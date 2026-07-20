@@ -19,7 +19,7 @@ export default function UserDropdown() {
 
   const adminState = useSelector((state) => state.admin) || {};
   const { admin, loading } = adminState;
-  const userType = admin?.type || "admin";
+
 
   const dropdownZIndex = pathname === "/settings" ? 9999 : 40;
 
@@ -109,11 +109,14 @@ export default function UserDropdown() {
         className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-lg border border-gray-200 bg-white p-3 shadow-theme-lg"
       >
         <div>
-          <span className="block capitalize font-medium text-gray-700 text-theme-sm">
-            {admin?.name || "Admin"}
+          <span className="block capitalize font-semibold text-gray-800 text-theme-sm">
+            {admin?.username || "User"}
           </span>
           <span className="mt-0.5 block text-theme-xs text-gray-500">
-            {admin?.email || "admin@booking.com"}
+            {admin?.email || ""}
+          </span>
+          <span className="mt-1.5 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+            {admin?.role || "Admin"}
           </span>
         </div>
 

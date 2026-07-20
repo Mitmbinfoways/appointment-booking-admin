@@ -12,6 +12,7 @@ import {
 } from "@/store/slices/authSlice";
 import { Toast } from "@/components/Toast";
 import Loader from "@/components/UI/Loader";
+import { userLogin } from "@/config/AxiosConfig";
 
 export default function LoginPage() {
   const dispatch = useDispatch();
@@ -98,38 +99,34 @@ export default function LoginPage() {
         dispatch(loginStart());
         dispatch(adminUpdateStates({ loading: true }));
 
-        // Simulate network delay for realistic look and feel
-        await new Promise((resolve) => setTimeout(resolve, 800));
-
-        // Skip API call and log in successfully with mock data
-        const mockAdminData = {
-          id: 1,
-          name: "Admin User",
-          email: getIdentifierType(formData.identifier) === "email" ? formData.identifier.trim() : "admin@booking.com",
-          mobile_number: getIdentifierType(formData.identifier) === "mobile" ? formData.identifier.trim() : "9876543210",
-          type: "admin",
-          is_active: 1,
-          dob: "1995-05-15",
-          joining_date: "2026-01-10",
-        };
-
-        dispatch(
-          loginSuccess({
-            token: "mock-jwt-token-key-12345",
-            admin: mockAdminData,
-          })
-        );
-        setSubmitSuccess(true);
-        Toast({
-          message: "Logged in successfully (Mock Mode)",
-          type: "success",
+        const response = await userLogin({
+          email: formData.identifier.trim(),
+          password: formData.password,
         });
-        router.push("/");
+
+        if (response.status === 200 && response.data?.statusCode === 200) {
+          const { admin, token } = response.data.data;
+          dispatch(loginSuccess({ admin, token }));
+          setSubmitSuccess(true);
+          Toast({
+            message: "Logged in successfully",
+            type: "success",
+          });
+          router.push("/");
+        } else {
+          const errMsg = response.data?.message || "Login failed. Invalid credentials.";
+          dispatch(loginFailure());
+          Toast({
+            message: errMsg,
+            type: "error",
+          });
+        }
       }
     } catch (error) {
       dispatch(loginFailure());
+      const errMsg = error?.response?.data?.message || "Login failed. Connection error.";
       Toast({
-        message: "Login failed.",
+        message: errMsg,
         type: "error",
       });
     } finally {

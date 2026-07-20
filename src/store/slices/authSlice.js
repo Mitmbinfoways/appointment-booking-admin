@@ -12,13 +12,13 @@ const mockAdmin = {
 };
 
 const initialState = {
-  isAuthenticated: true, // Always authenticated to bypass login screen
-  token: "mock-jwt-token-key-12345",
-  admin: mockAdmin,
+  isAuthenticated: false,
+  token: null,
+  admin: null,
   loading: false,
   error: null,
   isModalOpen: false,
-  isRehydrated: true, // Mark as rehydrated immediately
+  isRehydrated: false,
 };
 
 const adminSlice = createSlice({
@@ -44,16 +44,14 @@ const adminSlice = createSlice({
       state.isRehydrated = true;
     },
     logout(state) {
-      // Clear but keep auth state active to skip login if desired, or allow actual logout.
-      // Since the user wants to skip login, let's keep them authenticated or reset to mock.
-      state.isAuthenticated = true;
-      state.token = "mock-jwt-token-key-12345";
-      state.admin = mockAdmin;
+      state.isAuthenticated = false;
+      state.token = null;
+      state.admin = null;
       state.loading = false;
       state.isRehydrated = true;
       if (typeof window !== "undefined") {
-        localStorage.setItem("AppointmentBooking_admin", JSON.stringify(mockAdmin));
-        localStorage.setItem("AppointmentBooking_token", "mock-jwt-token-key-12345");
+        localStorage.removeItem("AppointmentBooking_admin");
+        localStorage.removeItem("AppointmentBooking_token");
       }
     },
     setAdmin(state, action) {

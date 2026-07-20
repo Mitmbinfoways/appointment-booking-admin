@@ -70,7 +70,7 @@ export const handleSessionExpiration = async (error) => {
 
 // Axios JSON instance
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000",
   headers: {
     "Content-Type": "application/json",
   },
@@ -107,7 +107,7 @@ axiosInstance.interceptors.response.use(
 
 // Axios FormData instance
 const axiosInstanceFormData = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000",
   headers: {
     "Content-Type": "multipart/form-data",
   },
@@ -142,66 +142,25 @@ axiosInstanceFormData.interceptors.response.use(
   }
 );
 
-// Mock auth requests for appointment booking panel
+// Real auth requests connected to backend
 export const userLogin = async (data) => {
-  // If baseline API matches
-  try {
-    return await axiosInstance.post("/api/v1/auth/login", data);
-  } catch (err) {
-    // If backend isn't running, return mock success for developer testing
-    if (data.email === "admin@booking.com" && data.password === "admin123") {
-      return {
-        status: 200,
-        data: {
-          status: true,
-          data: [
-            {
-              token: "mock-token-jwt-12345",
-              admin: {
-                id: 1,
-                name: "Admin User",
-                email: "admin@booking.com",
-                type: "admin",
-                is_active: 1,
-              },
-            },
-          ],
-        },
-      };
-    }
-    throw err;
-  }
+  return await axiosInstance.post("/api/admin/auth/login", data);
 };
 
 export const userLogout = async () => {
-  return axiosInstance.post("/api/v1/auth/logout");
+  return { status: 200 };
 };
 
 export const getProfile = async () => {
-  try {
-    return await axiosInstance.get("/api/v1/auth/profile");
-  } catch (err) {
-    if (typeof window !== "undefined" && localStorage.getItem("AppointmentBooking_token")) {
-      return {
-        status: 200,
-        data: {
-          status: true,
-          data: [
-            {
-              id: 1,
-              name: "Admin User",
-              email: "admin@booking.com",
-              dob: "1990-01-01",
-              joining_date: "2026-01-01",
-              mobile_number: "9876543210",
-              is_active: 1,
-            },
-          ],
-        },
-      };
-    }
-    throw err;
-  }
+  return await axiosInstance.get("/api/admin/profile");
+};
+
+export const updateUserProfile = async (data) => {
+  return await axiosInstance.put("/api/admin/profile", data);
+};
+
+export const updateUserPassword = async (data) => {
+  return await axiosInstance.put("/api/admin/profile/change-password", data);
 };
 
 export const getDashboardStats = async () => {
@@ -282,4 +241,41 @@ export const getCustomersList = async () => {
   };
 };
 
+export const getAdminsList = async () => {
+  return await axiosInstance.get("/api/superadmin/admins");
+};
+
+export const registerAdmin = async (data) => {
+  return await axiosInstance.post("/api/superadmin/admins", data);
+};
+
+export const toggleAdminActive = async (id) => {
+  return await axiosInstance.put(`/api/superadmin/admins/${id}/toggle`);
+};
+
+export const updateAdmin = async (id, data) => {
+  return await axiosInstance.put(`/api/superadmin/admins/${id}`, data);
+};
+
+export const deleteAdmin = async (id) => {
+  return await axiosInstance.delete(`/api/superadmin/admins/${id}`);
+};
+
+export const getAdminFormConfigSuper = async (adminId) => {
+  return await axiosInstance.get(`/api/superadmin/form-config/${adminId}`);
+};
+
+export const updateAdminFormConfigSuper = async (adminId, data) => {
+  return await axiosInstance.put(`/api/superadmin/form-config/${adminId}`, data);
+};
+
+export const getAdminSlotSettingsSuper = async (adminId) => {
+  return await axiosInstance.get(`/api/superadmin/slot-settings/${adminId}`);
+};
+
+export const updateAdminSlotSettingsSuper = async (adminId, data) => {
+  return await axiosInstance.put(`/api/superadmin/slot-settings/${adminId}`, data);
+};
+
 export default axiosInstance;
+

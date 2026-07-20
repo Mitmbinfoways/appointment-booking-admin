@@ -20,8 +20,8 @@ const AppSidebar = () => {
   const admin = adminState.admin;
 
   const navItems = useMemo(() => {
-    const userType = admin?.type || "admin";
-    return getMenuItemsByUserType(userType);
+    const userRole = admin?.role || admin?.type || "Admin";
+    return getMenuItemsByUserType(userRole);
   }, [admin]);
 
   const isActive = useCallback(

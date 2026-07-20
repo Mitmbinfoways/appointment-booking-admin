@@ -1,5 +1,18 @@
 import { LayoutDashboard, Calendar, Users, Settings } from "lucide-react";
 
+export const superAdminMenuItems = [
+  {
+    icon: LayoutDashboard,
+    name: "Dashboard",
+    path: "/",
+  },
+  {
+    icon: Users,
+    name: "Admins Management",
+    path: "/admins",
+  }
+];
+
 export const adminMenuItems = [
   {
     icon: LayoutDashboard,
@@ -16,36 +29,29 @@ export const adminMenuItems = [
       },
     ],
   },
-  // {
-  //   icon: Users,
-  //   name: "Management",
-  //   subItems: [
-  //     {
-  //       name: "Staff Members",
-  //       path: "/staff",
-  //     },
-  //     {
-  //       name: "Services Catalog",
-  //       path: "/services",
-  //     },
-  //     {
-  //       name: "Customers Directory",
-  //       path: "/customers",
-  //     },
-  //   ],
-  // },
-  // {
-  //   icon: Settings,
-  //   name: "Settings",
-  //   subItems: [
-  //     {
-  //       name: "My Profile",
-  //       path: "/profile",
-  //     },
-  //   ],
-  // },
+  {
+    icon: Settings,
+    name: "Settings",
+    subItems: [
+      {
+        name: "Slots Settings",
+        path: "/settings/slots",
+      },
+      {
+        name: "Form Settings",
+        path: "/settings/form",
+      },
+      {
+        name: "Holidays List",
+        path: "/settings/holidays",
+      }
+    ],
+  },
 ];
 
-export const getMenuItemsByUserType = (userType) => {
-  return adminMenuItems;
+export const getMenuItemsByUserType = (role) => {
+  if (role === "SuperAdmin") {
+    return superAdminMenuItems;
+  }
+  return adminMenuItems; // Default to Admin
 };
