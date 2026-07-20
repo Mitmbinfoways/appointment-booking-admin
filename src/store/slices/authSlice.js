@@ -12,7 +12,7 @@ const mockAdmin = {
 };
 
 const initialState = {
-  isAuthenticated: false,
+  isAuthenticated: true,
   token: null,
   admin: null,
   loading: false,

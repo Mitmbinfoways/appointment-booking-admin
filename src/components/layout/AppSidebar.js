@@ -25,7 +25,16 @@ const AppSidebar = () => {
   }, [admin]);
 
   const isActive = useCallback(
-    (path) => pathname === path,
+    (item) => {
+      if (!item) return false;
+      if (typeof item === "string") {
+        return pathname === item;
+      }
+      if (Array.isArray(item.isActive)) {
+        return item.isActive.includes(pathname);
+      }
+      return pathname === item.path;
+    },
     [pathname]
   );
 
@@ -33,12 +42,17 @@ const AppSidebar = () => {
     let submenuMatched = false;
     navItems.forEach((nav, index) => {
       if (nav.subItems) {
-        nav.subItems.forEach((subItem) => {
-          if (isActive(subItem.path)) {
-            setOpenSubmenu({ index });
-            submenuMatched = true;
-          }
-        });
+        if (isActive(nav)) {
+          setOpenSubmenu({ index });
+          submenuMatched = true;
+        } else {
+          nav.subItems.forEach((subItem) => {
+            if (isActive(subItem)) {
+              setOpenSubmenu({ index });
+              submenuMatched = true;
+            }
+          });
+        }
       }
     });
 
@@ -57,7 +71,7 @@ const AppSidebar = () => {
         }));
       }
     }
-  }, [openSubmenu]);
+  }, [openSubmenu, isExpanded, isHovered, isMobileOpen, navItems]);
 
   const handleSubmenuToggle = (index) => {
     setOpenSubmenu((prev) => {
@@ -122,14 +136,14 @@ const AppSidebar = () => {
                         toggleMobileSidebar();
                       }
                     }}
-                    className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
+                    className={`menu-item group ${isActive(nav) ? "menu-item-active" : "menu-item-inactive"
                       } ${!isExpanded && !isHovered
                         ? "md:justify-center"
                         : "md:justify-start"
                       }`}
                   >
                     <span
-                      className={`menu-item-icon-size ${isActive(nav.path)
+                      className={`menu-item-icon-size ${isActive(nav)
                         ? "menu-item-icon-active"
                         : "menu-item-icon-inactive"
                         }`}
@@ -165,7 +179,7 @@ const AppSidebar = () => {
                               toggleMobileSidebar();
                             }
                           }}
-                          className={`menu-dropdown-item text-md ${isActive(subItem.path)
+                          className={`menu-dropdown-item text-md ${isActive(subItem)
                             ? "menu-dropdown-item-active"
                             : "menu-dropdown-item-inactive"
                             }`}

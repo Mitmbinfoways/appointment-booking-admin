@@ -35,21 +35,20 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen transition-all duration-300 ease-in-out md:flex bg-white overflow-x-hidden w-full">
+    <div className="min-h-screen transition-all duration-300 ease-in-out md:flex bg-gray-50 overflow-x-hidden w-full">
       <div>
         <AppSidebar />
         <Backdrop />
       </div>
       <div
-        className={`flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out w-full overflow-x-hidden ${
-          isExpanded || isHovered
-            ? `${isExpanded ? "md:ml-[290px]" : "md:ml-0"} lg:ml-[290px]`
-            : "md:ml-0 lg:ml-[90px]"
-        } ${isMobileOpen ? "ml-0" : ""}`}
+        className={`flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out w-full overflow-x-hidden ${isExpanded || isHovered
+          ? `${isExpanded ? "md:ml-[290px]" : "md:ml-0"} lg:ml-[290px]`
+          : "md:ml-0 lg:ml-[90px]"
+          } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <AppHeader />
-        <div className="relative flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="p-4 mx-auto max-w-breakpoint-2xl md:p-5 lg:p-6 xl:p-6 w-full bg-white">
+        <div className="relative flex-1 overflow-y-auto overflow-x-hidden bg-gray-50">
+          <div className="p-4 mx-auto max-w-breakpoint-2xl md:p-5 lg:p-6 xl:p-6 w-full">
             {children}
           </div>
         </div>

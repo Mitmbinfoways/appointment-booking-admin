@@ -142,6 +142,14 @@ axiosInstanceFormData.interceptors.response.use(
   }
 );
 
+export const updateProfile = async (data) => {
+  return axiosInstanceFormData.post("/api/v1/auth/update-profile", data);
+};
+
+export const getAdminProfile = async () => {
+  return axiosInstance.get("/api/v1/auth/profile");
+};
+
 // Real auth requests connected to backend
 export const userLogin = async (data) => {
   return await axiosInstance.post("/api/admin/auth/login", data);
