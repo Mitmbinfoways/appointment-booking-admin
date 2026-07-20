@@ -8,6 +8,7 @@ import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
 import { getBookings } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { format } from "date-fns";
+import AppointmentsTable from "@/components/UI/table/AppointmentsTable";
 
 export default function AppointmentsPage() {
   const [bookingsList, setBookingsList] = useState([]);
@@ -123,18 +124,6 @@ export default function AppointmentsPage() {
     Toast({ message: "Booking created successfully", type: "success" });
   };
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "Confirmed":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "Pending":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200";
-      case "Cancelled":
-        return "bg-red-50 text-red-700 border-red-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
 
   return (
     <>
@@ -176,89 +165,11 @@ export default function AppointmentsPage() {
         </div>
 
         {/* Table Content */}
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Booking ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Service
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Date & Time
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBookings.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-10 text-center text-gray-400 text-sm">
-                    No bookings found.
-                  </td>
-                </tr>
-              ) : (
-                filteredBookings.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50/75 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                      {b.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
-                      {b.customerName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {b.serviceName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      <span className="block font-medium">{b.date}</span>
-                      <span className="text-xs text-gray-400">{b.time}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">
-                      ₹{b.amount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        onClick={() => handleStatusUpdateClick(b)}
-                        className={`inline-flex px-2.5 py-1 text-xs font-semibold border rounded-full cursor-pointer hover:opacity-85 transition-opacity ${getStatusClass(
-                          b.status
-                        )}`}
-                      >
-                        {b.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleStatusUpdateClick(b)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        Status
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(b)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <AppointmentsTable
+          bookings={filteredBookings}
+          onStatusClick={handleStatusUpdateClick}
+          onDeleteClick={handleDeleteClick}
+        />
       </div>
 
       {/* Edit Status Modal */}
