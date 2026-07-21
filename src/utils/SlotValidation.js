@@ -32,7 +32,7 @@ export const getBreakError = (brk, bIdx, breakTimes) => {
 export const hasAnyBreakErrors = (settings) => {
   return settings.workingDays.some(day => {
     if (!day.isOpen) return false;
-    const activeBreaks = (day.breakTimes || []).filter(brk =>
+    const activeBreaks = (day.breakTimes || []).filter(brk => 
       brk.startTime && brk.endTime && !(brk.startTime === "00:00" && brk.endTime === "00:00")
     );
     return activeBreaks.some((brk, idx) => {

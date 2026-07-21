@@ -13,7 +13,7 @@ import {
   checkOverlap,
   getBreakError,
   hasAnyBreakErrors
-} from "./SlotValidation";
+} from "@/utils/SlotValidation";
 
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
