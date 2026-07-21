@@ -61,6 +61,32 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
     return dateDigits ? `${dateDigits}${suffix}` : suffix;
   };
 
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime()) && dateStr.includes("T")) {
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+    const parts = dateStr.split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  const formatBookedDate = (createdAt) => {
+    if (!createdAt) return "";
+    const d = new Date(createdAt);
+    if (isNaN(d.getTime())) return "";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   // Modals state
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -280,7 +306,8 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                 {regularFields.map((field) => (
                   <TH key={field.fieldKey}>{field.label}</TH>
                 ))}
-                <TH>Date & Time</TH>
+                <TH>Appointment Date & Time</TH>
+                <TH>Date</TH>
                 <TH>Status</TH>
                 <TH className="text-right">Actions</TH>
               </TR>
@@ -288,13 +315,13 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={4 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
                     Loading bookings...
                   </TD>
                 </TR>
               ) : filteredBookings.length === 0 ? (
                 <TR>
-                  <TD colSpan={4 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
                     No bookings found.
                   </TD>
                 </TR>
@@ -344,8 +371,11 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                     })}
 
                     <TD className="text-gray-600 text-sm">
-                      <span className="block font-medium">{b.slotDate}</span>
-                      <span className="text-xs text-gray-400">{b.slotStartTime} - {b.slotEndTime}</span>
+                      <span className="block font-semibold text-gray-900">{formatDateDDMMYYYY(b.slotDate)}</span>
+                      <span className="block text-xs text-gray-500">{b.slotStartTime} - {b.slotEndTime}</span>
+                    </TD>
+                    <TD className="text-sm font-medium text-gray-700">
+                      {formatBookedDate(b.createdAt) || formatDateDDMMYYYY(b.slotDate)}
                     </TD>
                     <TD>
                       <span
@@ -410,14 +440,18 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 border-b border-gray-100 pb-3">
+            <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-3">
               <div>
-                <span className="block text-[10px] uppercase font-bold text-gray-400">Date</span>
-                <span className="text-sm font-medium text-gray-800">{selectedBooking.slotDate}</span>
+                <span className="block text-[10px] uppercase font-bold text-gray-400">Appointment Date</span>
+                <span className="text-sm font-medium text-gray-800">{formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
               </div>
               <div>
                 <span className="block text-[10px] uppercase font-bold text-gray-400">Time Window</span>
                 <span className="text-sm font-medium text-gray-800">{selectedBooking.slotStartTime} - {selectedBooking.slotEndTime}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-gray-400">Booking Date</span>
+                <span className="text-sm font-medium text-blue-600">{formatBookedDate(selectedBooking.createdAt) || formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
               </div>
             </div>
 
@@ -454,81 +488,6 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               </Button>
             </div>
           </div>
-        )}
-      </CustomModal>
-
-      {/* Edit Modal */}
-      <CustomModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit Booking"
-      >
-        {selectedBooking && (
-          <form onSubmit={handleSaveEdit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
-              <select
-                value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value)}
-                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800"
-              >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div className="space-y-3">
-              <span className="block text-xs font-bold text-gray-500 border-b pb-1">Response Fields</span>
-              {formFields.map((field) => {
-                const val = editResponses[field.fieldKey];
-                return (
-                  <div key={field.fieldKey}>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
-                      {field.label} {field.required && <span className="text-red-500">*</span>}
-                    </label>
-                    {field.inputType === "select" ? (
-                      <select
-                        value={val}
-                        required={field.required}
-                        onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800"
-                      >
-                        <option value="">Select option</option>
-                        {(field.options || []).map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : field.inputType === "textarea" ? (
-                      <textarea
-                        value={val}
-                        required={field.required}
-                        onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 min-h-20"
-                      />
-                    ) : (
-                      <input
-                        type={field.inputType === "number" ? "number" : "text"}
-                        value={val}
-                        required={field.required}
-                        onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800"
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-3">
-              <Button type="button" onClick={() => setIsEditModalOpen(false)} variant="secondary">
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </form>
         )}
       </CustomModal>
 

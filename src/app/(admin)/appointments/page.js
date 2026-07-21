@@ -64,6 +64,32 @@ export default function AppointmentsPage() {
     return dateDigits ? `${dateDigits}${suffix}` : suffix;
   };
 
+  const formatDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime()) && dateStr.includes("T")) {
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+    const parts = dateStr.split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  const formatBookedDate = (createdAt) => {
+    if (!createdAt) return "";
+    const d = new Date(createdAt);
+    if (isNaN(d.getTime())) return "";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   // Modals state
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -184,6 +210,7 @@ export default function AppointmentsPage() {
   }, [selectedYear, selectedMonth, holidays, slotSettings]);
 
   const handleCreateClick = () => {
+    setSelectedBooking(null);
     setNewBookingDate("");
     setNewBookingSlot("");
     const initialResponses = {};
@@ -272,27 +299,49 @@ export default function AppointmentsPage() {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const f of formFields) {
+      const isEmail = f.type === "email" || f.label?.toLowerCase().includes("email");
+      const val = newBookingResponses[f.fieldKey];
+      if (isEmail && val && !emailRegex.test(String(val).trim())) {
+        Toast({ message: `Please enter a valid email address for "${f.label}".`, type: "error" });
+        return;
+      }
+    }
+
     const [startTime, endTime] = newBookingSlot.split("-");
     setIsSaving(true);
 
     try {
-      const res = await createBookingRecord(admin._id, {
-        slotDate: newBookingDate,
-        slotStartTime: startTime,
-        slotEndTime: endTime,
-        dynamicResponses: newBookingResponses
-      });
+      let res;
+      if (selectedBooking) {
+        res = await updateAdminBookingRecord(selectedBooking._id, {
+          slotDate: newBookingDate,
+          slotStartTime: startTime,
+          slotEndTime: endTime,
+          status: editStatus,
+          dynamicResponses: newBookingResponses
+        });
+      } else {
+        res = await createBookingRecord(admin._id, {
+          slotDate: newBookingDate,
+          slotStartTime: startTime,
+          slotEndTime: endTime,
+          dynamicResponses: newBookingResponses
+        });
+      }
 
       if (res.status === 201 || res.status === 200) {
-        Toast({ message: "Appointment created successfully.", type: "success" });
+        Toast({ message: selectedBooking ? "Appointment updated successfully." : "Appointment created successfully.", type: "success" });
         setIsCreateModalOpen(false);
+        setSelectedBooking(null);
         loadData();
       } else {
-        Toast({ message: res.data?.message || "Failed to create booking.", type: "error" });
+        Toast({ message: res.data?.message || "Failed to save booking.", type: "error" });
       }
     } catch (err) {
       console.error(err);
-      const errMsg = err?.response?.data?.message || "Failed to create appointment.";
+      const errMsg = err?.response?.data?.message || "Failed to save appointment.";
       Toast({ message: errMsg, type: "error" });
     } finally {
       setIsSaving(false);
@@ -346,13 +395,28 @@ export default function AppointmentsPage() {
   const handleEditClick = (booking) => {
     setSelectedBooking(booking);
     setEditStatus(booking.status || "confirmed");
+    setNewBookingDate(booking.slotDate || "");
+    setNewBookingSlot(`${booking.slotStartTime}-${booking.slotEndTime}`);
+
+    if (booking.slotDate) {
+      const parts = booking.slotDate.split("-");
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        if (!isNaN(y) && !isNaN(m)) {
+          setSelectedYear(y);
+          setSelectedMonth(m);
+        }
+      }
+    }
+
     const responses = {};
     formFields.forEach(f => {
       const val = booking.dynamicResponses?.[f.fieldKey] || booking.dynamicResponses?.get?.(f.fieldKey);
       responses[f.fieldKey] = val !== undefined && val !== null ? val : "";
     });
-    setEditResponses(responses);
-    setIsEditModalOpen(true);
+    setNewBookingResponses(responses);
+    setIsCreateModalOpen(true);
   };
 
   const handleDeleteClick = (booking) => {
@@ -408,19 +472,19 @@ export default function AppointmentsPage() {
   if (isCreateModalOpen) {
     return (
       <>
-        <PageMeta title="Create Appointment - Booking Admin" description="Create a new appointment manually" />
+        <PageMeta title={`${selectedBooking ? "Edit" : "Create"} Appointment - Booking Admin`} description={`${selectedBooking ? "Edit" : "Create"} user appointment`} />
         <PageBreadcrumb
           items={[
             { label: "Home", to: "/" },
             { label: "Appointments", to: "/appointments" },
-            { label: "Create Appointment", to: "" }
+            { label: selectedBooking ? "Edit Appointment" : "Create Appointment", to: "" }
           ]}
         />
 
         <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs w-full">
           <div className="p-4 border-b border-gray-200 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-900">Create Appointment Manually</h3>
-            <p className="text-sm text-gray-500">First select an available date on the calendar, then fill the details.</p>
+            <h3 className="text-lg font-semibold text-gray-900">{selectedBooking ? "Edit Appointment Details" : "Create Appointment Manually"}</h3>
+            <p className="text-sm text-gray-500">{selectedBooking ? "Update appointment date, time window, status, and response details below." : "First select an available date on the calendar, then fill the details."}</p>
           </div>
 
           <form onSubmit={handleCreateSubmit} className="p-4 sm:p-6">
@@ -572,13 +636,15 @@ export default function AppointmentsPage() {
                         >
                           <option value="">-- Select a Slot --</option>
                           {availableSlots.map((s) => {
-                            const isAvailable = s.status === "available";
-                            const isBooked = s.status === "booked";
+                            const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                            const isAvailable = s.status === "available" || isCurrentSlot;
+                            const isBooked = s.status === "booked" && !isCurrentSlot;
                             const isBreak = s.status === "break";
 
                             let label = `${s.startTime} - ${s.endTime}`;
-                            if (isBooked) label += " (Already Booked)";
-                            if (isBreak) label += " (Break Slot)";
+                            if (isCurrentSlot) label += " (Current Slot)";
+                            else if (isBooked) label += " (Already Booked)";
+                            else if (isBreak) label += " (Break Slot)";
 
                             return (
                               <option
@@ -599,6 +665,9 @@ export default function AppointmentsPage() {
                       <span className="block text-sm font-bold text-gray-550 border-b pb-1.5">Response Fields</span>
                       {formFields.map((field) => {
                         const val = newBookingResponses[field.fieldKey] || "";
+                        const isEmail = field.type === "email" || field.label?.toLowerCase().includes("email");
+                        const isNumeric = field.type === "tel" || field.type === "number" || field.label?.toLowerCase().includes("phone") || field.label?.toLowerCase().includes("tel");
+
                         return (
                           <div key={field.fieldKey}>
                             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -625,10 +694,24 @@ export default function AppointmentsPage() {
                               />
                             ) : (
                               <input
-                                type={field.type === "number" ? "number" : "text"}
+                                type={isNumeric ? "tel" : isEmail ? "email" : field.type === "number" ? "number" : "text"}
                                 value={val}
                                 required={field.required}
-                                onChange={(e) => handleNewResponseChange(field.fieldKey, e.target.value)}
+                                onChange={(e) => {
+                                  let inputVal = e.target.value;
+                                  if (isNumeric) {
+                                    inputVal = inputVal.replace(/\D/g, "");
+                                  }
+                                  handleNewResponseChange(field.fieldKey, inputVal);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (isNumeric) {
+                                    const allowedKeys = ["Backspace", "Tab", "Delete", "ArrowLeft", "ArrowRight", "Enter"];
+                                    if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                                      e.preventDefault();
+                                    }
+                                  }
+                                }}
                                 className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
                               />
                             )}
@@ -637,12 +720,30 @@ export default function AppointmentsPage() {
                       })}
                     </div>
 
+                    {selectedBooking && (
+                      <div className="border-t border-gray-100 pt-5">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                          Status <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value)}
+                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 font-semibold"
+                        >
+                          <option value="confirmed">Confirmed</option>
+                          <option value="pending">Pending</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                    )}
+
                     <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                      <Button type="button" onClick={() => setIsCreateModalOpen(false)} variant="secondary">
+                      <Button type="button" onClick={() => { setIsCreateModalOpen(false); setSelectedBooking(null); }} variant="secondary">
                         Cancel
                       </Button>
                       <Button type="submit" disabled={isSaving || !newBookingSlot}>
-                        {isSaving ? "Creating..." : "Create Appointment"}
+                        {isSaving ? "Saving..." : selectedBooking ? "Save Changes" : "Create Appointment"}
                       </Button>
                     </div>
                   </div>
@@ -736,7 +837,8 @@ export default function AppointmentsPage() {
                 {regularFields.map((field) => (
                   <TH key={field.fieldKey}>{field.label}</TH>
                 ))}
-                <TH>Date & Time</TH>
+                <TH>Appointment Date & Time</TH>
+                <TH>Date</TH>
                 <TH>Status</TH>
                 <TH className="text-right">Actions</TH>
               </TR>
@@ -744,13 +846,13 @@ export default function AppointmentsPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={4 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
                     Loading bookings...
                   </TD>
                 </TR>
               ) : filteredBookings.length === 0 ? (
                 <TR>
-                  <TD colSpan={4 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
                     No bookings found.
                   </TD>
                 </TR>
@@ -800,8 +902,11 @@ export default function AppointmentsPage() {
                     })}
 
                     <TD className="text-gray-600 text-sm">
-                      <span className="block font-medium">{b.slotDate}</span>
-                      <span className="text-xs text-gray-400">{b.slotStartTime} - {b.slotEndTime}</span>
+                      <span className="block font-semibold text-gray-900">{formatDateDDMMYYYY(b.slotDate)}</span>
+                      <span className="block text-xs text-gray-500">{b.slotStartTime} - {b.slotEndTime}</span>
+                    </TD>
+                    <TD className="text-sm font-medium text-gray-700">
+                      {formatBookedDate(b.createdAt) || formatDateDDMMYYYY(b.slotDate)}
                     </TD>
                     <TD>
                       <span
@@ -866,14 +971,18 @@ export default function AppointmentsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 border-b border-gray-100 pb-3">
+            <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-3">
               <div>
-                <span className="block text-[10px] uppercase font-bold text-gray-400">Date</span>
-                <span className="text-sm font-medium text-gray-800">{selectedBooking.slotDate}</span>
+                <span className="block text-[10px] uppercase font-bold text-gray-400">Appointment Date</span>
+                <span className="text-sm font-medium text-gray-800">{formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
               </div>
               <div>
                 <span className="block text-[10px] uppercase font-bold text-gray-400">Time Window</span>
                 <span className="text-sm font-medium text-gray-800">{selectedBooking.slotStartTime} - {selectedBooking.slotEndTime}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-gray-400">Booking Date</span>
+                <span className="text-sm font-medium text-blue-600">{formatBookedDate(selectedBooking.createdAt) || formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
               </div>
             </div>
 
@@ -910,81 +1019,6 @@ export default function AppointmentsPage() {
               </Button>
             </div>
           </div>
-        )}
-      </CustomModal>
-
-      {/* Edit Modal */}
-      <CustomModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Edit Booking"
-      >
-        {selectedBooking && (
-          <form onSubmit={handleSaveEdit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
-              <select
-                value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value)}
-                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800"
-              >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div className="space-y-3">
-              <span className="block text-xs font-bold text-gray-500 border-b pb-1">Response Fields</span>
-              {formFields.map((field) => {
-                const val = editResponses[field.fieldKey];
-                return (
-                  <div key={field.fieldKey}>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
-                      {field.label} {field.required && <span className="text-red-500">*</span>}
-                    </label>
-                    {field.type === "select" ? (
-                      <select
-                        value={val}
-                        required={field.required}
-                        onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800"
-                      >
-                        <option value="">Select option</option>
-                        {(field.options || []).map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : field.type === "textarea" ? (
-                      <textarea
-                        value={val}
-                        required={field.required}
-                        onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 min-h-20"
-                      />
-                    ) : (
-                      <input
-                        type={field.type === "number" ? "number" : "text"}
-                        value={val}
-                        required={field.required}
-                        onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800"
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-3">
-              <Button type="button" onClick={() => setIsEditModalOpen(false)} variant="secondary">
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </form>
         )}
       </CustomModal>
 
