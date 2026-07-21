@@ -305,7 +305,7 @@ export default function AdminsPage() {
                           </svg>
                         </Link>
                         <Link
-                          href={`/admins/${admin._id}/appointments`}
+                          href={`/admins/appointments-list/${admin._id}`}
                           title="Appointments List"
                           className="text-gray-500 hover:text-amber-500 transition-colors cursor-pointer"
                         >

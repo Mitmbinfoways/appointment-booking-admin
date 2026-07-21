@@ -643,6 +643,7 @@ export default function HolidaysPage() {
                   required
                   value={customStartTime}
                   onChange={(e) => setCustomStartTime(e.target.value)}
+                  onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
                   className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 bg-white"
                 />
               </div>
@@ -655,6 +656,7 @@ export default function HolidaysPage() {
                   required
                   value={customEndTime}
                   onChange={(e) => setCustomEndTime(e.target.value)}
+                  onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
                   className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 bg-white"
                 />
               </div>

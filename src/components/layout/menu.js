@@ -10,6 +10,10 @@ export const superAdminMenuItems = [
     icon: Users,
     name: "Admins Management",
     path: "/admins",
+    isActive: [
+      "/admins",
+      "/admins/", // prefix matches all sub-routes like `/admins/[id]/holidays` and `/admins/appointments-list/[id]`
+    ]
   }
 ];
 
@@ -22,7 +26,11 @@ export const adminMenuItems = [
   {
     icon: CalendarCheck,
     name: "Appointments List",
-    path: "/appointments",
+    path: "/appointments-list",
+    isActive: [
+      "/appointments-list",
+      "/appointments-list/" // prefix matches sub-routes like `/appointments-list/create-appointment` and `/appointments-list/edit-appointment/[bookingId]`
+    ]
   },
   {
     icon: ClipboardList,
@@ -45,5 +53,5 @@ export const getMenuItemsByUserType = (role) => {
   if (role === "SuperAdmin") {
     return superAdminMenuItems;
   }
-    return adminMenuItems; // Default to Admin
+  return adminMenuItems; // Default to Admin
 };

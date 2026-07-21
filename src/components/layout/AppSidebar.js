@@ -31,7 +31,12 @@ const AppSidebar = () => {
         return pathname === item;
       }
       if (Array.isArray(item.isActive)) {
-        return item.isActive.includes(pathname);
+        return item.isActive.some((p) => {
+          if (p.endsWith("/")) {
+            return pathname.startsWith(p);
+          }
+          return pathname === p;
+        });
       }
       return pathname === item.path;
     },
