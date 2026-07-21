@@ -41,29 +41,31 @@ export default function UserDropdown() {
     try {
       dispatch(adminUpdateStates({ loading: true }));
 
-      // Clear local storage and state first
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("AppointmentBooking_admin");
-        localStorage.removeItem("AppointmentBooking_token");
-      }
-      dispatch(logout());
-
       try {
         await logoutAPI();
       } catch (apiErr) {
-        console.warn("Logout API failed, but state cleared:", apiErr);
+        console.warn("Logout API failed, but continuing clearing state:", apiErr);
+      }
+
+      // Clear local storage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("AppointmentBooking_admin");
+        localStorage.removeItem("AppointmentBooking_token");
       }
 
       Toast({
         message: "Logged out successfully",
         type: "success",
       });
+
+      // Dispatch logout state changes last
+      dispatch(logout());
+      router.push("/login");
     } catch (error) {
       console.error("Error in logout:", error);
     } finally {
       dispatch(adminUpdateStates({ loading: false }));
       setIsLogoutModalOpen(false);
-      router.push("/login");
     }
   };
 
@@ -82,7 +84,7 @@ export default function UserDropdown() {
         </span>
 
         <span className="block capitalize mr-1 font-medium text-theme-sm">
-          {admin?.name || "Admin"}
+          {admin?.username || admin?.name || "Admin"}
         </span>
         <ChevronDown
           className={`w-4.5 h-4.5 text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""

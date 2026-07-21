@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, use } from "react";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import Button from "@/components/UI/Button";
@@ -10,11 +10,11 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil } f
 import { format, parse } from "date-fns";
 import Tooltip from "@/components/UI/Tooltip";
 import {
-  getHolidaysList,
-  createHolidayRecord,
-  updateHolidayRecord,
-  deleteHolidayRecord,
-  getAdminSlotSettings,
+  getAdminHolidaysSuperList,
+  createAdminHolidaySuperRecord,
+  updateAdminHolidaySuperRecord,
+  deleteAdminHolidaySuperRecord,
+  getAdminSlotSettingsSuper,
 } from "@/config/AxiosConfig";
 
 const formatTime12h = (timeStr) => {
@@ -39,7 +39,10 @@ const toUiDateFormat = (dateStr) => {
   return `${d}-${m}-${y}`;
 };
 
-export default function HolidaysPage() {
+export default function AdminHolidaysPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const adminId = params.id;
+
   const [holidays, setHolidays] = useState([]);
   const [slotSettings, setSlotSettings] = useState(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -62,7 +65,7 @@ export default function HolidaysPage() {
   const fetchHolidays = async () => {
     setIsLoading(true);
     try {
-      const res = await getHolidaysList();
+      const res = await getAdminHolidaysSuperList(adminId);
       if (res.status === 200 && res.data?.statusCode === 200) {
         const loaded = (res.data.data || []).map((h) => ({
           ...h,
@@ -73,7 +76,7 @@ export default function HolidaysPage() {
       }
     } catch (err) {
       console.error(err);
-      Toast({ message: "Error loading holidays from server.", type: "error" });
+      Toast({ message: "Error loading admin holidays from server.", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +84,7 @@ export default function HolidaysPage() {
 
   const fetchSlotSettings = async () => {
     try {
-      const res = await getAdminSlotSettings();
+      const res = await getAdminSlotSettingsSuper(adminId);
       if (res.status === 200 && res.data?.statusCode === 200) {
         setSlotSettings(res.data.data);
       }
@@ -93,7 +96,7 @@ export default function HolidaysPage() {
   useEffect(() => {
     fetchHolidays();
     fetchSlotSettings();
-  }, []);
+  }, [adminId]);
 
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -205,7 +208,7 @@ export default function HolidaysPage() {
     setIsSaving(true);
     try {
       if (existing) {
-        const res = await updateHolidayRecord(existing._id, payload);
+        const res = await updateAdminHolidaySuperRecord(adminId, existing._id, payload);
         if (res.status === 200 && res.data?.statusCode === 200) {
           Toast({ message: `Holiday updated successfully for ${activeDate}`, type: "success" });
           await fetchHolidays();
@@ -213,7 +216,7 @@ export default function HolidaysPage() {
           Toast({ message: "Failed to update holiday.", type: "error" });
         }
       } else {
-        const res = await createHolidayRecord(payload);
+        const res = await createAdminHolidaySuperRecord(adminId, payload);
         if (res.status === 201 && res.data?.statusCode === 201) {
           Toast({ message: `Holiday added successfully for ${activeDate}`, type: "success" });
           await fetchHolidays();
@@ -242,7 +245,7 @@ export default function HolidaysPage() {
 
     setIsSaving(true);
     try {
-      const res = await deleteHolidayRecord(existing._id);
+      const res = await deleteAdminHolidaySuperRecord(adminId, existing._id);
       if (res.status === 200 && res.data?.statusCode === 200) {
         Toast({ message: `Holiday removed successfully.`, type: "success" });
         await fetchHolidays();
@@ -284,7 +287,11 @@ export default function HolidaysPage() {
     <>
       <PageMeta title="Holiday Management - Booking Admin" description="Configure company holidays on calendar" />
       <PageBreadcrumb
-        items={[{ label: "Home", to: "/" }, { label: "Holidays Management", to: "/holidays" }]}
+        items={[
+          { label: "Home", to: "/" },
+          { label: "Admins Management", to: "/admins" },
+          { label: "Holiday Management", to: "#" }
+        ]}
       />
 
       <div className="pb-4 flex flex-col lg:flex-row gap-5 items-stretch w-full">
@@ -355,7 +362,7 @@ export default function HolidaysPage() {
             <div className="grid grid-cols-7 gap-2">
               {calendarDays.map((dayObj, idx) => {
                 if (!dayObj.day) {
-                  return <div key={`empty-${idx}`} className="aspect-square bg-gray-55/50 rounded-lg border border-transparent"></div>;
+                  return <div key={`empty-${idx}`} className="aspect-square bg-gray-50/50 rounded-lg border border-transparent"></div>;
                 }
 
                 const isToday = dayObj.dateStr === todayStr;
@@ -461,7 +468,7 @@ export default function HolidaysPage() {
                       className={`flex items-center justify-between p-2.5 hover:bg-red-50/50 hover:border-red-200 border rounded-lg transition-all duration-200 cursor-pointer group
                         ${h.date === activeDate
                           ? "bg-red-50/70 border-red-200"
-                          : "bg-gray-55 border-gray-100"
+                          : "bg-gray-50 border-gray-100"
                         }
                       `}
                     >
@@ -489,7 +496,7 @@ export default function HolidaysPage() {
                           <div className="flex flex-wrap items-center gap-1 mt-0.5">
                             <span className="text-[10px] text-gray-450">{h.date}</span>
                             <span className="text-[8px] text-gray-300">•</span>
-                            <span className="text-[9px] font-semibold text-blue-705 bg-blue-50/50 px-1 py-0.2 rounded">
+                            <span className="text-[9px] font-semibold text-blue-700 bg-blue-50/50 px-1 py-0.2 rounded">
                               {h.holidayType === "full" && "Full Day"}
                               {h.holidayType === "half" && `Half Day (${h.halfDayType === "first_half" ? "Morning Off" : "Afternoon Off"})`}
                               {h.holidayType === "custom" && `Custom Time`}
@@ -605,7 +612,7 @@ export default function HolidaysPage() {
                     onClick={() => setHalfDayType(item.value)}
                     className={`py-2 px-3 text-[10px] leading-tight font-semibold rounded-lg border transition-all ${
                       halfDayType === item.value
-                        ? "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
+                        ? "bg-blue-55 border-blue-500 text-blue-700 shadow-sm"
                         : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
                   >
@@ -617,7 +624,7 @@ export default function HolidaysPage() {
           )}
 
           {holidayType === "custom" && (
-            <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="grid grid-cols-2 gap-3 p-3 bg-gray-55 rounded-lg border border-gray-200">
               <div>
                 <label className="block text-xs font-semibold text-gray-650 mb-1">
                   Available From (Start Time) <span className="text-red-500">*</span>

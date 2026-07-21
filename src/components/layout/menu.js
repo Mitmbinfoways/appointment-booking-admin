@@ -14,31 +14,31 @@ export const superAdminMenuItems = [
 ];
 
 export const adminMenuItems = [
-    {
-        icon: LayoutDashboard,
-        name: "Dashboard",
-        path: "/",
-    },
-    {
-        icon: LayoutDashboard,
-        name: "Holidays Management",
-        path: "/holidays",
-    },
-    // {
-    //     icon: Calendar,
-    //     name: "Appointments",
-    //     isActive: ["/appointments", "/appointments/add"],
-    //     subItems: [
-    //         {
-    //             name: "Bookings List",
-    //             path: "/appointments",
-    //         },
-    //         {
-    //             name: "Add Booking",
-    //             path: "/appointments/add",
-    //         },
-    //     ],
-    // },
+  {
+    icon: LayoutDashboard,
+    name: "Dashboard",
+    path: "/",
+  },
+  {
+    icon: Settings,
+    name: "Form Configuration",
+    path: "/settings/form",
+  },
+  {
+    icon: Settings,
+    name: "Slots Settings",
+    path: "/settings/slots",
+  },
+  {
+    icon: Calendar,
+    name: "Holidays Management",
+    path: "/holidays",
+  },
+  {
+    icon: Calendar,
+    name: "Appointments List",
+    path: "/appointments",
+  },
 ];
 
 export const getMenuItemsByUserType = (role) => {

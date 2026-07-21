@@ -1,0 +1,514 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import PageMeta from "@/components/PageMeta";
+import PageBreadcrumb from "@/components/PageBreadcrumb";
+import Button from "@/components/UI/Button";
+import { getAdminSlotSettings, updateAdminSlotSettings } from "@/config/AxiosConfig";
+import { Toast } from "@/components/Toast";
+import { useRouter } from "next/navigation";
+
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+const formatTime12h = (timeStr) => {
+  if (!timeStr) return "";
+  const [hoursStr, minutesStr] = timeStr.split(":");
+  const hours = parseInt(hoursStr, 10);
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours % 12 || 12;
+  const padHours = String(displayHours).padStart(2, "0");
+  return `${padHours}:${minutesStr} ${ampm}`;
+};
+
+export default function AdminSlotSettingsPage() {
+  const router = useRouter();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [slotSettings, setSlotSettings] = useState({
+    slotDurationMinutes: 30,
+    capacityPerSlot: 1,
+    workingDays: [],
+  });
+
+  const fetchSlotSettings = async () => {
+    setIsLoading(true);
+    try {
+      const res = await getAdminSlotSettings();
+      if (res.status === 200 && res.data?.statusCode === 200) {
+        const dbDays = res.data.data.workingDays || [];
+        const mappedDays = WEEKDAYS.map((dayName) => {
+          const found = dbDays.find((d) => d.day === dayName);
+          if (found) {
+            return {
+              ...found,
+              isEditingHours: false,
+              breakTimes: (found.breakTimes || []).map((b) => ({
+                ...b,
+                isEditing: false,
+              })),
+            };
+          }
+          return {
+            day: dayName,
+            isOpen: false,
+            startTime: "09:00",
+            endTime: "17:00",
+            isEditingHours: false,
+            breakTimes: [],
+          };
+        });
+
+        setSlotSettings({
+          slotDurationMinutes: res.data.data.slotDurationMinutes,
+          capacityPerSlot: res.data.data.capacityPerSlot,
+          workingDays: mappedDays,
+        });
+      } else {
+        Toast({ message: "Failed to load slot settings.", type: "error" });
+      }
+    } catch (err) {
+      console.error(err);
+      Toast({ message: "Connection error loading settings.", type: "error" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSlotSettings();
+  }, []);
+
+  const handleSlotSettingsChange = (field, value) => {
+    setSlotSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const saveSlotSettings = async (updatedSettings, shouldRedirect = false) => {
+    setIsSaving(true);
+    try {
+      const cleanedWorkingDays = updatedSettings.workingDays.map((day) => ({
+        day: day.day,
+        isOpen: day.isOpen,
+        startTime: day.startTime,
+        endTime: day.endTime,
+        breakTimes: (day.breakTimes || []).map(({ name, startTime, endTime }) => ({
+          name,
+          startTime,
+          endTime,
+        })),
+      }));
+
+      const res = await updateAdminSlotSettings({
+        slotDurationMinutes: Number(updatedSettings.slotDurationMinutes),
+        capacityPerSlot: Number(updatedSettings.capacityPerSlot),
+        workingDays: cleanedWorkingDays,
+      });
+
+      if (res.status === 200 && res.data?.statusCode === 200) {
+        Toast({ message: "Slot settings synced successfully.", type: "success" });
+        if (shouldRedirect) {
+          router.push("/");
+        }
+      } else {
+        Toast({ message: "Failed to update slot settings.", type: "error" });
+      }
+    } catch (err) {
+      console.error(err);
+      Toast({ message: "Error synchronizing slots with server.", type: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggleWorkingDayOpen = (dayName) => {
+    const nextDays = slotSettings.workingDays.map((d) => {
+      if (d.day === dayName) {
+        const nextOpen = !d.isOpen;
+        return {
+          ...d,
+          isOpen: nextOpen,
+          isEditingHours: nextOpen ? true : d.isEditingHours,
+        };
+      }
+      return d;
+    });
+
+    const nextSettings = {
+      ...slotSettings,
+      workingDays: nextDays,
+    };
+
+    setSlotSettings(nextSettings);
+    saveSlotSettings(nextSettings, false);
+  };
+
+  const handleToggleHoursEdit = (dayName, isEditing) => {
+    setSlotSettings((prev) => ({
+      ...prev,
+      workingDays: prev.workingDays.map((d) => (d.day === dayName ? { ...d, isEditingHours: isEditing } : d)),
+    }));
+  };
+
+  const handleWorkingDayTimeChange = (dayName, field, value) => {
+    setSlotSettings((prev) => ({
+      ...prev,
+      workingDays: prev.workingDays.map((d) => (d.day === dayName ? { ...d, [field]: value } : d)),
+    }));
+  };
+
+  const handleSaveWorkingDayHours = (dayName) => {
+    const targetDay = slotSettings.workingDays.find((d) => d.day === dayName);
+    if (!targetDay) return;
+
+    if (!targetDay.startTime || !targetDay.endTime) {
+      Toast({ message: "Please fill out all operational hour fields.", type: "warning" });
+      return;
+    }
+
+    const nextDays = slotSettings.workingDays.map((d) => (d.day === dayName ? { ...d, isEditingHours: false } : d));
+    const nextSettings = {
+      ...slotSettings,
+      workingDays: nextDays,
+    };
+
+    setSlotSettings(nextSettings);
+    saveSlotSettings(nextSettings, false);
+  };
+
+  const handleAddDayBreak = (dayName) => {
+    setSlotSettings((prev) => ({
+      ...prev,
+      workingDays: prev.workingDays.map((d) => {
+        if (d.day === dayName) {
+          const nextBreaks = [
+            ...(d.breakTimes || []),
+            {
+              name: `Break ${((d.breakTimes || []).length + 1)}`,
+              startTime: "13:00",
+              endTime: "14:00",
+              isEditing: true,
+            },
+          ];
+          return { ...d, breakTimes: nextBreaks };
+        }
+        return d;
+      }),
+    }));
+  };
+
+  const handleToggleBreakEdit = (dayName, breakIdx, isEditing) => {
+    const nextDays = slotSettings.workingDays.map((d) => {
+      if (d.day === dayName) {
+        const nextBreaks = d.breakTimes.map((b, idx) => (idx === breakIdx ? { ...b, isEditing } : b));
+        return { ...d, breakTimes: nextBreaks };
+      }
+      return d;
+    });
+
+    const nextSettings = {
+      ...slotSettings,
+      workingDays: nextDays,
+    };
+
+    setSlotSettings(nextSettings);
+    if (!isEditing) {
+      saveSlotSettings(nextSettings, false);
+    }
+  };
+
+  const handleDayBreakChange = (dayName, breakIdx, field, value) => {
+    setSlotSettings((prev) => ({
+      ...prev,
+      workingDays: prev.workingDays.map((d) => {
+        if (d.day === dayName) {
+          const nextBreaks = d.breakTimes.map((b, idx) => (idx === breakIdx ? { ...b, [field]: value } : b));
+          return { ...d, breakTimes: nextBreaks };
+        }
+        return d;
+      }),
+    }));
+  };
+
+  const handleRemoveDayBreak = (dayName, breakIdx) => {
+    const nextDays = slotSettings.workingDays.map((d) => {
+      if (d.day === dayName) {
+        const nextBreaks = d.breakTimes.filter((_, idx) => idx !== breakIdx);
+        return { ...d, breakTimes: nextBreaks };
+      }
+      return d;
+    });
+
+    const nextSettings = {
+      ...slotSettings,
+      workingDays: nextDays,
+    };
+
+    setSlotSettings(nextSettings);
+    saveSlotSettings(nextSettings, false);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    saveSlotSettings(slotSettings, true);
+  };
+
+  return (
+    <>
+      <PageMeta title="Configure Time Slots" description="Admin Slot Settings Configuration Panel" />
+      <PageBreadcrumb
+        items={[
+          { label: "Home", to: "/" },
+          { label: "Slots Settings", to: "/settings/slots" }
+        ]}
+      />
+
+      <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs p-6 max-w-4xl mx-auto">
+        <div className="border-b border-gray-200 pb-4 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Configure Availability & Time Slots</h3>
+          <p className="text-sm text-gray-500">Define appointment slot intervals, concurrency capacities, and operating hours.</p>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-10 text-gray-400 text-sm">
+            Loading slot settings...
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Slot Duration (Minutes)
+                </label>
+                <select
+                  value={slotSettings.slotDurationMinutes}
+                  onChange={(e) => handleSlotSettingsChange("slotDurationMinutes", Number(e.target.value))}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                >
+                  <option value={15}>15 Minutes</option>
+                  <option value={30}>30 Minutes</option>
+                  <option value={45}>45 Minutes</option>
+                  <option value={60}>60 Minutes (1 Hour)</option>
+                  <option value={90}>90 Minutes</option>
+                  <option value={120}>120 Minutes (2 Hours)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Capacity Per Slot (Max Concurrent Bookings)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  value={slotSettings.capacityPerSlot}
+                  onChange={(e) => handleSlotSettingsChange("capacityPerSlot", Number(e.target.value))}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Weekly Working Hours</h4>
+              
+              <div className="space-y-4">
+                {slotSettings.workingDays.map((day) => {
+                  const dayName = day.day;
+                  return (
+                    <div key={dayName} className="p-4 bg-gray-50 border border-gray-200 rounded-lg flex flex-col gap-4">
+                      {/* Weekday Switch & Hours Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleWorkingDayOpen(dayName)}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                              day.isOpen ? "bg-blue-600" : "bg-gray-250"
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                day.isOpen ? "translate-x-5" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                          <span className="text-sm font-semibold text-gray-800">{dayName}</span>
+                        </div>
+
+                        {day.isOpen ? (
+                          day.isEditingHours ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="time"
+                                value={day.startTime}
+                                onChange={(e) => handleWorkingDayTimeChange(dayName, "startTime", e.target.value)}
+                                className="px-2.5 py-1 border border-gray-300 rounded text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              />
+                              <span className="text-gray-400 text-xs">to</span>
+                              <input
+                                type="time"
+                                value={day.endTime}
+                                onChange={(e) => handleWorkingDayTimeChange(dayName, "endTime", e.target.value)}
+                                className="px-2.5 py-1 border border-gray-300 rounded text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveWorkingDayHours(dayName)}
+                                className="text-emerald-600 hover:text-emerald-800 transition-colors p-1"
+                                title="Save Operational Hours"
+                              >
+                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-600 bg-white px-3 py-1 border border-gray-200 rounded">
+                                {formatTime12h(day.startTime)} to {formatTime12h(day.endTime)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleHoursEdit(dayName, true)}
+                                className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+                                title="Edit Operational Hours"
+                              >
+                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                            </div>
+                          )
+                        ) : (
+                          <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1.5 rounded border border-gray-200">
+                            Closed
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Day break config nested inside day card */}
+                      {day.isOpen && (
+                        <div className="border-t border-gray-200/60 pt-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-tighter">Breaks for {dayName}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAddDayBreak(dayName)}
+                              className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                            >
+                              + Add Break
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2.5">
+                            {(day.breakTimes || []).length === 0 ? (
+                              <span className="text-xs text-gray-400 italic">No breaks configured for this day.</span>
+                            ) : (
+                              day.breakTimes.map((brk, bIdx) => (
+                                <div key={bIdx}>
+                                  {brk.isEditing ? (
+                                    <div className="flex items-center gap-2 bg-white px-3 py-1 border border-gray-300 rounded shadow-sm w-fit">
+                                      <input
+                                        type="text"
+                                        value={brk.name}
+                                        onChange={(e) => handleDayBreakChange(dayName, bIdx, "name", e.target.value)}
+                                        required
+                                        placeholder="Break Name"
+                                        className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none w-24 text-gray-800 font-semibold"
+                                      />
+                                      <input
+                                        type="time"
+                                        value={brk.startTime}
+                                        onChange={(e) => handleDayBreakChange(dayName, bIdx, "startTime", e.target.value)}
+                                        required
+                                        className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
+                                      />
+                                      <span className="text-gray-400 text-xs">to</span>
+                                      <input
+                                        type="time"
+                                        value={brk.endTime}
+                                        onChange={(e) => handleDayBreakChange(dayName, bIdx, "endTime", e.target.value)}
+                                        required
+                                        className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (brk.name.trim() === "" || !brk.startTime || !brk.endTime) {
+                                            Toast({ message: "Please fill out all break fields.", type: "warning" });
+                                            return;
+                                          }
+                                          handleToggleBreakEdit(dayName, bIdx, false);
+                                        }}
+                                        className="text-emerald-600 hover:text-emerald-800 transition-colors p-1"
+                                        title="Save Break"
+                                      >
+                                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveDayBreak(dayName, bIdx)}
+                                        className="text-red-500 hover:text-red-700 transition-colors p-1"
+                                        title="Delete Break"
+                                      >
+                                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-3 py-1 bg-white px-3 border border-gray-200 rounded text-xs text-gray-700 w-fit">
+                                      <span className="font-semibold text-gray-800">{brk.name}</span>
+                                      <span className="text-gray-400">|</span>
+                                      <span className="text-gray-600">{formatTime12h(brk.startTime)} - {formatTime12h(brk.endTime)}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleBreakEdit(dayName, breakIdx, true)}
+                                        className="text-blue-600 hover:text-blue-800 transition-colors ml-2 cursor-pointer"
+                                        title="Edit Break"
+                                      >
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveDayBreak(dayName, breakIdx)}
+                                        className="text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                                        title="Delete Break"
+                                      >
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-gray-200 pt-6">
+              <Button type="button" variant="secondary" size="md" onClick={() => router.push("/")}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="md" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Settings"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </div>
+    </>
+  );
+}

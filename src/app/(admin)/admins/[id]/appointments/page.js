@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, use } from "react";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { 
-  getAdminFormConfig, 
-  getBookings, 
-  updateAdminBookingRecord, 
-  deleteAdminBookingRecord 
+  getAdminFormConfigSuper, 
+  getAdminBookingsSuperList, 
+  getAdminsList,
+  updateAdminBookingSuperRecord,
+  deleteAdminBookingSuperRecord
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
@@ -31,7 +32,11 @@ const getStatusClass = (status) => {
   }
 };
 
-export default function AppointmentsPage() {
+export default function AdminAppointmentsPage({ params: paramsPromise }) {
+  const params = use(paramsPromise);
+  const adminId = params.id;
+
+  const [adminUser, setAdminUser] = useState(null);
   const [formFields, setFormFields] = useState([]);
   const [bookingsList, setBookingsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,14 +59,22 @@ export default function AppointmentsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // 1. Load FormConfig
-      const formRes = await getAdminFormConfig();
+      // 1. Load Admin details
+      const adminsRes = await getAdminsList();
+      if (adminsRes.status === 200 && adminsRes.data?.statusCode === 200) {
+        const list = adminsRes.data.data || [];
+        const found = list.find(a => a._id === adminId);
+        if (found) setAdminUser(found);
+      }
+
+      // 2. Load FormConfig
+      const formRes = await getAdminFormConfigSuper(adminId);
       if (formRes.status === 200 && formRes.data?.statusCode === 200) {
         setFormFields(formRes.data.data?.fields || []);
       }
 
-      // 2. Load Bookings
-      const bookingsRes = await getBookings();
+      // 3. Load Bookings
+      const bookingsRes = await getAdminBookingsSuperList(adminId);
       if (bookingsRes.status === 200 && bookingsRes.data?.statusCode === 200) {
         setBookingsList(bookingsRes.data.data?.bookings || []);
       }
@@ -75,15 +88,15 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [adminId]);
 
   // Columns classification
   const mediaFields = useMemo(() => {
-    return formFields.filter(f => f.type === "image" || f.type === "video");
+    return formFields.filter(f => f.inputType === "image" || f.inputType === "video");
   }, [formFields]);
 
   const regularFields = useMemo(() => {
-    return formFields.filter(f => f.type !== "image" && f.type !== "video");
+    return formFields.filter(f => f.inputType !== "image" && f.inputType !== "video");
   }, [formFields]);
 
   const filteredBookings = useMemo(() => {
@@ -142,7 +155,7 @@ export default function AppointmentsPage() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await updateAdminBookingRecord(selectedBooking._id, {
+      const res = await updateAdminBookingSuperRecord(selectedBooking._id, {
         status: editStatus,
         dynamicResponses: editResponses
       });
@@ -162,7 +175,7 @@ export default function AppointmentsPage() {
   const handleConfirmDelete = async () => {
     setIsSaving(true);
     try {
-      const res = await deleteAdminBookingRecord(selectedBooking._id);
+      const res = await deleteAdminBookingSuperRecord(selectedBooking._id);
       if (res.status === 200) {
         Toast({ message: "Booking deleted successfully.", type: "success" });
         setIsDeleteModalOpen(false);
@@ -185,9 +198,16 @@ export default function AppointmentsPage() {
 
   return (
     <>
-      <PageMeta title="Appointments - Booking Admin" description="Manage user appointments" />
+      <PageMeta 
+        title={`Appointments - ${adminUser?.username || "Admin"} - Booking Admin`} 
+        description="View and manage sub-admin appointments" 
+      />
       <PageBreadcrumb
-        items={[{ label: "Home", to: "/" }, { label: "Appointments", to: "/appointments" }]}
+        items={[
+          { label: "Home", to: "/" }, 
+          { label: "Admins Management", to: "/admins" },
+          { label: `Bookings (${adminUser?.username || "Admin"})`, to: `/admins/${adminId}/appointments` }
+        ]}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
@@ -274,7 +294,7 @@ export default function AppointmentsPage() {
                       return (
                         <TD key={field.fieldKey} className="text-sm">
                           {val ? (
-                            field.type === "image" ? (
+                            field.inputType === "image" ? (
                               <img 
                                 src={val} 
                                 alt={field.label} 
@@ -395,11 +415,11 @@ export default function AppointmentsPage() {
                     <span className="text-[11px] font-semibold text-gray-400">{field.label}</span>
                     <div className="text-sm text-gray-800">
                       {val ? (
-                        field.type === "image" ? (
+                        field.inputType === "image" ? (
                           <a href={val} target="_blank" rel="noreferrer" className="block max-w-xs border rounded-lg overflow-hidden hover:opacity-90">
                             <img src={val} alt={field.label} className="w-full object-cover max-h-40" />
                           </a>
-                        ) : field.type === "video" ? (
+                        ) : field.inputType === "video" ? (
                           <video src={val} className="max-w-xs border rounded-lg max-h-40" controls />
                         ) : (
                           <span>{String(val)}</span>
@@ -452,7 +472,7 @@ export default function AppointmentsPage() {
                     <label className="block text-sm font-semibold text-gray-700 mb-1">
                       {field.label} {field.required && <span className="text-red-500">*</span>}
                     </label>
-                    {field.type === "select" ? (
+                    {field.inputType === "select" ? (
                       <select
                         value={val}
                         required={field.required}
@@ -464,7 +484,7 @@ export default function AppointmentsPage() {
                           <option key={opt} value={opt}>{opt}</option>
                         ))}
                       </select>
-                    ) : field.type === "textarea" ? (
+                    ) : field.inputType === "textarea" ? (
                       <textarea
                         value={val}
                         required={field.required}
@@ -473,7 +493,7 @@ export default function AppointmentsPage() {
                       />
                     ) : (
                       <input
-                        type={field.type === "number" ? "number" : "text"}
+                        type={field.inputType === "number" ? "number" : "text"}
                         value={val}
                         required={field.required}
                         onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}

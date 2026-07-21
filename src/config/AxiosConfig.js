@@ -190,18 +190,15 @@ export const getDashboardStats = async () => {
 };
 
 export const getBookings = async () => {
-  return {
-    status: 200,
-    data: {
-      status: true,
-      data: [
-        { id: "B-101", customerName: "Rahul Sharma", serviceName: "Haircut & Styling", date: "2026-07-21", time: "10:00 AM", status: "Confirmed", amount: 1500 },
-        { id: "B-102", customerName: "Priya Patel", serviceName: "Spa Treatment", date: "2026-07-21", time: "11:30 AM", status: "Confirmed", amount: 3500 },
-        { id: "B-103", customerName: "Amit Verma", serviceName: "Dental Checkup", date: "2026-07-22", time: "02:00 PM", status: "Pending", amount: 2000 },
-        { id: "B-104", customerName: "Sneha Reddy", serviceName: "Nail Art", date: "2026-07-23", time: "04:30 PM", status: "Cancelled", amount: 1200 },
-      ],
-    },
-  };
+  return await axiosInstance.get("/api/admin/bookings");
+};
+
+export const updateAdminBookingRecord = async (id, data) => {
+  return await axiosInstance.put(`/api/admin/bookings/${id}`, data);
+};
+
+export const deleteAdminBookingRecord = async (id) => {
+  return await axiosInstance.delete(`/api/admin/bookings/${id}`);
 };
 
 export const getStaffList = async () => {
@@ -277,12 +274,72 @@ export const updateAdminFormConfigSuper = async (adminId, data) => {
   return await axiosInstance.put(`/api/superadmin/form-config/${adminId}`, data);
 };
 
+export const getAdminFormConfig = async () => {
+  return await axiosInstance.get("/api/admin/form-config");
+};
+
+export const updateAdminFormConfig = async (data) => {
+  return await axiosInstance.put("/api/admin/form-config", data);
+};
+
+export const updateAdminSlotSettings = async (data) => {
+  return await axiosInstance.put("/api/admin/slot-settings", data);
+};
+
 export const getAdminSlotSettingsSuper = async (adminId) => {
   return await axiosInstance.get(`/api/superadmin/slot-settings/${adminId}`);
 };
 
+export const getAdminSlotSettings = async () => {
+  return await axiosInstance.get("/api/admin/slot-settings");
+};
+
 export const updateAdminSlotSettingsSuper = async (adminId, data) => {
   return await axiosInstance.put(`/api/superadmin/slot-settings/${adminId}`, data);
+};
+
+export const getHolidaysList = async () => {
+  return await axiosInstance.get("/api/holidays");
+};
+
+export const createHolidayRecord = async (data) => {
+  return await axiosInstance.post("/api/holidays", data);
+};
+
+export const updateHolidayRecord = async (id, data) => {
+  return await axiosInstance.put(`/api/holidays/${id}`, data);
+};
+
+export const deleteHolidayRecord = async (id) => {
+  return await axiosInstance.delete(`/api/holidays/${id}`);
+};
+
+export const getAdminHolidaysSuperList = async (adminId) => {
+  return await axiosInstance.get(`/api/holidays/admin/${adminId}`);
+};
+
+export const createAdminHolidaySuperRecord = async (adminId, data) => {
+  return await axiosInstance.post(`/api/holidays/admin/${adminId}`, data);
+};
+
+export const updateAdminHolidaySuperRecord = async (adminId, id, data) => {
+  return await axiosInstance.put(`/api/holidays/admin/${adminId}/${id}`, data);
+};
+
+export const deleteAdminHolidaySuperRecord = async (adminId, id) => {
+  return await axiosInstance.delete(`/api/holidays/admin/${adminId}/${id}`);
+};
+
+export const getAdminBookingsSuperList = async (adminId) => {
+  return await axiosInstance.get(`/api/superadmin/bookings/${adminId}`);
+};
+
+export const updateAdminBookingSuperRecord = async (id, data) => {
+  return await axiosInstance.put(`/api/superadmin/bookings/${id}`, data);
+};
+
+export const deleteAdminBookingSuperRecord = async (id) => {
+  return await axiosInstance.delete(`/api/superadmin/bookings/${id}`);
 };
 
 export default axiosInstance;
