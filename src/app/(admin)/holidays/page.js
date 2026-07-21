@@ -6,7 +6,7 @@ import PageBreadcrumb from "@/components/PageBreadcrumb";
 import Button from "@/components/UI/Button";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
 import { Toast } from "@/components/Toast";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil } from "lucide-react";
 import { format, parse } from "date-fns";
 import Tooltip from "@/components/UI/Tooltip";
 
@@ -181,7 +181,7 @@ export default function HolidaysPage() {
     <>
       <PageMeta title="Holiday Management - Booking Admin" description="Configure company holidays on calendar" />
       <PageBreadcrumb
-        items={[{ label: "Home", to: "/" }, { label: "Management", to: "/staff" }, { label: "Holidays", to: "/holidays" }]}
+        items={[{ label: "Home", to: "/" }, { label: "Holidays Management", to: "/holidays" }]}
       />
 
       <div className="pb-4 flex flex-col lg:flex-row gap-5 items-stretch w-full">
@@ -256,20 +256,30 @@ export default function HolidaysPage() {
                 }
 
                 const isToday = dayObj.dateStr === todayStr;
-                const cellTooltipContent = dayObj.isHoliday 
-                  ? `${dayObj.holidayTitle} (${dayObj.dateStr})` 
-                  : `Click to set holiday for ${dayObj.dateStr}`;
+                const isActive = dayObj.dateStr === activeDate;
+                const cellTooltipContent = dayObj.isHoliday
+                  ? `${dayObj.holidayTitle}`
+                  : null
+                // ? `${dayObj.holidayTitle} (${dayObj.dateStr})`
+                // : `Click to set holiday for ${dayObj.dateStr}`;
 
                 return (
                   <div
                     key={dayObj.dateStr}
                     onClick={() => handleDateClick(dayObj)}
-                    className={`aspect-square rounded-lg border cursor-pointer transition-all duration-200 select-none overflow-visible
+                    className={`aspect-square rounded-lg cursor-pointer transition-all duration-200 select-none overflow-visible
                       ${dayObj.isHoliday
-                        ? "bg-red-50/70 border-red-200 text-red-700 hover:bg-red-50 hover:shadow-sm"
-                        : "bg-white border-gray-200 text-gray-800 hover:border-blue-300 hover:bg-blue-50/20"
+                        ? "bg-red-50/70 text-red-700 hover:bg-red-50 hover:shadow-sm"
+                        : "bg-white text-gray-800 hover:bg-blue-50/20"
                       }
-                      ${isToday ? "!border-green-500 ring-2 ring-green-500/20" : ""}
+                      ${isActive
+                        ? "border border-blue-600 shadow-sm"
+                        : isToday
+                          ? "border-2 border-green-600"
+                          : dayObj.isHoliday
+                            ? "border border-red-200"
+                            : "border border-gray-200 hover:border-blue-600"
+                      }
                     `}
                   >
                     <Tooltip content={cellTooltipContent}>
@@ -324,35 +334,72 @@ export default function HolidaysPage() {
                       onClick={() => {
                         const monthVal = dateObj.getMonth();
                         setSelectedMonth(monthVal);
+                        setSelectedYear(dateObj.getFullYear());
                         setActiveDate(h.date);
                         setHolidayTitle(h.title);
-                        setIsModalOpen(true);
                       }}
-                      className="flex items-center justify-between p-2.5 bg-gray-50 hover:bg-red-50/50 hover:border-red-200 border border-gray-100 rounded-lg transition-all duration-200 cursor-pointer group"
+                      className={`flex items-center justify-between p-2.5 hover:bg-red-50/50 hover:border-red-200 border rounded-lg transition-all duration-200 cursor-pointer group
+                        ${h.date === activeDate
+                          ? "bg-red-50/70 border-red-200"
+                          : "bg-gray-50 border-gray-100"
+                        }
+                      `}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="flex flex-col items-center justify-center w-9 h-9 bg-white border border-gray-200 rounded-lg text-center font-bold text-gray-700 shadow-sm group-hover:border-red-200 group-hover:text-red-700">
-                          <span className="text-[9px] uppercase text-gray-400 group-hover:text-red-400 leading-none mb-0.5">{monthName}</span>
+                        <div className={`flex flex-col items-center justify-center w-9 h-9 bg-white border rounded-lg text-center font-bold shadow-sm transition-all
+                          ${h.date === activeDate
+                            ? "border-red-200 text-red-700"
+                            : "border-gray-200 text-gray-700 group-hover:border-red-200 group-hover:text-red-700"
+                          }
+                        `}>
+                          <span className={`text-[9px] uppercase leading-none mb-0.5 transition-all
+                            ${h.date === activeDate
+                              ? "text-red-400"
+                              : "text-gray-400 group-hover:text-red-400"
+                            }
+                          `}>{monthName}</span>
                           <span className="text-xs leading-none">{day}</span>
                         </div>
                         <div>
-                          <h4 className="font-semibold text-xs text-gray-800 group-hover:text-red-950 truncate max-w-[120px] sm:max-w-none">
+                          <h4 className={`font-semibold text-xs truncate max-w-[120px] sm:max-w-none transition-all
+                            ${h.date === activeDate ? "text-red-950" : "text-gray-800 group-hover:text-red-950"}
+                          `}>
                             {h.title}
                           </h4>
                           <span className="text-[10px] text-gray-400">{h.date}</span>
                         </div>
                       </div>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveDate(h.date);
-                          setIsDeleteModalOpen(true);
-                        }}
-                        className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const monthVal = dateObj.getMonth();
+                            setSelectedMonth(monthVal);
+                            setSelectedYear(dateObj.getFullYear());
+                            setActiveDate(h.date);
+                            setHolidayTitle(h.title);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Edit Holiday"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDate(h.date);
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete Holiday"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -386,27 +433,13 @@ export default function HolidaysPage() {
             />
           </div>
 
-          <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-            {holidays.some((h) => h.date === activeDate) ? (
-              <button
-                type="button"
-                onClick={handleDeleteClick}
-                className="flex items-center gap-1.5 text-red-600 hover:text-red-800 text-sm font-semibold hover:underline"
-              >
-                <Trash2 size={16} />
-                Remove Holiday
-              </button>
-            ) : (
-              <div></div>
-            )}
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="sm">
-                Save
-              </Button>
-            </div>
+          <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
+            <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="sm">
+              Save
+            </Button>
           </div>
         </form>
       </CustomModal>
