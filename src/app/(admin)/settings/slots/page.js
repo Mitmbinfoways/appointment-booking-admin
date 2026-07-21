@@ -300,7 +300,7 @@ export default function AdminSlotSettingsPage() {
                     <button
                       type="button"
                       onClick={() => setIsEditingDuration(true)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
                       title="Edit Slot Duration"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -315,12 +315,9 @@ export default function AdminSlotSettingsPage() {
                         setIsEditingDuration(false);
                         saveSlotSettings(slotSettings, false);
                       }}
-                      className="text-xs text-green-600 hover:text-green-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      className="h-6 px-2.5 text-xs text-white bg-green-600 hover:bg-green-700 font-semibold rounded transition-all duration-150 flex items-center gap-1 focus:outline-none cursor-pointer shadow-sm"
                       title="Save Slot Duration"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
                       Save
                     </button>
                   )}
@@ -379,7 +376,7 @@ export default function AdminSlotSettingsPage() {
                     <button
                       type="button"
                       onClick={() => setIsEditingCapacity(true)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
                       title="Edit Capacity"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -395,16 +392,13 @@ export default function AdminSlotSettingsPage() {
                         setIsEditingCapacity(false);
                         saveSlotSettings(slotSettings, false);
                       }}
-                      className={`text-xs font-semibold flex items-center gap-1 focus:outline-none ${
+                      className={`h-6 px-2.5 text-xs font-semibold rounded transition-all duration-150 flex items-center gap-1 focus:outline-none shadow-sm ${
                         isCapacityInvalid
-                          ? "text-gray-400 cursor-not-allowed opacity-50"
-                          : "text-green-600 hover:text-green-800"
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-50"
+                          : "text-white bg-green-600 hover:bg-green-700 cursor-pointer"
                       }`}
                       title="Save Capacity"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
                       Save
                     </button>
                   )}

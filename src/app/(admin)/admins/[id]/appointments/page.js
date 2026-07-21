@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useMemo, use, useRef } from "react";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
-import { 
-  getAdminFormConfigSuper, 
-  getAdminBookingsSuperList, 
+import {
+  getAdminFormConfigSuper,
+  getAdminBookingsSuperList,
   getAdminsList,
   updateAdminBookingSuperRecord,
   deleteAdminBookingSuperRecord,
@@ -415,9 +415,9 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   if (isEditModalOpen) {
     return (
       <>
-        <PageMeta 
-          title={`Edit Appointment - ${adminUser?.username || "Admin"} - Booking Admin`} 
-          description="Edit user appointment details" 
+        <PageMeta
+          title={`Edit Appointment - ${adminUser?.username || "Admin"} - Booking Admin`}
+          description="Edit user appointment details"
         />
         <PageBreadcrumb
           items={[
@@ -561,7 +561,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                       </label>
                       {isLoadingSlots ? (
                         <p className="text-xs text-gray-400">Loading available slots...</p>
-                      ) : availableSlots.length === 0 ? (
+                      ) : (availableSlots.length === 0 && !selectedBooking) ? (
                         <p className="text-xs text-red-500 font-medium">No slots available for {editBookingDate}.</p>
                       ) : (
                         <select
@@ -571,28 +571,42 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                           className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
                         >
                           <option value="">-- Select a Slot --</option>
-                          {availableSlots.map((s) => {
-                            const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
-                            const isAvailable = s.status === "available" || isCurrentSlot;
-                            const isBooked = s.status === "booked" && !isCurrentSlot;
-                            const isBreak = s.status === "break";
+                          {(() => {
+                            const renderedSlots = [...availableSlots];
+                            if (selectedBooking && selectedBooking.slotStartTime && selectedBooking.slotEndTime) {
+                              const currentSlotKey = `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                              const exists = renderedSlots.some(s => `${s.startTime}-${s.endTime}` === currentSlotKey);
+                              if (!exists) {
+                                renderedSlots.unshift({
+                                  startTime: selectedBooking.slotStartTime,
+                                  endTime: selectedBooking.slotEndTime,
+                                  status: "available"
+                                });
+                              }
+                            }
+                            return renderedSlots.map((s) => {
+                              const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                              const isAvailable = s.status === "available" || isCurrentSlot;
+                              const isBooked = s.status === "booked" && !isCurrentSlot;
+                              const isBreak = s.status === "break";
 
-                            let label = `${s.startTime} - ${s.endTime}`;
-                            if (isCurrentSlot) label += " (Current Slot)";
-                            else if (isBooked) label += " (Already Booked)";
-                            else if (isBreak) label += " (Break Slot)";
+                              let label = `${s.startTime} - ${s.endTime}`;
+                              if (isCurrentSlot) label += " (Current Slot)";
+                              else if (isBooked) label += " (Already Booked)";
+                              else if (isBreak) label += " (Break Slot)";
 
-                            return (
-                              <option
-                                key={`${s.startTime}-${s.endTime}`}
-                                value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
-                                disabled={!isAvailable}
-                                className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
-                              >
-                                {label}
-                              </option>
-                            );
-                          })}
+                              return (
+                                <option
+                                  key={`${s.startTime}-${s.endTime}`}
+                                  value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
+                                  disabled={!isAvailable}
+                                  className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
+                                >
+                                  {label}
+                                </option>
+                              );
+                            });
+                          })()}
                         </select>
                       )}
                     </div>
@@ -708,13 +722,13 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
 
   return (
     <>
-      <PageMeta 
-        title={`Appointments - ${adminUser?.username || "Admin"} - Booking Admin`} 
-        description="View and manage sub-admin appointments" 
+      <PageMeta
+        title={`Appointments - ${adminUser?.username || "Admin"} - Booking Admin`}
+        description="View and manage sub-admin appointments"
       />
       <PageBreadcrumb
         items={[
-          { label: "Home", to: "/" }, 
+          { label: "Home", to: "/" },
           { label: "Admins Management", to: "/admins" },
           { label: `Bookings (${adminUser?.username || "Admin"})`, to: `/admins/${adminId}/appointments` }
         ]}
@@ -798,7 +812,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                 filteredBookings.map((b, idx) => (
                   <TR key={b._id}>
                     <TD className="text-sm text-gray-500">{idx + 1}</TD>
-                    
+
                     {/* Render matching dynamic responses for Media Columns */}
                     {mediaFields.map((field) => {
                       const val = b.dynamicResponses?.[field.fieldKey] || b.dynamicResponses?.get?.(field.fieldKey);
@@ -806,16 +820,16 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                         <TD key={field.fieldKey} className="text-sm">
                           {val ? (
                             field.inputType === "image" ? (
-                              <img 
-                                src={val} 
-                                alt={field.label} 
-                                className="w-10 h-10 object-cover rounded-lg border border-gray-200" 
+                              <img
+                                src={val}
+                                alt={field.label}
+                                className="w-10 h-10 object-cover rounded-lg border border-gray-200"
                               />
                             ) : (
-                              <video 
-                                src={val} 
-                                className="w-14 h-10 object-cover rounded-lg border border-gray-200" 
-                                controls 
+                              <video
+                                src={val}
+                                className="w-14 h-10 object-cover rounded-lg border border-gray-200"
+                                controls
                               />
                             )
                           ) : (

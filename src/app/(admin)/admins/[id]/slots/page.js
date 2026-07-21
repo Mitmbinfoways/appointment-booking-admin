@@ -40,7 +40,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingDuration, setIsEditingDuration] = useState(false);
   const [isEditingCapacity, setIsEditingCapacity] = useState(false);
-  
+
   const [slotSettings, setSlotSettings] = useState({
     slotDurationMinutes: 30,
     capacityPerSlot: 1,
@@ -318,7 +318,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                     <button
                       type="button"
                       onClick={() => setIsEditingDuration(true)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
                       title="Edit Slot Duration"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,12 +333,9 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                         setIsEditingDuration(false);
                         saveSlotSettings(slotSettings, false);
                       }}
-                      className="text-xs text-green-600 hover:text-green-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      className="h-6 px-2.5 text-xs text-white bg-green-600 hover:bg-green-700 font-semibold rounded transition-all duration-150 flex items-center gap-1 focus:outline-none cursor-pointer shadow-sm"
                       title="Save Slot Duration"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
                       Save
                     </button>
                   )}
@@ -397,7 +394,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                     <button
                       type="button"
                       onClick={() => setIsEditingCapacity(true)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
                       title="Edit Capacity"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -413,16 +410,13 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                         setIsEditingCapacity(false);
                         saveSlotSettings(slotSettings, false);
                       }}
-                      className={`text-xs font-semibold flex items-center gap-1 focus:outline-none ${
+                      className={`h-6 px-2.5 text-xs font-semibold rounded transition-all duration-150 flex items-center gap-1 focus:outline-none shadow-sm ${
                         isCapacityInvalid
-                          ? "text-gray-400 cursor-not-allowed opacity-50"
-                          : "text-green-600 hover:text-green-800"
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-50"
+                          : "text-white bg-green-600 hover:bg-green-700 cursor-pointer"
                       }`}
                       title="Save Capacity"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
                       Save
                     </button>
                   )}
@@ -475,13 +469,11 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                           <button
                             type="button"
                             onClick={() => handleToggleWorkingDayOpen(dayName)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              dayObj.isOpen ? "bg-blue-600" : "bg-gray-200"
-                            }`}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${dayObj.isOpen ? "bg-blue-600" : "bg-gray-200"
+                              }`}
                           >
-                            <span className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                              dayObj.isOpen ? "translate-x-4" : "translate-x-0"
-                            }`} />
+                            <span className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${dayObj.isOpen ? "translate-x-4" : "translate-x-0"
+                              }`} />
                           </button>
                           <span className="text-sm font-semibold text-gray-800">{dayName}</span>
                         </div>

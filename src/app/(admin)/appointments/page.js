@@ -631,7 +631,7 @@ export default function AppointmentsPage() {
                       </label>
                       {isLoadingSlots ? (
                         <p className="text-xs text-gray-400">Loading available slots...</p>
-                      ) : availableSlots.length === 0 ? (
+                      ) : (availableSlots.length === 0 && !selectedBooking) ? (
                         <p className="text-xs text-red-500 font-medium">No slots available for {newBookingDate}.</p>
                       ) : (
                         <select
@@ -641,28 +641,42 @@ export default function AppointmentsPage() {
                           className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
                         >
                           <option value="">-- Select a Slot --</option>
-                          {availableSlots.map((s) => {
-                            const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
-                            const isAvailable = s.status === "available" || isCurrentSlot;
-                            const isBooked = s.status === "booked" && !isCurrentSlot;
-                            const isBreak = s.status === "break";
+                          {(() => {
+                            const renderedSlots = [...availableSlots];
+                            if (selectedBooking && selectedBooking.slotStartTime && selectedBooking.slotEndTime) {
+                              const currentSlotKey = `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                              const exists = renderedSlots.some(s => `${s.startTime}-${s.endTime}` === currentSlotKey);
+                              if (!exists) {
+                                renderedSlots.unshift({
+                                  startTime: selectedBooking.slotStartTime,
+                                  endTime: selectedBooking.slotEndTime,
+                                  status: "available"
+                                });
+                              }
+                            }
+                            return renderedSlots.map((s) => {
+                              const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                              const isAvailable = s.status === "available" || isCurrentSlot;
+                              const isBooked = s.status === "booked" && !isCurrentSlot;
+                              const isBreak = s.status === "break";
 
-                            let label = `${s.startTime} - ${s.endTime}`;
-                            if (isCurrentSlot) label += " (Current Slot)";
-                            else if (isBooked) label += " (Already Booked)";
-                            else if (isBreak) label += " (Break Slot)";
+                              let label = `${s.startTime} - ${s.endTime}`;
+                              if (isCurrentSlot) label += " (Current Slot)";
+                              else if (isBooked) label += " (Already Booked)";
+                              else if (isBreak) label += " (Break Slot)";
 
-                            return (
-                              <option
-                                key={`${s.startTime}-${s.endTime}`}
-                                value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
-                                disabled={!isAvailable}
-                                className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
-                              >
-                                {label}
-                              </option>
-                            );
-                          })}
+                              return (
+                                <option
+                                  key={`${s.startTime}-${s.endTime}`}
+                                  value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
+                                  disabled={!isAvailable}
+                                  className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
+                                >
+                                  {label}
+                                </option>
+                              );
+                            });
+                          })()}
                         </select>
                       )}
                     </div>
