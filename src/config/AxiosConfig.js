@@ -342,5 +342,13 @@ export const deleteAdminBookingSuperRecord = async (id) => {
   return await axiosInstance.delete(`/api/superadmin/bookings/${id}`);
 };
 
+export const getAvailableSlotsList = async (adminId, date) => {
+  return await axiosInstance.get(`/api/bookings/available-slots/${adminId}?date=${date}`);
+};
+
+export const createBookingRecord = async (adminId, data) => {
+  return await axiosInstance.post(`/api/bookings/${adminId}`, data);
+};
+
 export default axiosInstance;
 

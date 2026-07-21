@@ -148,11 +148,18 @@ export default function HolidaysPage() {
         }
       }
 
+      const todayAtMidnight = new Date();
+      todayAtMidnight.setHours(0, 0, 0, 0);
+      const cellDateAtMidnight = new Date(selectedYear, selectedMonth, d);
+      cellDateAtMidnight.setHours(0, 0, 0, 0);
+      const isPastDay = cellDateAtMidnight < todayAtMidnight;
+
       days.push({
         day: d,
         dateStr,
         isHoliday: !!holiday,
         isClosedDay,
+        isPastDay,
         holidayTitle: holiday ? holiday.title : null,
         holidayType: holiday ? holiday.holidayType : null,
         halfDayType: holiday ? holiday.halfDayType : null,
@@ -361,35 +368,38 @@ export default function HolidaysPage() {
                 const isToday = dayObj.dateStr === todayStr;
                 const isActive = dayObj.dateStr === activeDate;
                 const isClosed = dayObj.isClosedDay;
+                const isPast = dayObj.isPastDay;
                 
-                const cellTooltipContent = isClosed
-                  ? "Closed Day (Normal Off-Day)"
-                  : dayObj.isHoliday
-                    ? `${dayObj.holidayTitle}`
-                    : null;
+                const cellTooltipContent = isPast
+                  ? "Past Date (Cannot set holiday)"
+                  : isClosed
+                    ? "Closed Day (Normal Off-Day)"
+                    : dayObj.isHoliday
+                      ? `${dayObj.holidayTitle}`
+                      : null;
 
                 return (
                   <div
                     key={dayObj.dateStr}
                     onClick={() => {
-                      if (isClosed) return;
+                      if (isClosed || isPast) return;
                       handleDateClick(dayObj);
                     }}
                     className={`aspect-square rounded-lg transition-all duration-200 select-none overflow-visible
-                      ${isClosed
+                      ${isClosed || isPast
                         ? "bg-gray-100/70 text-gray-400 border border-gray-200 cursor-not-allowed"
                         : dayObj.isHoliday
                           ? "bg-red-50/70 text-red-700 hover:bg-red-50 hover:shadow-sm cursor-pointer border border-red-200"
                           : "bg-white text-gray-800 hover:bg-blue-50/20 cursor-pointer border border-gray-200 hover:border-blue-600"
                       }
-                      ${!isClosed && isActive ? "border border-blue-600 shadow-sm" : ""}
-                      ${!isClosed && isToday ? "border-2 border-green-600" : ""}
+                      ${!isClosed && !isPast && isActive ? "border border-blue-600 shadow-sm" : ""}
+                      ${!isClosed && !isPast && isToday ? "border-2 border-green-600" : ""}
                     `}
                   >
                     <Tooltip content={cellTooltipContent}>
                       <div className="w-full h-full flex flex-col justify-between p-1.5">
                         <span className={`text-xs font-semibold rounded flex items-center justify-center w-5 h-5 
-                          ${isClosed
+                          ${isClosed || isPast
                             ? "bg-gray-200 text-gray-450 font-medium"
                             : dayObj.isHoliday
                               ? "bg-red-100 text-red-800"
@@ -407,7 +417,13 @@ export default function HolidaysPage() {
                           </span>
                         )}
 
-                        {isClosed && (
+                        {isPast && (
+                          <span className="block text-[8px] leading-tight truncate font-semibold text-gray-400 text-left mt-0.5 max-w-full uppercase tracking-tighter">
+                            Past
+                          </span>
+                        )}
+
+                        {!isPast && isClosed && (
                           <span className="block text-[8px] leading-tight truncate font-semibold text-gray-400 text-left mt-0.5 max-w-full uppercase tracking-tighter">
                             Closed
                           </span>

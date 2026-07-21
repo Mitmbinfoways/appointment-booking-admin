@@ -188,25 +188,23 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+            className="space-y-6"
+          >
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email or Mobile Number <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                {getIdentifierType(formData.identifier) === "email" ? (
-                  <Mail
-                    className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${
-                      focusedField === "identifier" ? "text-gray-800" : "text-gray-400"
-                    }`}
-                  />
-                ) : (
-                  <Phone
-                    className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${
-                      focusedField === "identifier" ? "text-gray-800" : "text-gray-400"
-                    }`}
-                  />
-                )}
+                <Mail
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${
+                    focusedField === "identifier" ? "text-gray-800" : "text-gray-400"
+                  }`}
+                />
                 <input
                   ref={identifierRef}
                   type="text"
@@ -271,7 +269,7 @@ export default function LoginPage() {
             </div>
 
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={loading}
               className="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl hover:bg-gray-800 transform transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -284,7 +282,7 @@ export default function LoginPage() {
                 "Login"
               )}
             </button>
-          </div>
+          </form>
 
           <div className="mt-6 text-center">
             <button
