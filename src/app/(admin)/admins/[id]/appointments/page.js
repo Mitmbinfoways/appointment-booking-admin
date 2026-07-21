@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, use } from "react";
+import React, { useState, useEffect, useMemo, use, useRef } from "react";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { 
@@ -37,6 +37,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const adminId = params.id;
 
   const [adminUser, setAdminUser] = useState(null);
+  const fetchedIdRef = useRef(null);
   const [formFields, setFormFields] = useState([]);
   const [bookingsList, setBookingsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +98,10 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const [editStatus, setEditStatus] = useState("confirmed");
   const [editResponses, setEditResponses] = useState({});
 
-  const loadData = async () => {
+  const loadData = async (force = false) => {
+    if (!adminId) return;
+    if (!force && fetchedIdRef.current === adminId) return;
+    fetchedIdRef.current = adminId;
     setIsLoading(true);
     try {
       // 1. Load Admin details
@@ -128,7 +132,9 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   };
 
   useEffect(() => {
-    loadData();
+    if (adminId) {
+      loadData(false);
+    }
   }, [adminId]);
 
   // Columns classification
@@ -203,7 +209,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
       if (res.status === 200) {
         Toast({ message: "Booking updated successfully.", type: "success" });
         setIsEditModalOpen(false);
-        loadData();
+        loadData(true);
       }
     } catch (err) {
       console.error(err);
@@ -220,7 +226,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
       if (res.status === 200) {
         Toast({ message: "Booking deleted successfully.", type: "success" });
         setIsDeleteModalOpen(false);
-        loadData();
+        loadData(true);
       }
     } catch (err) {
       console.error(err);

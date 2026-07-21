@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
@@ -39,6 +39,7 @@ const getStatusClass = (status) => {
 export default function AppointmentsPage() {
   const adminState = useSelector((state) => state.admin) || {};
   const { admin } = adminState;
+  const fetchedRef = useRef(false);
 
   const [formFields, setFormFields] = useState([]);
   const [bookingsList, setBookingsList] = useState([]);
@@ -229,7 +230,9 @@ export default function AppointmentsPage() {
     }));
   };
 
-  const loadData = async () => {
+  const loadData = async (force = false) => {
+    if (!force && fetchedRef.current) return;
+    fetchedRef.current = true;
     setIsLoading(true);
     try {
       // 1. Load FormConfig
@@ -252,7 +255,7 @@ export default function AppointmentsPage() {
   };
 
   useEffect(() => {
-    loadData();
+    loadData(false);
   }, []);
 
   useEffect(() => {
@@ -335,7 +338,7 @@ export default function AppointmentsPage() {
         Toast({ message: selectedBooking ? "Appointment updated successfully." : "Appointment created successfully.", type: "success" });
         setIsCreateModalOpen(false);
         setSelectedBooking(null);
-        loadData();
+        loadData(true);
       } else {
         Toast({ message: res.data?.message || "Failed to save booking.", type: "error" });
       }
@@ -435,7 +438,7 @@ export default function AppointmentsPage() {
       if (res.status === 200) {
         Toast({ message: "Booking updated successfully.", type: "success" });
         setIsEditModalOpen(false);
-        loadData();
+        loadData(true);
       }
     } catch (err) {
       console.error(err);
@@ -452,7 +455,7 @@ export default function AppointmentsPage() {
       if (res.status === 200) {
         Toast({ message: "Booking deleted successfully.", type: "success" });
         setIsDeleteModalOpen(false);
-        loadData();
+        loadData(true);
       }
     } catch (err) {
       console.error(err);

@@ -261,6 +261,8 @@ export default function AdminSlotSettingsPage() {
     saveSlotSettings(nextSettings, false);
   };
 
+  const isCapacityInvalid = slotSettings.capacityPerSlot === "" || slotSettings.capacityPerSlot === null || isNaN(Number(slotSettings.capacityPerSlot)) || Number(slotSettings.capacityPerSlot) < 1;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     saveSlotSettings(slotSettings, true);
@@ -388,11 +390,16 @@ export default function AdminSlotSettingsPage() {
                   ) : (
                     <button
                       type="button"
+                      disabled={isCapacityInvalid}
                       onClick={() => {
                         setIsEditingCapacity(false);
                         saveSlotSettings(slotSettings, false);
                       }}
-                      className="text-xs text-green-600 hover:text-green-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      className={`text-xs font-semibold flex items-center gap-1 focus:outline-none ${
+                        isCapacityInvalid
+                          ? "text-gray-400 cursor-not-allowed opacity-50"
+                          : "text-green-600 hover:text-green-800"
+                      }`}
                       title="Save Capacity"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -408,14 +415,24 @@ export default function AdminSlotSettingsPage() {
                     {slotSettings.capacityPerSlot}
                   </div>
                 ) : (
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={slotSettings.capacityPerSlot}
-                    onChange={(e) => handleSlotSettingsChange("capacityPerSlot", Number(e.target.value))}
-                    className="w-full p-2.5 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
-                  />
+                  <div>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={slotSettings.capacityPerSlot}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        handleSlotSettingsChange("capacityPerSlot", val === "" ? "" : Number(val));
+                      }}
+                      className="w-full p-2.5 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
+                    />
+                    {isCapacityInvalid && (
+                      <p className="mt-1 text-xs text-red-500 font-semibold">
+                        Capacity must be at least 1
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
