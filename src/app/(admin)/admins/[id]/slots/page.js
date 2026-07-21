@@ -20,6 +20,17 @@ const formatTime12h = (timeStr) => {
   return `${padHours}:${minutesStr} ${ampm}`;
 };
 
+const formatDurationLabel = (minutes) => {
+  const num = Number(minutes);
+  if (!num || isNaN(num)) return "0 Minutes";
+  if (num < 60) return `${num} Minutes`;
+  const hours = Math.floor(num / 60);
+  const mins = num % 60;
+  const hrLabel = hours === 1 ? "1 Hour" : `${hours} Hours`;
+  if (mins === 0) return hrLabel;
+  return `${hrLabel} ${mins} Minutes`;
+};
+
 export default function AdminSlotSettingsPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
   const adminId = params.id;
@@ -27,6 +38,8 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingDuration, setIsEditingDuration] = useState(false);
+  const [isEditingCapacity, setIsEditingCapacity] = useState(false);
   
   const [slotSettings, setSlotSettings] = useState({
     slotDurationMinutes: 30,
@@ -295,26 +308,133 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Slot Duration (Minutes)</label>
-                <input
-                  type="number"
-                  value={slotSettings.slotDurationMinutes}
-                  onChange={(e) => handleSlotSettingsChange("slotDurationMinutes", Number(e.target.value))}
-                  required
-                  min="5"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Slot Duration (Minutes)
+                  </label>
+                  {!isEditingDuration ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDuration(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      title="Edit Slot Duration"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Edit
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingDuration(false);
+                        saveSlotSettings(slotSettings, false);
+                      }}
+                      className="text-xs text-green-600 hover:text-green-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      title="Save Slot Duration"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingDuration ? (
+                  <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 font-medium flex items-center justify-between">
+                    <span>{formatDurationLabel(slotSettings.slotDurationMinutes)}</span>
+                    <span className="text-xs text-gray-400">({slotSettings.slotDurationMinutes} mins)</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    <select
+                      value={[15, 30, 45, 60, 90, 120].includes(slotSettings.slotDurationMinutes) ? slotSettings.slotDurationMinutes : "custom"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val !== "custom") {
+                          handleSlotSettingsChange("slotDurationMinutes", Number(val));
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
+                    >
+                      <option value={15}>15 Minutes</option>
+                      <option value={30}>30 Minutes</option>
+                      <option value={45}>45 Minutes</option>
+                      <option value={60}>60 Minutes (1 Hour)</option>
+                      <option value={90}>90 Minutes (1 Hour 30 Minutes)</option>
+                      <option value={120}>120 Minutes (2 Hours)</option>
+                      <option value="custom">Custom Minutes...</option>
+                    </select>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs font-semibold text-gray-600">Custom Minutes:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={slotSettings.slotDurationMinutes}
+                        onChange={(e) => handleSlotSettingsChange("slotDurationMinutes", Math.max(1, Number(e.target.value)))}
+                        className="w-28 p-1.5 border border-gray-300 rounded-md text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 font-semibold"
+                        placeholder="e.g. 5, 7, 75, 80"
+                      />
+                      <span className="text-xs text-blue-600 font-medium">
+                        {formatDurationLabel(slotSettings.slotDurationMinutes)}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Capacity Per Slot (Users limit)</label>
-                <input
-                  type="number"
-                  value={slotSettings.capacityPerSlot}
-                  onChange={(e) => handleSlotSettingsChange("capacityPerSlot", Number(e.target.value))}
-                  required
-                  min="1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Capacity Per Slot (Max Concurrent Bookings)
+                  </label>
+                  {!isEditingCapacity ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingCapacity(true)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      title="Edit Capacity"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Edit
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingCapacity(false);
+                        saveSlotSettings(slotSettings, false);
+                      }}
+                      className="text-xs text-green-600 hover:text-green-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      title="Save Capacity"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Save
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingCapacity ? (
+                  <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 font-medium">
+                    {slotSettings.capacityPerSlot}
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min={1}
+                    required
+                    value={slotSettings.capacityPerSlot}
+                    onChange={(e) => handleSlotSettingsChange("capacityPerSlot", Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
+                  />
+                )}
               </div>
             </div>
 
@@ -523,14 +643,6 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-gray-200 pt-6">
-              <Button type="button" variant="secondary" size="md" onClick={() => router.push("/admins")}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary" size="md" disabled={isSaving}>
-                {isSaving ? "Saving..." : "Save Settings"}
-              </Button>
-            </div>
           </form>
         )}
       </div>

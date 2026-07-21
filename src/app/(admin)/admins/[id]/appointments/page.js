@@ -46,6 +46,21 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
+  const getNumericBookingId = (b) => {
+    if (!b) return "";
+    if (b.bookingId) return String(b.bookingId);
+    const dateDigits = b.slotDate ? b.slotDate.replace(/-/g, "") : "";
+    let suffix = "0000";
+    if (b._id) {
+      const hexPart = b._id.toString().slice(-6);
+      const num = parseInt(hexPart, 16);
+      if (!isNaN(num)) {
+        suffix = String(num % 10000).padStart(4, "0");
+      }
+    }
+    return dateDigits ? `${dateDigits}${suffix}` : suffix;
+  };
+
   // Modals state
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -315,7 +330,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                     })}
 
                     <TD className="text-sm font-semibold text-gray-900">
-                      {b._id.substring(b._id.length - 8).toUpperCase()}
+                      {getNumericBookingId(b)}
                     </TD>
 
                     {/* Render matching dynamic responses for Regular Form Columns */}
@@ -385,7 +400,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
             <div className="grid grid-cols-2 gap-4 border-b border-gray-100 pb-3">
               <div>
                 <span className="block text-[10px] uppercase font-bold text-gray-400">Booking ID</span>
-                <span className="text-sm font-semibold text-gray-900">{selectedBooking._id.toUpperCase()}</span>
+                <span className="text-sm font-semibold text-gray-900">{getNumericBookingId(selectedBooking)}</span>
               </div>
               <div>
                 <span className="block text-[10px] uppercase font-bold text-gray-400">Status</span>
