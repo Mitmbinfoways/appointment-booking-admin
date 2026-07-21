@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar, Users, Settings } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, ClipboardList, Clock, CalendarCheck } from "lucide-react";
 
 export const superAdminMenuItems = [
   {
@@ -20,12 +20,17 @@ export const adminMenuItems = [
     path: "/",
   },
   {
-    icon: Settings,
+    icon: CalendarCheck,
+    name: "Appointments List",
+    path: "/appointments",
+  },
+  {
+    icon: ClipboardList,
     name: "Form Configuration",
     path: "/settings/form",
   },
   {
-    icon: Settings,
+    icon: Clock,
     name: "Slots Settings",
     path: "/settings/slots",
   },
@@ -33,11 +38,6 @@ export const adminMenuItems = [
     icon: Calendar,
     name: "Holidays Management",
     path: "/holidays",
-  },
-  {
-    icon: Calendar,
-    name: "Appointments List",
-    path: "/appointments",
   },
 ];
 

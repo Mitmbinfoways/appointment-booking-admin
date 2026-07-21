@@ -15,10 +15,16 @@ import {
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function AdminsPage() {
   const [adminsList, setAdminsList] = useState([]);
+  const [visibleSecrets, setVisibleSecrets] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const toggleSecretVisibility = (id) => {
+    setVisibleSecrets((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
   
   // Modals visibility states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -206,6 +212,7 @@ export default function AdminsPage() {
                 <TH>Email</TH>
                 <TH>Phone Number</TH>
                 <TH>Business Name</TH>
+                <TH>Secret Key</TH>
                 <TH>Created Date</TH>
                 <TH>Status</TH>
                 <TH className="text-right">Actions</TH>
@@ -214,13 +221,13 @@ export default function AdminsPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={8} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={9} className="px-6 py-10 text-center text-gray-400 text-sm">
                     Loading admin list...
                   </TD>
                 </TR>
               ) : adminsList.length === 0 ? (
                 <TR>
-                  <TD colSpan={8} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={9} className="px-6 py-10 text-center text-gray-400 text-sm">
                     No Admin profiles found.
                   </TD>
                 </TR>
@@ -232,6 +239,25 @@ export default function AdminsPage() {
                     <TD className="text-sm text-gray-700">{admin.email}</TD>
                     <TD className="text-sm text-gray-600">{admin.phoneNumber || "N/A"}</TD>
                     <TD className="text-sm text-gray-600">{admin.businessName}</TD>
+                    <TD className="text-sm">
+                      <div className="flex items-center gap-1.5 w-fit">
+                        <span className="font-mono text-[11px] text-gray-700 select-all">
+                          {visibleSecrets[admin._id] ? admin.secretKey : "••••••••••••••••"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleSecretVisibility(admin._id)}
+                          className="text-gray-400 hover:text-blue-600 focus:outline-none cursor-pointer p-0.5 inline-flex items-center"
+                          title={visibleSecrets[admin._id] ? "Hide Secret Key" : "Show Secret Key"}
+                        >
+                          {visibleSecrets[admin._id] ? (
+                            <EyeOff size={15} />
+                          ) : (
+                            <Eye size={15} />
+                          )}
+                        </button>
+                      </div>
+                    </TD>
                     <TD className="text-sm text-gray-500">
                       {new Date(admin.createdAt).toLocaleDateString()}
                     </TD>
