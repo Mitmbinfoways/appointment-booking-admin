@@ -196,6 +196,7 @@ export default function AppointmentsPage() {
       const formattedDdMmYyyy = `${dayStr}-${monthStr}-${yearStr}`;
       const holiday = holidays.find((h) => h.date === dateStr || h.date === formattedDdMmYyyy);
       const isPastDay = dateStr < todayStr;
+      const isFullDayHoliday = holiday && (holiday.holidayType === "full" || holiday.holidayType === undefined || holiday.holidayType === null || holiday.isFullDay === true);
 
       days.push({
         day: d,
@@ -203,6 +204,7 @@ export default function AppointmentsPage() {
         isClosedDay,
         isPastDay,
         isHoliday: !!holiday,
+        isFullDayHoliday: !!isFullDayHoliday,
         holidayTitle: holiday ? holiday.reason || holiday.title : null
       });
     }
@@ -566,20 +568,21 @@ export default function AppointmentsPage() {
                       const isClosed = dayObj.isClosedDay;
                       const isPast = dayObj.isPastDay;
                       const isHoliday = dayObj.isHoliday;
+                      const isFullDayHoliday = dayObj.isFullDayHoliday;
                       const isToday = dayObj.dateStr === todayStr;
 
                       return (
                         <div
                           key={dayObj.dateStr}
                           onClick={() => {
-                            if (isClosed || isHoliday || isPast) return;
+                            if (isClosed || isFullDayHoliday || isPast) return;
                             setNewBookingDate(dayObj.dateStr);
                             setNewBookingSlot("");
                           }}
                           className={`aspect-square rounded-lg flex items-center justify-center text-xs transition-all duration-200 select-none border relative
                             ${isClosed || isPast
                               ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
-                              : isHoliday
+                              : isFullDayHoliday
                                 ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
                                 : isSelected
                                   ? "bg-blue-600 text-white border-blue-600 font-semibold cursor-pointer"
@@ -602,7 +605,7 @@ export default function AppointmentsPage() {
                             <span>{dayObj.day}</span>
                             {isPast && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Past</span>}
                             {!isPast && isClosed && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Off</span>}
-                            {!isPast && isHoliday && <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5">Hol</span>}
+                            {!isPast && isFullDayHoliday && <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5">Hol</span>}
                           </div>
                         </div>
                       );

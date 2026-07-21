@@ -8,12 +8,15 @@ import {
   getAdminBookingsSuperList, 
   getAdminsList,
   updateAdminBookingSuperRecord,
-  deleteAdminBookingSuperRecord
+  deleteAdminBookingSuperRecord,
+  getAdminHolidaysSuperList,
+  getAdminSlotSettingsSuper,
+  getAvailableSlotsList
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "@/components/UI/Button";
 
 const getStatusClass = (status) => {
@@ -97,6 +100,14 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   // Edit form state
   const [editStatus, setEditStatus] = useState("confirmed");
   const [editResponses, setEditResponses] = useState({});
+  const [holidays, setHolidays] = useState([]);
+  const [slotSettings, setSlotSettings] = useState(null);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [editBookingDate, setEditBookingDate] = useState("");
+  const [editBookingSlot, setEditBookingSlot] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const loadData = async (force = false) => {
     if (!adminId) return;
@@ -136,6 +147,123 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
       loadData(false);
     }
   }, [adminId]);
+
+  // Calendar helpers
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const years = [2025, 2026, 2027, 2028, 2029, 2030];
+
+  const handlePrevMonth = () => {
+    if (selectedMonth === 0) {
+      setSelectedMonth(11);
+      setSelectedYear((prev) => (years.includes(prev - 1) ? prev - 1 : prev));
+    } else {
+      setSelectedMonth((prev) => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (selectedMonth === 11) {
+      setSelectedMonth(0);
+      setSelectedYear((prev) => (years.includes(prev + 1) ? prev + 1 : prev));
+    } else {
+      setSelectedMonth((prev) => prev + 1);
+    }
+  };
+
+  const todayStr = useMemo(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  }, []);
+
+  const calendarDays = useMemo(() => {
+    const startDay = new Date(selectedYear, selectedMonth, 1).getDay();
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const days = [];
+
+    for (let i = 0; i < startDay; i++) {
+      days.push({ day: null, dateStr: null });
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const currentDateObj = new Date(selectedYear, selectedMonth, d);
+      const yearStr = selectedYear;
+      const monthStr = String(selectedMonth + 1).padStart(2, "0");
+      const dayStr = String(d).padStart(2, "0");
+      const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+
+      const weekdayName = currentDateObj.toLocaleDateString("en-US", { weekday: "long" });
+      
+      let isClosedDay = false;
+      if (slotSettings && slotSettings.workingDays) {
+        const dayConfig = slotSettings.workingDays.find((wd) => wd.day === weekdayName);
+        if (dayConfig && !dayConfig.isOpen) {
+          isClosedDay = true;
+        }
+      }
+
+      const formattedDdMmYyyy = `${dayStr}-${monthStr}-${yearStr}`;
+      const holiday = holidays.find((h) => h.date === dateStr || h.date === formattedDdMmYyyy);
+      const isPastDay = dateStr < todayStr;
+      const isFullDayHoliday = holiday && (holiday.holidayType === "full" || holiday.holidayType === undefined || holiday.holidayType === null || holiday.isFullDay === true);
+
+      days.push({
+        day: d,
+        dateStr,
+        isClosedDay,
+        isPastDay,
+        isHoliday: !!holiday,
+        isFullDayHoliday: !!isFullDayHoliday,
+        holidayTitle: holiday ? holiday.reason || holiday.title : null
+      });
+    }
+
+    return days;
+  }, [selectedYear, selectedMonth, holidays, slotSettings, todayStr]);
+
+  // Load calendar config when editor opens
+  useEffect(() => {
+    const loadConfigForCalendar = async () => {
+      if (!isEditModalOpen || !adminId) return;
+      try {
+        const holidaysRes = await getAdminHolidaysSuperList(adminId);
+        if (holidaysRes.status === 200 && holidaysRes.data?.statusCode === 200) {
+          setHolidays(holidaysRes.data.data || []);
+        }
+        const slotsRes = await getAdminSlotSettingsSuper(adminId);
+        if (slotsRes.status === 200 && slotsRes.data?.statusCode === 200) {
+          setSlotSettings(slotsRes.data.data);
+        }
+      } catch (err) {
+        console.error("Error loading config for calendar selection:", err);
+      }
+    };
+    loadConfigForCalendar();
+  }, [isEditModalOpen, adminId]);
+
+  // Load available slots when date changes
+  useEffect(() => {
+    const loadSlots = async () => {
+      if (!editBookingDate || !adminId || !isEditModalOpen) return;
+      setIsLoadingSlots(true);
+      try {
+        const res = await getAvailableSlotsList(adminId, editBookingDate);
+        if (res.status === 200 && res.data?.statusCode === 200) {
+          setAvailableSlots(res.data.data || []);
+        } else {
+          setAvailableSlots([]);
+        }
+      } catch (err) {
+        console.error("Error loading available slots:", err);
+        setAvailableSlots([]);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+    loadSlots();
+  }, [editBookingDate, adminId, isEditModalOpen]);
 
   // Columns classification
   const mediaFields = useMemo(() => {
@@ -184,6 +312,21 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const handleEditClick = (booking) => {
     setSelectedBooking(booking);
     setEditStatus(booking.status || "confirmed");
+    setEditBookingDate(booking.slotDate || "");
+    setEditBookingSlot(booking.slotStartTime && booking.slotEndTime ? `${booking.slotStartTime}-${booking.slotEndTime}` : "");
+    
+    if (booking.slotDate) {
+      const parts = booking.slotDate.split("-");
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        if (!isNaN(y) && !isNaN(m)) {
+          setSelectedYear(y);
+          setSelectedMonth(m);
+        }
+      }
+    }
+
     const responses = {};
     formFields.forEach(f => {
       const val = booking.dynamicResponses?.[f.fieldKey] || booking.dynamicResponses?.get?.(f.fieldKey);
@@ -200,15 +343,41 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const f of formFields) {
+      const isEmail = f.type === "email" || f.label?.toLowerCase().includes("email");
+      const val = editResponses[f.fieldKey];
+      if (isEmail && val && !emailRegex.test(String(val).trim())) {
+        Toast({ message: `Please enter a valid email address for "${f.label}".`, type: "error" });
+        return;
+      }
+    }
+
+    if (!editBookingDate) {
+      Toast({ message: "Please select a date.", type: "error" });
+      return;
+    }
+    if (!editBookingSlot) {
+      Toast({ message: "Please select a time slot.", type: "error" });
+      return;
+    }
+
+    const [startTime, endTime] = editBookingSlot.split("-");
     setIsSaving(true);
     try {
       const res = await updateAdminBookingSuperRecord(selectedBooking._id, {
+        slotDate: editBookingDate,
+        slotStartTime: startTime,
+        slotEndTime: endTime,
         status: editStatus,
         dynamicResponses: editResponses
       });
       if (res.status === 200) {
         Toast({ message: "Booking updated successfully.", type: "success" });
         setIsEditModalOpen(false);
+        setSelectedBooking(null);
         loadData(true);
       }
     } catch (err) {
@@ -242,6 +411,300 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
       [fieldKey]: value
     }));
   };
+
+  if (isEditModalOpen) {
+    return (
+      <>
+        <PageMeta 
+          title={`Edit Appointment - ${adminUser?.username || "Admin"} - Booking Admin`} 
+          description="Edit user appointment details" 
+        />
+        <PageBreadcrumb
+          items={[
+            { label: "Home", to: "/" },
+            { label: "Admins Management", to: "/admins" },
+            { label: `Bookings (${adminUser?.username || "Admin"})`, to: `/admins/${adminId}/appointments` },
+            { label: "Edit Appointment", to: "" }
+          ]}
+        />
+
+        <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs w-full">
+          <div className="p-4 border-b border-gray-200 sm:p-6">
+            <h3 className="text-lg font-semibold text-gray-900">Edit Appointment Details</h3>
+            <p className="text-sm text-gray-500">Update appointment date, time window, status, and response details below.</p>
+          </div>
+
+          <form onSubmit={handleSaveEdit} className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start w-full">
+              {/* Left Column: Calendar Date Selection */}
+              <div className="w-full space-y-4">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Select Date <span className="text-red-500">*</span>
+                </label>
+
+                <div className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 focus:outline-none focus:border-blue-500 bg-white"
+                      >
+                        {years.map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+
+                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={handlePrevMonth}
+                          className="p-2 hover:bg-gray-50 border-r border-gray-300 transition-colors"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        <span className="px-3 py-1.5 text-xs font-bold text-gray-700 min-w-28 text-center select-none">
+                          {months[selectedMonth]}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleNextMonth}
+                          className="p-2 hover:bg-gray-50 border-l border-gray-300 transition-colors"
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {editBookingDate && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditBookingDate("");
+                          setEditBookingSlot("");
+                        }}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-1 text-center mb-1 font-semibold text-gray-400 text-[10px] uppercase tracking-wider">
+                    <div>Sun</div>
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                  </div>
+
+                  <div className="grid grid-cols-7 gap-2">
+                    {calendarDays.map((dayObj, idx) => {
+                      if (!dayObj.day) {
+                        return <div key={`empty-${idx}`} className="aspect-square bg-gray-55/50 rounded-lg border border-transparent"></div>;
+                      }
+
+                      const isSelected = editBookingDate === dayObj.dateStr;
+                      const isClosed = dayObj.isClosedDay;
+                      const isPast = dayObj.isPastDay;
+                      const isHoliday = dayObj.isHoliday;
+                      const isFullDayHoliday = dayObj.isFullDayHoliday;
+
+                      return (
+                        <div
+                          key={dayObj.dateStr}
+                          onClick={() => {
+                            if (isClosed || isFullDayHoliday || isPast) return;
+                            setEditBookingDate(dayObj.dateStr);
+                            setEditBookingSlot("");
+                          }}
+                          className={`aspect-square rounded-lg flex items-center justify-center text-xs transition-all duration-200 select-none border relative
+                            ${isClosed || isPast
+                              ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
+                              : isFullDayHoliday
+                                ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
+                                : isSelected
+                                  ? "bg-blue-600 text-white border-blue-600 font-semibold shadow-sm cursor-pointer"
+                                  : "bg-white text-gray-700 border-gray-200 hover:border-blue-500 hover:text-blue-600 cursor-pointer"
+                            }`}
+                          title={isHoliday ? dayObj.holidayTitle : isClosed ? "Closed Day (Normal Off-Day)" : isPast ? "Past Date" : "Select date"}
+                        >
+                          <span className="font-semibold">{dayObj.day}</span>
+                          <div className="absolute bottom-1 flex gap-0.5 justify-center w-full">
+                            {isPast && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Past</span>}
+                            {!isPast && isClosed && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Off</span>}
+                            {!isPast && isFullDayHoliday && <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5">Hol</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Time Slot Selector & Dynamic Inputs */}
+              <div className="w-full">
+                {editBookingDate ? (
+                  <div className="space-y-6 animate-fadeIn">
+                    <div>
+                      <h4 className="text-md font-semibold text-gray-800 mb-1">
+                        Details for {editBookingDate}
+                      </h4>
+                      <p className="text-xs text-gray-500">Choose an available slot and populate form fields below.</p>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-5">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Select Time Slot <span className="text-red-500">*</span>
+                      </label>
+                      {isLoadingSlots ? (
+                        <p className="text-xs text-gray-400">Loading available slots...</p>
+                      ) : availableSlots.length === 0 ? (
+                        <p className="text-xs text-red-500 font-medium">No slots available for {editBookingDate}.</p>
+                      ) : (
+                        <select
+                          value={editBookingSlot}
+                          required
+                          onChange={(e) => setEditBookingSlot(e.target.value)}
+                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">-- Select a Slot --</option>
+                          {availableSlots.map((s) => {
+                            const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                            const isAvailable = s.status === "available" || isCurrentSlot;
+                            const isBooked = s.status === "booked" && !isCurrentSlot;
+                            const isBreak = s.status === "break";
+
+                            let label = `${s.startTime} - ${s.endTime}`;
+                            if (isCurrentSlot) label += " (Current Slot)";
+                            else if (isBooked) label += " (Already Booked)";
+                            else if (isBreak) label += " (Break Slot)";
+
+                            return (
+                              <option
+                                key={`${s.startTime}-${s.endTime}`}
+                                value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
+                                disabled={!isAvailable}
+                                className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
+                              >
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      )}
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-5">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Status <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value)}
+                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 font-semibold"
+                      >
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-4 border-t border-gray-100 pt-5">
+                      <span className="block text-sm font-bold text-gray-550 border-b pb-1.5">Response Fields</span>
+                      {formFields.map((field) => {
+                        const val = editResponses[field.fieldKey] || "";
+                        const isEmail = field.type === "email" || field.label?.toLowerCase().includes("email");
+                        const isNumeric = field.type === "tel" || field.type === "number" || field.label?.toLowerCase().includes("phone") || field.label?.toLowerCase().includes("tel");
+
+                        return (
+                          <div key={field.fieldKey}>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                              {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </label>
+                            {field.type === "select" ? (
+                              <select
+                                value={val}
+                                required={field.required}
+                                onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
+                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              >
+                                <option value="">Select option</option>
+                                {(field.options || []).map((opt) => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            ) : field.type === "textarea" ? (
+                              <textarea
+                                value={val}
+                                required={field.required}
+                                onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
+                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 min-h-20"
+                              />
+                            ) : (
+                              <input
+                                type={isNumeric ? "tel" : isEmail ? "email" : field.type === "number" ? "number" : "text"}
+                                value={val}
+                                required={field.required}
+                                onChange={(e) => {
+                                  let inputVal = e.target.value;
+                                  if (isNumeric) {
+                                    inputVal = inputVal.replace(/\D/g, "");
+                                  }
+                                  handleEditResponseChange(field.fieldKey, inputVal);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (isNumeric) {
+                                    const allowedKeys = ["Backspace", "Tab", "Delete", "ArrowLeft", "ArrowRight", "Enter"];
+                                    if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                                      e.preventDefault();
+                                    }
+                                  }
+                                }}
+                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                      <Button type="button" onClick={() => { setIsEditModalOpen(false); setSelectedBooking(null); }} variant="secondary">
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={isSaving || !editBookingSlot}>
+                        {isSaving ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col h-full justify-between min-h-[300px] border border-dashed border-gray-200 rounded-xl p-6 text-center">
+                    <div className="my-auto space-y-2">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <h5 className="text-sm font-semibold text-gray-700">No Date Selected</h5>
+                      <p className="text-xs text-gray-400 max-w-xs mx-auto">Please choose an open day on the calendar grid to configure your new appointment slot.</p>
+                    </div>
+
+                    <div className="flex justify-end pt-6 border-t border-gray-100 w-full shrink-0">
+                      <Button type="button" onClick={() => setIsEditModalOpen(false)} variant="secondary">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </form>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -496,6 +959,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
           </div>
         )}
       </CustomModal>
+
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
