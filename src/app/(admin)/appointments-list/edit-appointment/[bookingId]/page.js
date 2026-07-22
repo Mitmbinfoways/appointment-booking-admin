@@ -18,11 +18,14 @@ import { Toast } from "@/components/Toast";
 import Button from "@/components/UI/Button";
 import Tooltip from "@/components/UI/Tooltip";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import FileViewModal from "@/components/UI/FileViewModal";
 
 export default function EditAppointmentPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
   const bookingId = params.bookingId;
   const router = useRouter();
+
+  const [filePreview, setFilePreview] = useState({ isOpen: false, url: "", type: "image", title: "" });
 
   const adminState = useSelector((state) => state.admin) || {};
   const { admin } = adminState;
@@ -702,7 +705,8 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                                       <img
                                         src={val}
                                         alt={field.label}
-                                        className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-xs"
+                                        onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                                        className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-xs cursor-pointer hover:scale-105 transition-transform"
                                       />
                                       <label
                                         htmlFor={`file_input_${field.fieldKey}`}
@@ -747,11 +751,15 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                                       </button>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                      <video
-                                        src={val}
-                                        className="w-44 h-28 object-cover rounded-lg border border-gray-200 shadow-xs bg-black"
-                                        controls
-                                      />
+                                      <div 
+                                        onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                                        className="cursor-pointer"
+                                      >
+                                        <video
+                                          src={val}
+                                          className="w-44 h-28 object-cover rounded-lg border border-gray-200 shadow-xs bg-black pointer-events-none"
+                                        />
+                                      </div>
                                       <label
                                         htmlFor={`file_input_${field.fieldKey}`}
                                         className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors shadow-2xs"
@@ -852,6 +860,15 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
           </div>
         </form>
       </div>
+
+      {/* Full Screen File View Modal */}
+      <FileViewModal
+        isOpen={filePreview.isOpen}
+        onClose={() => setFilePreview({ isOpen: false, url: "", type: "image", title: "" })}
+        fileUrl={filePreview.url}
+        fileType={filePreview.type}
+        title={filePreview.title}
+      />
     </>
   );
 }

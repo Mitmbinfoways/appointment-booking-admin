@@ -13,6 +13,7 @@ import {
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
+import FileViewModal from "@/components/UI/FileViewModal";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import Button from "@/components/UI/Button";
 
@@ -52,6 +53,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [filePreview, setFilePreview] = useState({ isOpen: false, url: "", type: "image", title: "" });
 
   const getNumericBookingId = (b) => {
     if (!b) return "";
@@ -316,14 +318,19 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                               <img 
                                 src={val} 
                                 alt={field.label} 
-                                className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs" 
+                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                                className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform" 
                               />
                             ) : (
-                              <video 
-                                src={val} 
-                                className="w-14 h-10 object-cover rounded-lg border border-gray-200" 
-                                controls 
-                              />
+                              <div 
+                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                                className="cursor-pointer inline-block"
+                              >
+                                <video 
+                                  src={val} 
+                                  className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none" 
+                                />
+                              </div>
                             )
                           ) : (
                             <span className="text-gray-400">-</span>
@@ -347,14 +354,19 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                             <img
                               src={val}
                               alt={field.label}
-                              className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs"
+                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                              className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                             />
                           ) : isVideo ? (
-                            <video
-                              src={val}
-                              className="w-14 h-10 object-cover rounded-lg border border-gray-200"
-                              controls
-                            />
+                            <div 
+                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                              className="cursor-pointer inline-block"
+                            >
+                              <video
+                                src={val}
+                                className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none"
+                              />
+                            </div>
                           ) : val !== undefined && val !== null ? (
                             String(val)
                           ) : (
@@ -491,26 +503,27 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                       {val ? (
                         fieldType === "image" || isImageVal ? (
                           <div className="mt-1">
-                            <div className="relative group max-w-xs rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-slate-100">
+                            <div 
+                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                              className="relative group max-w-xs rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-slate-100 cursor-pointer"
+                            >
                               <img
                                 src={val}
                                 alt={field.label}
                                 className="w-full max-h-52 object-contain bg-slate-900/5 group-hover:scale-105 transition-transform duration-300"
                               />
-                              <a
-                                href={val}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5"
-                              >
-                                🔍 Open Full Image
-                              </a>
+                              <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5">
+                                🔍 Preview File
+                              </div>
                             </div>
                           </div>
                         ) : fieldType === "video" || isVideoVal ? (
                           <div className="mt-1">
-                            <div className="max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-black">
-                              <video src={val} className="w-full max-h-56 object-contain" controls />
+                            <div 
+                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                              className="max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-black cursor-pointer"
+                            >
+                              <video src={val} className="w-full max-h-56 object-contain pointer-events-none" />
                             </div>
                           </div>
                         ) : (
@@ -544,6 +557,15 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
         onConfirm={handleConfirmDelete}
         title="Delete Appointment"
         message="Are you sure you want to permanently delete this appointment? This action cannot be undone."
+      />
+
+      {/* Full Screen File View Modal */}
+      <FileViewModal
+        isOpen={filePreview.isOpen}
+        onClose={() => setFilePreview({ isOpen: false, url: "", type: "image", title: "" })}
+        fileUrl={filePreview.url}
+        fileType={filePreview.type}
+        title={filePreview.title}
       />
     </>
   );

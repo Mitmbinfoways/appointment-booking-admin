@@ -13,6 +13,7 @@ import {
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
+import FileViewModal from "@/components/UI/FileViewModal";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import Button from "@/components/UI/Button";
 
@@ -41,6 +42,10 @@ export default function AppointmentsListPage() {
   const [bookingsList, setBookingsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [filePreview, setFilePreview] = useState({ isOpen: false, url: "", type: "image", title: "" });
   const [searchFilter, setSearchFilter] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -87,11 +92,6 @@ export default function AppointmentsListPage() {
     const year = d.getFullYear();
     return `${day}-${month}-${year}`;
   };
-
-  // Modals state
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleCreateClick = () => {
     router.push("/appointments-list/create-appointment");
@@ -300,14 +300,19 @@ export default function AppointmentsListPage() {
                               <img
                                 src={val}
                                 alt={field.label}
-                                className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs"
+                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                                className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                               />
                             ) : (
-                              <video
-                                src={val}
-                                className="w-14 h-10 object-cover rounded-lg border border-gray-200"
-                                controls
-                              />
+                              <div
+                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                                className="cursor-pointer inline-block"
+                              >
+                                <video
+                                  src={val}
+                                  className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none"
+                                />
+                              </div>
                             )
                           ) : (
                             <span className="text-gray-400">-</span>
@@ -331,14 +336,19 @@ export default function AppointmentsListPage() {
                             <img
                               src={val}
                               alt={field.label}
-                              className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs"
+                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                              className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                             />
                           ) : isVideo ? (
-                            <video
-                              src={val}
-                              className="w-14 h-10 object-cover rounded-lg border border-gray-200"
-                              controls
-                            />
+                            <div
+                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                              className="cursor-pointer inline-block"
+                            >
+                              <video
+                                src={val}
+                                className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none"
+                              />
+                            </div>
                           ) : val !== undefined && val !== null ? (
                             String(val)
                           ) : (
@@ -417,10 +427,9 @@ export default function AppointmentsListPage() {
                 </div>
                 <div>
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold border rounded-full shadow-xs ${getStatusClass(selectedBooking.status)}`}>
-                    <span className={`w-2 h-2 rounded-full ${
-                      selectedBooking.status?.toLowerCase() === "confirmed" ? "bg-green-500" :
-                      selectedBooking.status?.toLowerCase() === "pending" ? "bg-yellow-500" : "bg-red-500"
-                    }`}></span>
+                    <span className={`w-2 h-2 rounded-full ${selectedBooking.status?.toLowerCase() === "confirmed" ? "bg-green-500" :
+                        selectedBooking.status?.toLowerCase() === "pending" ? "bg-yellow-500" : "bg-red-500"
+                      }`}></span>
                     <span className="capitalize">{selectedBooking.status}</span>
                   </span>
                 </div>
@@ -464,9 +473,8 @@ export default function AppointmentsListPage() {
                   return (
                     <div
                       key={field.fieldKey}
-                      className={`p-3.5 rounded-xl border border-slate-200/80 bg-white transition-all hover:border-slate-300 ${
-                        isMedia ? "sm:col-span-2 bg-slate-50/50" : ""
-                      }`}
+                      className={`p-3.5 rounded-xl border border-slate-200/80 bg-white transition-all hover:border-slate-300 ${isMedia ? "sm:col-span-2 bg-slate-50/50" : ""
+                        }`}
                     >
                       <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                         {field.label}
@@ -528,6 +536,15 @@ export default function AppointmentsListPage() {
         onConfirm={handleConfirmDelete}
         title="Delete Appointment"
         message="Are you sure you want to permanently delete this appointment? This action cannot be undone."
+      />
+
+      {/* Full Screen File View Modal */}
+      <FileViewModal
+        isOpen={filePreview.isOpen}
+        onClose={() => setFilePreview({ isOpen: false, url: "", type: "image", title: "" })}
+        fileUrl={filePreview.url}
+        fileType={filePreview.type}
+        title={filePreview.title}
       />
     </>
   );
