@@ -5,12 +5,12 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
-import { 
-  getAdminFormConfig, 
-  getAvailableSlotsList, 
-  createBookingRecord, 
-  getHolidaysList, 
-  getAdminSlotSettings 
+import {
+  getAdminFormConfig,
+  getAvailableSlotsList,
+  createBookingRecord,
+  getHolidaysList,
+  getAdminSlotSettings,
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import Button from "@/components/UI/Button";
@@ -23,6 +23,7 @@ export default function CreateAppointmentPage() {
   const { admin } = adminState;
 
   const [formFields, setFormFields] = useState([]);
+  const [fileNames, setFileNames] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -40,8 +41,18 @@ export default function CreateAppointmentPage() {
   const [slotSettings, setSlotSettings] = useState(null);
 
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   const years = [2025, 2026, 2027, 2028, 2029, 2030];
 
@@ -77,16 +88,19 @@ export default function CreateAppointmentPage() {
         if (formRes.status === 200 && formRes.data?.statusCode === 200) {
           const fields = formRes.data.data?.fields || [];
           setFormFields(fields);
-          
+
           const initialResponses = {};
-          fields.forEach(f => {
+          fields.forEach((f) => {
             initialResponses[f.fieldKey] = "";
           });
           setNewBookingResponses(initialResponses);
         }
 
         const holidaysRes = await getHolidaysList();
-        if (holidaysRes.status === 200 && holidaysRes.data?.statusCode === 200) {
+        if (
+          holidaysRes.status === 200 &&
+          holidaysRes.data?.statusCode === 200
+        ) {
           setHolidays(holidaysRes.data.data || []);
         }
 
@@ -120,20 +134,31 @@ export default function CreateAppointmentPage() {
       const dayStr = String(d).padStart(2, "0");
       const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
 
-      const weekdayName = currentDateObj.toLocaleDateString("en-US", { weekday: "long" });
-      
+      const weekdayName = currentDateObj.toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+
       let isClosedDay = false;
       if (slotSettings && slotSettings.workingDays) {
-        const dayConfig = slotSettings.workingDays.find((wd) => wd.day === weekdayName);
+        const dayConfig = slotSettings.workingDays.find(
+          (wd) => wd.day === weekdayName,
+        );
         if (dayConfig && !dayConfig.isOpen) {
           isClosedDay = true;
         }
       }
 
       const formattedDdMmYyyy = `${dayStr}-${monthStr}-${yearStr}`;
-      const holiday = holidays.find((h) => h.date === dateStr || h.date === formattedDdMmYyyy);
+      const holiday = holidays.find(
+        (h) => h.date === dateStr || h.date === formattedDdMmYyyy,
+      );
       const isPastDay = dateStr < todayStr;
-      const isFullDayHoliday = holiday && (holiday.holidayType === "full" || holiday.holidayType === undefined || holiday.holidayType === null || holiday.isFullDay === true);
+      const isFullDayHoliday =
+        holiday &&
+        (holiday.holidayType === "full" ||
+          holiday.holidayType === undefined ||
+          holiday.holidayType === null ||
+          holiday.isFullDay === true);
 
       days.push({
         day: d,
@@ -142,7 +167,7 @@ export default function CreateAppointmentPage() {
         isPastDay,
         isHoliday: !!holiday,
         isFullDayHoliday: !!isFullDayHoliday,
-        holidayTitle: holiday ? holiday.reason || holiday.title : null
+        holidayTitle: holiday ? holiday.reason || holiday.title : null,
       });
     }
 
@@ -157,7 +182,11 @@ export default function CreateAppointmentPage() {
       try {
         const res = await getAvailableSlotsList(admin._id, newBookingDate);
         if (res.status === 200 && res.data?.statusCode === 200) {
-          setAvailableSlots(res.data.data || []);
+          const rawData = res.data.data;
+          const slotsList = Array.isArray(rawData)
+            ? rawData
+            : rawData?.slots || [];
+          setAvailableSlots(slotsList);
         } else {
           setAvailableSlots([]);
         }
@@ -172,10 +201,63 @@ export default function CreateAppointmentPage() {
   }, [newBookingDate, admin?._id]);
 
   const handleNewResponseChange = (fieldKey, value) => {
-    setNewBookingResponses(prev => ({
+    setNewBookingResponses((prev) => ({
       ...prev,
-      [fieldKey]: value
+      [fieldKey]: value,
     }));
+  };
+
+  const getFileNameDisplay = (val, fieldKey, defaultLabel) => {
+    if (fileNames[fieldKey]) return fileNames[fieldKey];
+    if (!val || typeof val !== "string") return "";
+    if (val.includes("/") || val.includes("\\")) {
+      const name = val.split(/[/\\]/).pop().split("?")[0];
+      if (name && name.includes(".")) return name;
+    }
+    if (val.startsWith("data:")) {
+      const match = val.match(/^data:(image|video)\/([a-zA-Z0-9]+);/);
+      if (match) return `${match[1]}_file.${match[2]}`;
+    }
+    return defaultLabel;
+  };
+
+  const handleFileChange = (fieldKey, file, fieldType) => {
+    if (!file) return;
+
+    if (file.name) {
+      setFileNames((prev) => ({ ...prev, [fieldKey]: file.name }));
+    }
+
+    // Validate file type
+    if (fieldType === "image" && !file.type.startsWith("image/")) {
+      Toast({ message: "Please select a valid image file.", type: "error" });
+      return;
+    }
+    if (fieldType === "video" && !file.type.startsWith("video/")) {
+      Toast({ message: "Please select a valid video file.", type: "error" });
+      return;
+    }
+
+    // Validate file size: 5MB for images, 20MB for videos
+    const maxSize = fieldType === "image" ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
+    const maxLabel = fieldType === "image" ? "5MB" : "20MB";
+    if (file.size > maxSize) {
+      Toast({
+        message: `File size must be less than ${maxLabel}.`,
+        type: "error",
+      });
+      return;
+    }
+
+    // Convert to Base64 data URL
+    const reader = new FileReader();
+    reader.onload = () => {
+      handleNewResponseChange(fieldKey, reader.result);
+    };
+    reader.onerror = () => {
+      Toast({ message: "Failed to read file.", type: "error" });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleCreateSubmit = async (e) => {
@@ -190,7 +272,7 @@ export default function CreateAppointmentPage() {
     }
 
     let missingField = null;
-    formFields.forEach(f => {
+    formFields.forEach((f) => {
       if (f.required && !newBookingResponses[f.fieldKey]) {
         missingField = f.label;
       }
@@ -203,10 +285,14 @@ export default function CreateAppointmentPage() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     for (const f of formFields) {
-      const isEmail = f.type === "email" || f.label?.toLowerCase().includes("email");
+      const isEmail =
+        f.type === "email" || f.label?.toLowerCase().includes("email");
       const val = newBookingResponses[f.fieldKey];
       if (isEmail && val && !emailRegex.test(String(val).trim())) {
-        Toast({ message: `Please enter a valid email address for "${f.label}".`, type: "error" });
+        Toast({
+          message: `Please enter a valid email address for "${f.label}".`,
+          type: "error",
+        });
         return;
       }
     }
@@ -219,18 +305,25 @@ export default function CreateAppointmentPage() {
         slotDate: newBookingDate,
         slotStartTime: startTime,
         slotEndTime: endTime,
-        dynamicResponses: newBookingResponses
+        dynamicResponses: newBookingResponses,
       });
 
       if (res.status === 201 || res.status === 200) {
-        Toast({ message: "Appointment created successfully.", type: "success" });
+        Toast({
+          message: "Appointment created successfully.",
+          type: "success",
+        });
         router.push("/appointments-list");
       } else {
-        Toast({ message: res.data?.message || "Failed to save booking.", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to save booking.",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error(err);
-      const errMsg = err?.response?.data?.message || "Failed to save appointment.";
+      const errMsg =
+        err?.response?.data?.message || "Failed to save appointment.";
       Toast({ message: errMsg, type: "error" });
     } finally {
       setIsSaving(false);
@@ -239,19 +332,27 @@ export default function CreateAppointmentPage() {
 
   return (
     <>
-      <PageMeta title="Create Appointment - Booking Admin" description="Create user appointment" />
+      <PageMeta
+        title="Create Appointment - Booking Admin"
+        description="Create user appointment"
+      />
       <PageBreadcrumb
         items={[
           { label: "Home", to: "/" },
           { label: "Appointments List", to: "/appointments-list" },
-          { label: "Create Appointment", to: "" }
+          { label: "Create Appointment", to: "" },
         ]}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs w-full">
         <div className="p-4 border-b border-gray-200 sm:p-6">
-          <h3 className="text-lg font-semibold text-gray-900">Create Appointment Manually</h3>
-          <p className="text-sm text-gray-500 font-medium">First select an available date on the calendar, then fill the details.</p>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Create Appointment Manually
+          </h3>
+          <p className="text-sm text-gray-500 font-medium">
+            First select an available date on the calendar, then fill the
+            details.
+          </p>
         </div>
 
         <form onSubmit={handleCreateSubmit} className="p-4 sm:p-6">
@@ -271,7 +372,9 @@ export default function CreateAppointmentPage() {
                       className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 focus:outline-none focus:border-blue-500 bg-white"
                     >
                       {years.map((y) => (
-                        <option key={y} value={y}>{y}</option>
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
                       ))}
                     </select>
 
@@ -323,7 +426,12 @@ export default function CreateAppointmentPage() {
                 <div className="grid grid-cols-7 gap-2">
                   {calendarDays.map((dayObj, idx) => {
                     if (!dayObj.day) {
-                      return <div key={`empty-${idx}`} className="aspect-square bg-gray-55/50 rounded-lg border border-transparent"></div>;
+                      return (
+                        <div
+                          key={`empty-${idx}`}
+                          className="aspect-square bg-gray-55/50 rounded-lg border border-transparent"
+                        ></div>
+                      );
                     }
 
                     const isSelected = newBookingDate === dayObj.dateStr;
@@ -342,15 +450,16 @@ export default function CreateAppointmentPage() {
                           setNewBookingSlot("");
                         }}
                         className={`aspect-square rounded-lg flex items-center justify-center text-xs transition-all duration-200 select-none border relative
-                          ${isClosed || isPast
-                            ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
-                            : isFullDayHoliday
-                              ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
-                              : isSelected
-                                ? "bg-blue-600 text-white border-blue-600 font-semibold cursor-pointer"
-                                : isToday
-                                  ? "bg-green-50 text-green-700 border-green-300 font-bold cursor-pointer"
-                                  : "bg-white text-gray-800 hover:border-blue-600 border-gray-200 cursor-pointer"
+                          ${
+                            isClosed || isPast
+                              ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
+                              : isFullDayHoliday
+                                ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
+                                : isSelected
+                                  ? "bg-blue-600 text-white border-blue-600 font-semibold cursor-pointer"
+                                  : isToday
+                                    ? "bg-green-50 text-green-700 border-green-300 font-bold cursor-pointer"
+                                    : "bg-white text-gray-800 hover:border-blue-600 border-gray-200 cursor-pointer"
                           }
                         `}
                         title={
@@ -364,20 +473,46 @@ export default function CreateAppointmentPage() {
                         }
                       >
                         {isHoliday ? (
-                          <Tooltip content={`Holiday: ${dayObj.holidayTitle || "Holiday"}`}>
+                          <Tooltip
+                            content={`Holiday: ${dayObj.holidayTitle || "Holiday"}`}
+                          >
                             <div className="flex flex-col items-center justify-center w-full h-full min-h-[40px]">
                               <span>{dayObj.day}</span>
-                              {isPast && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Past</span>}
-                              {!isPast && isClosed && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Off</span>}
-                              {!isPast && isFullDayHoliday && <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5 font-bold">Hol</span>}
+                              {isPast && (
+                                <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">
+                                  Past
+                                </span>
+                              )}
+                              {!isPast && isClosed && (
+                                <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">
+                                  Off
+                                </span>
+                              )}
+                              {!isPast && isFullDayHoliday && (
+                                <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5 font-bold">
+                                  Hol
+                                </span>
+                              )}
                             </div>
                           </Tooltip>
                         ) : (
                           <div className="flex flex-col items-center justify-center w-full h-full min-h-[40px]">
                             <span>{dayObj.day}</span>
-                            {isPast && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Past</span>}
-                            {!isPast && isClosed && <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">Off</span>}
-                            {!isPast && isFullDayHoliday && <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5 font-bold">Hol</span>}
+                            {isPast && (
+                              <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">
+                                Past
+                              </span>
+                            )}
+                            {!isPast && isClosed && (
+                              <span className="text-[7px] text-gray-400 uppercase leading-none mt-0.5">
+                                Off
+                              </span>
+                            )}
+                            {!isPast && isFullDayHoliday && (
+                              <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5 font-bold">
+                                Hol
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
@@ -395,7 +530,9 @@ export default function CreateAppointmentPage() {
                     <h4 className="text-md font-semibold text-gray-800 mb-1">
                       Details for {newBookingDate}
                     </h4>
-                    <p className="text-xs text-gray-550 font-medium">Choose an available slot and populate form fields below.</p>
+                    <p className="text-xs text-gray-550 font-medium">
+                      Choose an available slot and populate form fields below.
+                    </p>
                   </div>
 
                   <div className="border-t border-gray-100 pt-5">
@@ -403,9 +540,14 @@ export default function CreateAppointmentPage() {
                       Select Time Slot <span className="text-red-500">*</span>
                     </label>
                     {isLoadingSlots ? (
-                      <p className="text-xs text-gray-400">Loading available slots...</p>
-                    ) : availableSlots.length === 0 ? (
-                      <p className="text-xs text-red-500 font-medium">No slots available for {newBookingDate}.</p>
+                      <p className="text-xs text-gray-400">
+                        Loading available slots...
+                      </p>
+                    ) : !Array.isArray(availableSlots) ||
+                      availableSlots.length === 0 ? (
+                      <p className="text-xs text-red-500 font-medium">
+                        No slots available for {newBookingDate}.
+                      </p>
                     ) : (
                       <select
                         value={newBookingSlot}
@@ -414,7 +556,10 @@ export default function CreateAppointmentPage() {
                         className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
                       >
                         <option value="">-- Select a Slot --</option>
-                        {availableSlots.map((s) => {
+                        {(Array.isArray(availableSlots)
+                          ? availableSlots
+                          : []
+                        ).map((s) => {
                           const isAvailable = s.status === "available";
                           const isBooked = s.status === "booked";
                           const isBreak = s.status === "break";
@@ -426,9 +571,15 @@ export default function CreateAppointmentPage() {
                           return (
                             <option
                               key={`${s.startTime}-${s.endTime}`}
-                              value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
+                              value={
+                                isAvailable ? `${s.startTime}-${s.endTime}` : ""
+                              }
                               disabled={!isAvailable}
-                              className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
+                              className={
+                                !isAvailable
+                                  ? "text-gray-400 bg-gray-100 font-normal"
+                                  : ""
+                              }
                             >
                               {label}
                             </option>
@@ -439,39 +590,170 @@ export default function CreateAppointmentPage() {
                   </div>
 
                   <div className="space-y-4 border-t border-gray-100 pt-5">
-                    <span className="block text-sm font-bold text-gray-550 border-b pb-1.5">Response Fields</span>
+                    <span className="block text-sm font-bold text-gray-550 border-b pb-1.5">
+                      Response Fields
+                    </span>
                     {formFields.map((field) => {
                       const val = newBookingResponses[field.fieldKey] || "";
-                      const isEmail = field.type === "email" || field.label?.toLowerCase().includes("email");
-                      const isNumeric = field.type === "tel" || field.type === "number" || field.label?.toLowerCase().includes("phone") || field.label?.toLowerCase().includes("tel");
+                      const isEmail =
+                        field.type === "email" ||
+                        field.label?.toLowerCase().includes("email");
+                      const isNumeric =
+                        field.type === "tel" ||
+                        field.type === "number" ||
+                        field.label?.toLowerCase().includes("phone") ||
+                        field.label?.toLowerCase().includes("tel");
 
                       return (
                         <div key={field.fieldKey}>
                           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                            {field.label} {field.required && <span className="text-red-500">*</span>}
+                            {field.label}{" "}
+                            {field.required && (
+                              <span className="text-red-500">*</span>
+                            )}
                           </label>
                           {field.type === "select" ? (
                             <select
                               value={val}
                               required={field.required}
-                              onChange={(e) => handleNewResponseChange(field.fieldKey, e.target.value)}
+                              onChange={(e) =>
+                                handleNewResponseChange(
+                                  field.fieldKey,
+                                  e.target.value,
+                                )
+                              }
                               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
                             >
                               <option value="">Select option</option>
                               {(field.options || []).map((opt) => (
-                                <option key={opt} value={opt}>{opt}</option>
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
                               ))}
                             </select>
                           ) : field.type === "textarea" ? (
                             <textarea
                               value={val}
                               required={field.required}
-                              onChange={(e) => handleNewResponseChange(field.fieldKey, e.target.value)}
+                              onChange={(e) =>
+                                handleNewResponseChange(
+                                  field.fieldKey,
+                                  e.target.value,
+                                )
+                              }
                               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 min-h-20"
                             />
+                          ) : field.type === "image" ? (
+                            <div className="space-y-2">
+                              <div className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}>
+                                <input
+                                  id={`file_input_${field.fieldKey}`}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) =>
+                                    handleFileChange(field.fieldKey, e.target.files[0], "image")
+                                  }
+                                  className={val ? "hidden" : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer"}
+                                />
+                                {val && (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-2xs">
+                                      <div className="flex items-center gap-2 truncate">
+                                        <span className="text-xs font-bold text-blue-600 shrink-0">Selected File:</span>
+                                        <span className="text-xs font-semibold text-gray-700 truncate">{getFileNameDisplay(val, field.fieldKey, "Attached Image")}</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleNewResponseChange(field.fieldKey, "");
+                                          setFileNames((prev) => ({ ...prev, [field.fieldKey]: "" }));
+                                          const inputEl = document.getElementById(`file_input_${field.fieldKey}`);
+                                          if (inputEl) inputEl.value = "";
+                                        }}
+                                        className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors shrink-0 cursor-pointer"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <img
+                                        src={val}
+                                        alt={field.label}
+                                        className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-xs"
+                                      />
+                                      <label
+                                        htmlFor={`file_input_${field.fieldKey}`}
+                                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                                      >
+                                        Change Image
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-400">Accepts images only (max 5MB)</p>
+                            </div>
+                          ) : field.type === "video" ? (
+                            <div className="space-y-2">
+                              <div className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}>
+                                <input
+                                  id={`file_input_${field.fieldKey}`}
+                                  type="file"
+                                  accept="video/*"
+                                  onChange={(e) =>
+                                    handleFileChange(field.fieldKey, e.target.files[0], "video")
+                                  }
+                                  className={val ? "hidden" : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100 file:cursor-pointer cursor-pointer"}
+                                />
+                                {val && (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-2xs">
+                                      <div className="flex items-center gap-2 truncate">
+                                        <span className="text-xs font-bold text-purple-600 shrink-0">Selected File:</span>
+                                        <span className="text-xs font-semibold text-gray-700 truncate">{getFileNameDisplay(val, field.fieldKey, "Attached Video")}</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleNewResponseChange(field.fieldKey, "");
+                                          setFileNames((prev) => ({ ...prev, [field.fieldKey]: "" }));
+                                          const inputEl = document.getElementById(`file_input_${field.fieldKey}`);
+                                          if (inputEl) inputEl.value = "";
+                                        }}
+                                        className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors shrink-0 cursor-pointer"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <video
+                                        src={val}
+                                        className="w-44 h-28 object-cover rounded-lg border border-gray-200 shadow-xs bg-black"
+                                        controls
+                                      />
+                                      <label
+                                        htmlFor={`file_input_${field.fieldKey}`}
+                                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                                      >
+                                        Change Video
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-400">Accepts videos only (max 20MB)</p>
+                            </div>
                           ) : (
                             <input
-                              type={isNumeric ? "tel" : isEmail ? "email" : field.type === "number" ? "number" : "text"}
+                              type={
+                                isNumeric
+                                  ? "tel"
+                                  : isEmail
+                                    ? "email"
+                                    : field.type === "number"
+                                      ? "number"
+                                      : "text"
+                              }
                               value={val}
                               required={field.required}
                               onChange={(e) => {
@@ -479,12 +761,27 @@ export default function CreateAppointmentPage() {
                                 if (isNumeric) {
                                   inputVal = inputVal.replace(/\D/g, "");
                                 }
-                                handleNewResponseChange(field.fieldKey, inputVal);
+                                handleNewResponseChange(
+                                  field.fieldKey,
+                                  inputVal,
+                                );
                               }}
                               onKeyDown={(e) => {
                                 if (isNumeric) {
-                                  const allowedKeys = ["Backspace", "Tab", "Delete", "ArrowLeft", "ArrowRight", "Enter"];
-                                  if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+                                  const allowedKeys = [
+                                    "Backspace",
+                                    "Tab",
+                                    "Delete",
+                                    "ArrowLeft",
+                                    "ArrowRight",
+                                    "Enter",
+                                  ];
+                                  if (
+                                    !allowedKeys.includes(e.key) &&
+                                    !/^\d$/.test(e.key) &&
+                                    !e.ctrlKey &&
+                                    !e.metaKey
+                                  ) {
                                     e.preventDefault();
                                   }
                                 }
@@ -498,10 +795,17 @@ export default function CreateAppointmentPage() {
                   </div>
 
                   <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                    <Button type="button" onClick={() => router.push("/appointments-list")} variant="secondary">
+                    <Button
+                      type="button"
+                      onClick={() => router.push("/appointments-list")}
+                      variant="secondary"
+                    >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={isSaving || !newBookingSlot}>
+                    <Button
+                      type="submit"
+                      disabled={isSaving || !newBookingSlot}
+                    >
                       {isSaving ? "Saving..." : "Create Appointment"}
                     </Button>
                   </div>
@@ -509,15 +813,34 @@ export default function CreateAppointmentPage() {
               ) : (
                 <div className="flex flex-col h-full justify-between min-h-[300px] border border-dashed border-gray-200 rounded-xl p-6 text-center">
                   <div className="my-auto space-y-2">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.5"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
-                    <h5 className="text-sm font-semibold text-gray-700">No Date Selected</h5>
-                    <p className="text-xs text-gray-400 max-w-xs mx-auto">Please choose an open day on the calendar grid to configure your new appointment slot.</p>
+                    <h5 className="text-sm font-semibold text-gray-700">
+                      No Date Selected
+                    </h5>
+                    <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                      Please choose an open day on the calendar grid to
+                      configure your new appointment slot.
+                    </p>
                   </div>
 
                   <div className="flex justify-end pt-6 border-t border-gray-100 w-full shrink-0">
-                    <Button type="button" onClick={() => router.push("/appointments-list")} variant="secondary">
+                    <Button
+                      type="button"
+                      onClick={() => router.push("/appointments-list")}
+                      variant="secondary"
+                    >
                       Cancel
                     </Button>
                   </div>

@@ -375,67 +375,117 @@ export default function AppointmentsListPage() {
       <CustomModal
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
-        title="View Booking Details"
+        title="Appointment Details"
+        maxWidth="max-w-[720px]"
       >
         {selectedBooking && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 border-b border-gray-100 pb-3">
-              <div>
-                <span className="block text-[10px] uppercase font-bold text-gray-400">Booking ID</span>
-                <span className="text-sm font-semibold text-gray-900">{getNumericBookingId(selectedBooking)}</span>
+          <div className="space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar pr-1">
+            {/* Top Banner Card */}
+            <div className="bg-gradient-to-r from-slate-50 via-blue-50/20 to-slate-50 p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Booking ID</span>
+                  <span className="px-2.5 py-0.5 text-xs font-mono font-bold text-blue-700 bg-blue-100/80 border border-blue-200 rounded-md">
+                    #{getNumericBookingId(selectedBooking)}
+                  </span>
+                </div>
+                <div>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold border rounded-full shadow-xs ${getStatusClass(selectedBooking.status)}`}>
+                    <span className={`w-2 h-2 rounded-full ${
+                      selectedBooking.status?.toLowerCase() === "confirmed" ? "bg-green-500" :
+                      selectedBooking.status?.toLowerCase() === "pending" ? "bg-yellow-500" : "bg-red-500"
+                    }`}></span>
+                    <span className="capitalize">{selectedBooking.status}</span>
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="block text-[10px] uppercase font-bold text-gray-400">Status</span>
-                <span className={`inline-flex px-2.5 py-0.5 text-xs font-semibold border rounded-full ${getStatusClass(selectedBooking.status)}`}>
-                  {selectedBooking.status}
-                </span>
+
+              {/* Appointment Meta Highlights */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Appointment Date</span>
+                  <span className="text-sm font-bold text-slate-900">{formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
+                </div>
+                <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Time Slot</span>
+                  <span className="text-sm font-bold text-slate-900">{selectedBooking.slotStartTime} - {selectedBooking.slotEndTime}</span>
+                </div>
+                <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Booked On</span>
+                  <span className="text-sm font-bold text-blue-600">
+                    {formatBookedDate(selectedBooking.createdAt) || formatDateDDMMYYYY(selectedBooking.slotDate)}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 border-b border-gray-100 pb-3">
-              <div>
-                <span className="block text-[10px] uppercase font-bold text-gray-400">Appointment Date</span>
-                <span className="text-sm font-medium text-gray-800">{formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
-              </div>
-              <div>
-                <span className="block text-[10px] uppercase font-bold text-gray-400">Time Window</span>
-                <span className="text-sm font-medium text-gray-800">{selectedBooking.slotStartTime} - {selectedBooking.slotEndTime}</span>
-              </div>
-              <div>
-                <span className="block text-[10px] uppercase font-bold text-gray-400">Booking Date</span>
-                <span className="text-sm font-medium text-blue-600">{formatBookedDate(selectedBooking.createdAt) || formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
-              </div>
-            </div>
-
+            {/* Customer Responses Section */}
             <div className="space-y-3">
-              <span className="block text-xs font-bold text-gray-550 border-b pb-1">Response Data</span>
-              {formFields.map((field) => {
-                const val = selectedBooking.dynamicResponses?.[field.fieldKey] || selectedBooking.dynamicResponses?.get?.(field.fieldKey);
-                return (
-                  <div key={field.fieldKey} className="flex flex-col gap-1">
-                    <span className="text-[11px] font-semibold text-gray-400">{field.label}</span>
-                    <div className="text-sm text-gray-800">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Customer Submitted Responses</h4>
+                <span className="text-xs font-medium text-slate-400">{formFields.length} Fields Configured</span>
+              </div>
+
+              {/* Dynamic Responses Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {formFields.map((field) => {
+                  const fieldType = field.type || field.inputType;
+                  const val = selectedBooking.dynamicResponses?.[field.fieldKey] || selectedBooking.dynamicResponses?.get?.(field.fieldKey);
+                  const isMedia = fieldType === "image" || fieldType === "video";
+
+                  return (
+                    <div
+                      key={field.fieldKey}
+                      className={`p-3.5 rounded-xl border border-slate-200/80 bg-white transition-all hover:border-slate-300 ${
+                        isMedia ? "sm:col-span-2 bg-slate-50/50" : ""
+                      }`}
+                    >
+                      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                        {field.label}
+                      </span>
+
                       {val ? (
-                        field.type === "image" ? (
-                          <a href={val} target="_blank" rel="noreferrer" className="block max-w-xs border rounded-lg overflow-hidden hover:opacity-90">
-                            <img src={val} alt={field.label} className="w-full object-cover max-h-40" />
-                          </a>
-                        ) : field.type === "video" ? (
-                          <video src={val} className="max-w-xs border rounded-lg max-h-40" controls />
+                        fieldType === "image" ? (
+                          <div className="mt-1">
+                            <div className="relative group max-w-xs rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-slate-100">
+                              <img
+                                src={val}
+                                alt={field.label}
+                                className="w-full max-h-52 object-contain bg-slate-900/5 group-hover:scale-105 transition-transform duration-300"
+                              />
+                              <a
+                                href={val}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5"
+                              >
+                                🔍 Open Full Image
+                              </a>
+                            </div>
+                          </div>
+                        ) : fieldType === "video" ? (
+                          <div className="mt-1">
+                            <div className="max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-black">
+                              <video src={val} className="w-full max-h-56 object-contain" controls />
+                            </div>
+                          </div>
                         ) : (
-                          <span>{String(val)}</span>
+                          <span className="text-sm font-semibold text-slate-800 break-words block">
+                            {String(val)}
+                          </span>
                         )
                       ) : (
-                        <span className="text-gray-400 italic">No response provided</span>
+                        <span className="text-xs text-slate-400 italic font-normal">No response provided</span>
                       )}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="flex justify-end pt-3">
-              <Button onClick={() => setIsViewModalOpen(false)} variant="secondary">
+            {/* Modal Footer */}
+            <div className="flex justify-end pt-4 border-t border-slate-200">
+              <Button onClick={() => setIsViewModalOpen(false)} variant="secondary" size="md">
                 Close
               </Button>
             </div>

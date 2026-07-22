@@ -33,6 +33,7 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
   // Edit form state
   const [editStatus, setEditStatus] = useState("confirmed");
   const [editResponses, setEditResponses] = useState({});
+  const [fileNames, setFileNames] = useState({});
   const [newBookingDate, setNewBookingDate] = useState("");
   const [newBookingSlot, setNewBookingSlot] = useState("");
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -197,7 +198,9 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
       try {
         const res = await getAvailableSlotsList(admin._id, newBookingDate);
         if (res.status === 200 && res.data?.statusCode === 200) {
-          setAvailableSlots(res.data.data || []);
+          const rawData = res.data.data;
+          const slotsList = Array.isArray(rawData) ? rawData : (rawData?.slots || []);
+          setAvailableSlots(slotsList);
         } else {
           setAvailableSlots([]);
         }
@@ -216,6 +219,56 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
       ...prev,
       [fieldKey]: value
     }));
+  };
+
+  const getFileNameDisplay = (val, fieldKey, defaultLabel) => {
+    if (fileNames[fieldKey]) return fileNames[fieldKey];
+    if (!val || typeof val !== "string") return "";
+    if (val.includes("/") || val.includes("\\")) {
+      const name = val.split(/[/\\]/).pop().split("?")[0];
+      if (name && name.includes(".")) return name;
+    }
+    if (val.startsWith("data:")) {
+      const match = val.match(/^data:(image|video)\/([a-zA-Z0-9]+);/);
+      if (match) return `${match[1]}_file.${match[2]}`;
+    }
+    return defaultLabel;
+  };
+
+  const handleFileChange = (fieldKey, file, fieldType) => {
+    if (!file) return;
+
+    if (file.name) {
+      setFileNames((prev) => ({ ...prev, [fieldKey]: file.name }));
+    }
+
+    // Validate file type
+    if (fieldType === "image" && !file.type.startsWith("image/")) {
+      Toast({ message: "Please select a valid image file.", type: "error" });
+      return;
+    }
+    if (fieldType === "video" && !file.type.startsWith("video/")) {
+      Toast({ message: "Please select a valid video file.", type: "error" });
+      return;
+    }
+
+    // Validate file size: 5MB for images, 20MB for videos
+    const maxSize = fieldType === "image" ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
+    const maxLabel = fieldType === "image" ? "5MB" : "20MB";
+    if (file.size > maxSize) {
+      Toast({ message: `File size must be less than ${maxLabel}.`, type: "error" });
+      return;
+    }
+
+    // Convert to Base64 data URL
+    const reader = new FileReader();
+    reader.onload = () => {
+      handleEditResponseChange(fieldKey, reader.result);
+    };
+    reader.onerror = () => {
+      Toast({ message: "Failed to read file.", type: "error" });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleEditSubmit = async (e) => {
@@ -454,7 +507,8 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                       >
                         <option value="">-- Select a Slot --</option>
                         {(() => {
-                          const renderedSlots = [...availableSlots];
+                          const slotsArray = Array.isArray(availableSlots) ? availableSlots : [];
+                          const renderedSlots = [...slotsArray];
                           if (selectedBooking && selectedBooking.slotStartTime && selectedBooking.slotEndTime) {
                             const currentSlotKey = `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
                             const exists = renderedSlots.some(s => `${s.startTime}-${s.endTime}` === currentSlotKey);
@@ -524,6 +578,102 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                               onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
                               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 min-h-20"
                             />
+                          ) : field.type === "image" ? (
+                            <div className="space-y-2">
+                              <div className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}>
+                                <input
+                                  id={`file_input_${field.fieldKey}`}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleFileChange(field.fieldKey, e.target.files[0], "image")}
+                                  className={val ? "hidden" : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer"}
+                                />
+                                {val && (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-2xs">
+                                      <div className="flex items-center gap-2 truncate">
+                                        <span className="text-xs font-bold text-blue-600 shrink-0">Selected File:</span>
+                                        <span className="text-xs font-semibold text-gray-700 truncate">{getFileNameDisplay(val, field.fieldKey, "Attached Image")}</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleEditResponseChange(field.fieldKey, "");
+                                          setFileNames((prev) => ({ ...prev, [field.fieldKey]: "" }));
+                                          const inputEl = document.getElementById(`file_input_${field.fieldKey}`);
+                                          if (inputEl) inputEl.value = "";
+                                        }}
+                                        className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors shrink-0 cursor-pointer"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <img
+                                        src={val}
+                                        alt={field.label}
+                                        className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-xs"
+                                      />
+                                      <label
+                                        htmlFor={`file_input_${field.fieldKey}`}
+                                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                                      >
+                                        Change Image
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-400">Accepts images only (max 5MB)</p>
+                            </div>
+                          ) : field.type === "video" ? (
+                            <div className="space-y-2">
+                              <div className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}>
+                                <input
+                                  id={`file_input_${field.fieldKey}`}
+                                  type="file"
+                                  accept="video/*"
+                                  onChange={(e) => handleFileChange(field.fieldKey, e.target.files[0], "video")}
+                                  className={val ? "hidden" : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100 file:cursor-pointer cursor-pointer"}
+                                />
+                                {val && (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-2xs">
+                                      <div className="flex items-center gap-2 truncate">
+                                        <span className="text-xs font-bold text-purple-600 shrink-0">Selected File:</span>
+                                        <span className="text-xs font-semibold text-gray-700 truncate">{getFileNameDisplay(val, field.fieldKey, "Attached Video")}</span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleEditResponseChange(field.fieldKey, "");
+                                          setFileNames((prev) => ({ ...prev, [field.fieldKey]: "" }));
+                                          const inputEl = document.getElementById(`file_input_${field.fieldKey}`);
+                                          if (inputEl) inputEl.value = "";
+                                        }}
+                                        className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors shrink-0 cursor-pointer"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                      <video
+                                        src={val}
+                                        className="w-44 h-28 object-cover rounded-lg border border-gray-200 shadow-xs bg-black"
+                                        controls
+                                      />
+                                      <label
+                                        htmlFor={`file_input_${field.fieldKey}`}
+                                        className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors shadow-2xs"
+                                      >
+                                        Change Video
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-400">Accepts videos only (max 20MB)</p>
+                            </div>
                           ) : (
                             <input
                               type={isNumeric ? "tel" : isEmail ? "email" : field.type === "number" ? "number" : "text"}

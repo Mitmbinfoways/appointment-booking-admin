@@ -78,7 +78,7 @@ export const CustomModal = ({
             </svg>
           </button>
         )}
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="p-4 lg:p-6 max-h-[85vh] overflow-y-auto custom-scrollbar">{children}</div>
       </div>
     </div>
   );
