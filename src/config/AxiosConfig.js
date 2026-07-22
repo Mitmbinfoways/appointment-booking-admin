@@ -202,8 +202,8 @@ export const getDashboardStats = async () => {
   };
 };
 
-export const getBookings = async () => {
-  return await axiosInstance.get("/api/admin/bookings");
+export const getBookings = async (params = {}) => {
+  return await axiosInstance.get("/api/admin/bookings", { params });
 };
 
 export const updateAdminBookingRecord = async (id, data) => {

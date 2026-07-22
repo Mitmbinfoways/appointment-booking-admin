@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
@@ -36,13 +36,13 @@ export default function AppointmentsListPage() {
   const router = useRouter();
   const adminState = useSelector((state) => state.admin) || {};
   const { admin } = adminState;
-  const fetchedRef = useRef(false);
 
   const [formFields, setFormFields] = useState([]);
   const [bookingsList, setBookingsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -97,19 +97,35 @@ export default function AppointmentsListPage() {
     router.push("/appointments-list/create-appointment");
   };
 
-  const loadData = async (force = false) => {
-    if (!force && fetchedRef.current) return;
-    fetchedRef.current = true;
-    setIsLoading(true);
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchFilter);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchFilter]);
+
+  const loadFormConfig = async () => {
     try {
-      // 1. Load FormConfig
       const formRes = await getAdminFormConfig();
       if (formRes.status === 200 && formRes.data?.statusCode === 200) {
         setFormFields(formRes.data.data?.fields || []);
       }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-      // 2. Load Bookings
-      const bookingsRes = await getBookings();
+  const loadBookings = async () => {
+    setIsLoading(true);
+    try {
+      const params = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (statusFilter) params.status = statusFilter;
+
+      const bookingsRes = await getBookings(params);
       if (bookingsRes.status === 200 && bookingsRes.data?.statusCode === 200) {
         setBookingsList(bookingsRes.data.data?.bookings || []);
       }
@@ -121,9 +137,15 @@ export default function AppointmentsListPage() {
     }
   };
 
+  // Load form config once
   useEffect(() => {
-    loadData(false);
+    loadFormConfig();
   }, []);
+
+  // Re-fetch bookings whenever filters change
+  useEffect(() => {
+    loadBookings();
+  }, [debouncedSearch, startDate, endDate, statusFilter]);
 
   // Columns classification
   const mediaFields = useMemo(() => {
@@ -134,33 +156,8 @@ export default function AppointmentsListPage() {
     return formFields.filter(f => f.type !== "image" && f.type !== "video");
   }, [formFields]);
 
-  const filteredBookings = useMemo(() => {
-    return bookingsList.filter((b) => {
-      const responsesString = formFields
-        .map(f => String(b.dynamicResponses?.[f.fieldKey] || b.dynamicResponses?.get?.(f.fieldKey) || ""))
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch = !searchFilter ||
-        responsesString.includes(searchFilter.toLowerCase()) ||
-        b._id.toLowerCase().includes(searchFilter.toLowerCase());
-
-      let matchesDate = true;
-      if (startDate) {
-        matchesDate = matchesDate && b.slotDate >= startDate;
-      }
-      if (endDate) {
-        matchesDate = matchesDate && b.slotDate <= endDate;
-      }
-
-      let matchesStatus = true;
-      if (statusFilter) {
-        matchesStatus = b.status?.toLowerCase() === statusFilter.toLowerCase();
-      }
-
-      return matchesSearch && matchesDate && matchesStatus;
-    });
-  }, [bookingsList, formFields, searchFilter, startDate, endDate, statusFilter]);
+  // Bookings are already filtered by backend, pass through directly
+  const filteredBookings = bookingsList;
 
   // Action Triggers
   const handleViewClick = (booking) => {
@@ -184,7 +181,7 @@ export default function AppointmentsListPage() {
       if (res.status === 200) {
         Toast({ message: "Booking deleted successfully.", type: "success" });
         setIsDeleteModalOpen(false);
-        loadData(true);
+        loadBookings();
       }
     } catch (err) {
       console.error(err);
