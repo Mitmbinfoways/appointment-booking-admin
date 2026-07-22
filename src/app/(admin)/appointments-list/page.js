@@ -149,11 +149,17 @@ export default function AppointmentsListPage() {
 
   // Columns classification
   const mediaFields = useMemo(() => {
-    return formFields.filter(f => f.type === "image" || f.type === "video");
+    return formFields.filter(f => {
+      const type = f.type || f.inputType;
+      return type === "image" || type === "video";
+    });
   }, [formFields]);
 
   const regularFields = useMemo(() => {
-    return formFields.filter(f => f.type !== "image" && f.type !== "video");
+    return formFields.filter(f => {
+      const type = f.type || f.inputType;
+      return type !== "image" && type !== "video";
+    });
   }, [formFields]);
 
   // Bookings are already filtered by backend, pass through directly
@@ -285,14 +291,16 @@ export default function AppointmentsListPage() {
                     {/* Render matching dynamic responses for Media Columns */}
                     {mediaFields.map((field) => {
                       const val = b.dynamicResponses?.[field.fieldKey] || b.dynamicResponses?.get?.(field.fieldKey);
+                      const fieldType = field.type || field.inputType;
+                      const isImage = fieldType === "image" || (typeof val === "string" && val.startsWith("data:image/"));
                       return (
                         <TD key={field.fieldKey} className="text-sm">
                           {val ? (
-                            field.type === "image" ? (
+                            isImage ? (
                               <img
                                 src={val}
                                 alt={field.label}
-                                className="w-10 h-10 object-cover rounded-lg border border-gray-200"
+                                className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs"
                               />
                             ) : (
                               <video
@@ -315,9 +323,27 @@ export default function AppointmentsListPage() {
                     {/* Render matching dynamic responses for Regular Form Columns */}
                     {regularFields.map((field) => {
                       const val = b.dynamicResponses?.[field.fieldKey] || b.dynamicResponses?.get?.(field.fieldKey);
+                      const isImage = typeof val === "string" && val.startsWith("data:image/");
+                      const isVideo = typeof val === "string" && val.startsWith("data:video/");
                       return (
                         <TD key={field.fieldKey} className="text-sm text-gray-700">
-                          {val !== undefined && val !== null ? String(val) : "-"}
+                          {isImage ? (
+                            <img
+                              src={val}
+                              alt={field.label}
+                              className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs"
+                            />
+                          ) : isVideo ? (
+                            <video
+                              src={val}
+                              className="w-14 h-10 object-cover rounded-lg border border-gray-200"
+                              controls
+                            />
+                          ) : val !== undefined && val !== null ? (
+                            String(val)
+                          ) : (
+                            "-"
+                          )}
                         </TD>
                       );
                     })}
@@ -431,7 +457,9 @@ export default function AppointmentsListPage() {
                 {formFields.map((field) => {
                   const fieldType = field.type || field.inputType;
                   const val = selectedBooking.dynamicResponses?.[field.fieldKey] || selectedBooking.dynamicResponses?.get?.(field.fieldKey);
-                  const isMedia = fieldType === "image" || fieldType === "video";
+                  const isImageVal = typeof val === "string" && val.startsWith("data:image/");
+                  const isVideoVal = typeof val === "string" && val.startsWith("data:video/");
+                  const isMedia = fieldType === "image" || fieldType === "video" || isImageVal || isVideoVal;
 
                   return (
                     <div
@@ -445,7 +473,7 @@ export default function AppointmentsListPage() {
                       </span>
 
                       {val ? (
-                        fieldType === "image" ? (
+                        fieldType === "image" || isImageVal ? (
                           <div className="mt-1">
                             <div className="relative group max-w-xs rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-slate-100">
                               <img
@@ -463,7 +491,7 @@ export default function AppointmentsListPage() {
                               </a>
                             </div>
                           </div>
-                        ) : fieldType === "video" ? (
+                        ) : fieldType === "video" || isVideoVal ? (
                           <div className="mt-1">
                             <div className="max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-black">
                               <video src={val} className="w-full max-h-56 object-contain" controls />
