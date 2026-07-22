@@ -29,9 +29,13 @@ export default function AdminLayout({ children }) {
     );
   }
 
-  // Double check in rendering to prevent momentary flicker of dashboard if not authenticated
+  // Render spinner loader while redirecting to login to prevent white blank screen
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (

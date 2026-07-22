@@ -128,9 +128,13 @@ export default function LoginPage() {
     }
   };
 
-  // Prevent showing login form momentarily if authenticated
+  // Render spinner loader while redirecting to dashboard to prevent white blank screen
   if (isRehydrated && isAuthenticated) {
-    return null;
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   return (
@@ -174,9 +178,8 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <Mail
-                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${
-                    focusedField === "identifier" ? "text-gray-800" : "text-gray-400"
-                  }`}
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${focusedField === "identifier" ? "text-gray-800" : "text-gray-400"
+                    }`}
                 />
                 <input
                   ref={identifierRef}
@@ -186,13 +189,12 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField("identifier")}
                   onBlur={() => setFocusedField(null)}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:border transition-all ${
-                    errors.identifier
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:border transition-all ${errors.identifier
                       ? "border-red-500 focus:border-red-600"
                       : focusedField === "identifier"
-                      ? "border-blue-500 bg-gray-50 focus:border-blue-500"
-                      : "border-blue-200 hover:border-blue-300 focus:border-blue-500"
-                  }`}
+                        ? "border-blue-500 bg-gray-50 focus:border-blue-500"
+                        : "border-blue-200 hover:border-blue-300 focus:border-blue-500"
+                    }`}
                   placeholder="Enter your email address"
                 />
               </div>
@@ -207,9 +209,8 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <Lock
-                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${
-                    focusedField === "password" ? "text-gray-800" : "text-gray-400"
-                  }`}
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${focusedField === "password" ? "text-gray-800" : "text-gray-400"
+                    }`}
                 />
                 <input
                   ref={passwordRef}
@@ -219,13 +220,12 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
-                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:outline-none focus:border transition-all ${
-                    errors.password
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:outline-none focus:border transition-all ${errors.password
                       ? "border-red-500 focus:border-red-600"
                       : focusedField === "password"
-                      ? "border-blue-500 bg-gray-50 focus:border-blue-500"
-                      : "border-blue-200 hover:border-blue-300 focus:border-blue-500"
-                  }`}
+                        ? "border-blue-500 bg-gray-50 focus:border-blue-500"
+                        : "border-blue-200 hover:border-blue-300 focus:border-blue-500"
+                    }`}
                   placeholder="Enter your password"
                 />
                 <button
