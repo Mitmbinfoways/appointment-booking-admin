@@ -258,6 +258,10 @@ export const toggleAdminActive = async (id) => {
   return await axiosInstance.put(`/api/superadmin/admins/${id}/toggle`);
 };
 
+export const toggleAdminApiCredentials = async (id) => {
+  return await axiosInstance.put(`/api/superadmin/admins/${id}/toggle-credentials`);
+};
+
 export const updateAdmin = async (id, data) => {
   return await axiosInstance.put(`/api/superadmin/admins/${id}`, data);
 };

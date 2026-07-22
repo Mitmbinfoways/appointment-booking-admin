@@ -10,20 +10,30 @@ import {
   getAdminsList,
   registerAdmin,
   toggleAdminActive,
+  toggleAdminApiCredentials,
   updateAdmin,
   deleteAdmin,
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Copy, Check } from "lucide-react";
 
 export default function AdminsPage() {
   const [adminsList, setAdminsList] = useState([]);
   const [visibleSecrets, setVisibleSecrets] = useState({});
+  const [copiedField, setCopiedField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const toggleSecretVisibility = (id) => {
     setVisibleSecrets((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleCopy = (text, label) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(label);
+    Toast({ message: `${label} copied to clipboard!`, type: "success" });
+    setTimeout(() => setCopiedField(null), 2000);
   };
   
   // Modals visibility states
@@ -83,6 +93,21 @@ export default function AdminsPage() {
     } catch (err) {
       console.error("Error toggling active state:", err);
       Toast({ message: "Failed to toggle status.", type: "error" });
+    }
+  };
+
+  const handleToggleCredentials = async (adminId) => {
+    try {
+      const res = await toggleAdminApiCredentials(adminId);
+      if (res.status === 200 && res.data?.statusCode === 200) {
+        Toast({ message: res.data.message || "Credentials visibility updated", type: "success" });
+        fetchAdmins();
+      } else {
+        Toast({ message: res.data?.message || "Failed to toggle credentials visibility", type: "error" });
+      }
+    } catch (err) {
+      console.error("Error toggling credentials visibility:", err);
+      Toast({ message: "Failed to toggle credentials visibility.", type: "error" });
     }
   };
 
@@ -208,11 +233,13 @@ export default function AdminsPage() {
             <THead>
               <TR>
                 <TH>Sr No</TH>
+                <TH>Admin ID</TH>
                 <TH>Username</TH>
                 <TH>Email</TH>
                 <TH>Phone Number</TH>
                 <TH>Business Name</TH>
                 <TH>Secret Key</TH>
+                <TH>Show Credentials</TH>
                 <TH>Created Date</TH>
                 <TH>Status</TH>
                 <TH className="text-right">Actions</TH>
@@ -221,13 +248,13 @@ export default function AdminsPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={9} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={11} className="px-6 py-10 text-center text-gray-400 text-sm">
                     Loading admin list...
                   </TD>
                 </TR>
               ) : adminsList.length === 0 ? (
                 <TR>
-                  <TD colSpan={9} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={11} className="px-6 py-10 text-center text-gray-400 text-sm">
                     No Admin profiles found.
                   </TD>
                 </TR>
@@ -235,6 +262,23 @@ export default function AdminsPage() {
                 adminsList.map((admin, index) => (
                   <TR key={admin._id}>
                     <TD className="text-sm text-gray-500">{index + 1}</TD>
+                    <TD className="text-sm font-mono text-[11px] text-gray-700">
+                      <div className="flex items-center gap-1.5 w-fit">
+                        <span className="select-all">{admin._id}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(admin._id, `Admin ID (${admin.username})`)}
+                          className="text-gray-400 hover:text-blue-600 focus:outline-none cursor-pointer p-0.5 inline-flex items-center"
+                          title="Copy Admin ID"
+                        >
+                          {copiedField === `Admin ID (${admin.username})` ? (
+                            <Check size={14} className="text-green-600" />
+                          ) : (
+                            <Copy size={14} />
+                          )}
+                        </button>
+                      </div>
+                    </TD>
                     <TD className="text-sm font-semibold text-gray-900">{admin.username}</TD>
                     <TD className="text-sm text-gray-700">{admin.email}</TD>
                     <TD className="text-sm text-gray-600">{admin.phoneNumber || "N/A"}</TD>
@@ -256,7 +300,35 @@ export default function AdminsPage() {
                             <Eye size={15} />
                           )}
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(admin.secretKey, `Secret Key (${admin.username})`)}
+                          className="text-gray-400 hover:text-blue-600 focus:outline-none cursor-pointer p-0.5 inline-flex items-center"
+                          title="Copy Secret Key"
+                        >
+                          {copiedField === `Secret Key (${admin.username})` ? (
+                            <Check size={14} className="text-green-600" />
+                          ) : (
+                            <Copy size={14} />
+                          )}
+                        </button>
                       </div>
+                    </TD>
+                    <TD>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleCredentials(admin._id)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                          admin.showApiCredentials ? "bg-blue-600" : "bg-gray-200"
+                        }`}
+                        title={admin.showApiCredentials ? "API Credentials Visible on Admin Profile (Click to Hide)" : "API Credentials Hidden from Admin Profile (Click to Show)"}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            admin.showApiCredentials ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
                     </TD>
                     <TD className="text-sm text-gray-500">
                       {new Date(admin.createdAt).toLocaleDateString()}

@@ -8,17 +8,23 @@ import { getProfile, updateUserProfile, updateUserPassword } from "@/config/Axio
 import { Toast } from "@/components/Toast";
 import { useDispatch } from "react-redux";
 import { setAdmin } from "@/store/slices/authSlice";
+import { Copy, Check, Eye, EyeOff, ExternalLink } from "lucide-react";
 
 export default function ProfilePage() {
   const dispatch = useDispatch();
 
   const [profileData, setProfileData] = useState({
+    id: "",
     username: "",
     email: "",
     businessName: "",
     phoneNumber: "",
     role: "",
+    secretKey: "",
   });
+
+  const [showSecretKey, setShowSecretKey] = useState(false);
+  const [copiedField, setCopiedField] = useState(null);
 
   const [originalProfileData, setOriginalProfileData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -34,6 +40,14 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 
+  const handleCopy = (text, fieldName) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    Toast({ message: `${fieldName} copied to clipboard!`, type: "success" });
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   const fetchProfile = async () => {
     setIsLoading(true);
     try {
@@ -41,11 +55,14 @@ export default function ProfilePage() {
       if (res.status === 200 && res.data?.statusCode === 200) {
         const user = res.data.data;
         const profileObj = {
+          id: user._id || "",
           username: user.username || "",
           email: user.email || "",
           businessName: user.businessName || "",
           phoneNumber: user.phoneNumber || "",
           role: user.role || "",
+          secretKey: user.secretKey || "",
+          showApiCredentials: user.showApiCredentials || false,
         };
         setProfileData(profileObj);
         setOriginalProfileData(profileObj);
@@ -98,15 +115,18 @@ export default function ProfilePage() {
         phoneNumber: profileData.phoneNumber,
       });
 
-      if (res.status === 200 && res.data?.statusCode === 200) {
+        if (res.status === 200 && res.data?.statusCode === 200) {
         Toast({ message: "Profile updated successfully.", type: "success" });
         const user = res.data.data;
         const profileObj = {
+          id: user._id || profileData.id || "",
           username: user.username || "",
           email: user.email || "",
           businessName: user.businessName || "",
           phoneNumber: user.phoneNumber || "",
           role: user.role || "",
+          secretKey: user.secretKey || profileData.secretKey || "",
+          showApiCredentials: user.showApiCredentials ?? profileData.showApiCredentials ?? false,
         };
         setProfileData(profileObj);
         setOriginalProfileData(profileObj);
@@ -162,6 +182,13 @@ export default function ProfilePage() {
       setIsPasswordLoading(false);
     }
   };
+
+  const clientBaseUrl = typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:3000`
+    : "http://localhost:3000";
+  const bookingUrl = (profileData.id && profileData.secretKey)
+    ? `${clientBaseUrl}/?adminId=${profileData.id}&key=${profileData.secretKey}`
+    : "";
 
   return (
     <>
@@ -370,6 +397,116 @@ export default function ProfilePage() {
             )}
           </form>
         </div>
+
+        {/* API & Booking Integration Credentials Card */}
+        {(profileData.showApiCredentials || profileData.role === "SuperAdmin") && (
+          <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs p-6 lg:col-span-2">
+            <div className="border-b border-gray-200 pb-4 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">API & Integration Credentials</h3>
+              <p className="text-sm text-gray-500">
+                Your unique Admin ID and Secret Key required for public client booking integration and API requests.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Admin ID */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Admin ID</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={profileData.id || "N/A"}
+                    className="w-full px-4 py-2 border border-gray-200 bg-gray-50/50 rounded-lg text-sm text-gray-800 font-mono focus:outline-none select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(profileData.id, "Admin ID")}
+                    className="px-3.5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                  >
+                    {copiedField === "Admin ID" ? (
+                      <Check className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-500" />
+                    )}
+                    <span>{copiedField === "Admin ID" ? "Copied" : "Copy"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Secret Key */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Secret Key</label>
+                <div className="flex items-center gap-2">
+                  <div className="relative w-full">
+                    <input
+                      type={showSecretKey ? "text" : "password"}
+                      readOnly
+                      value={profileData.secretKey || "N/A"}
+                      className="w-full pl-4 pr-10 py-2 border border-gray-200 bg-gray-50/50 rounded-lg text-sm text-gray-800 font-mono focus:outline-none select-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecretKey((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none cursor-pointer"
+                      title={showSecretKey ? "Hide Secret Key" : "Show Secret Key"}
+                    >
+                      {showSecretKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(profileData.secretKey, "Secret Key")}
+                    className="px-3.5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                  >
+                    {copiedField === "Secret Key" ? (
+                      <Check className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-500" />
+                    )}
+                    <span>{copiedField === "Secret Key" ? "Copied" : "Copy"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Public Booking Link */}
+              {profileData.id && profileData.secretKey && (
+                <div className="md:col-span-2 pt-2 border-t border-gray-100">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Public Booking Link</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={bookingUrl}
+                      className="w-full px-4 py-2 border border-gray-200 bg-gray-50/50 rounded-lg text-sm text-gray-800 font-mono focus:outline-none select-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(bookingUrl, "Booking Link")}
+                      className="px-3.5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                    >
+                      {copiedField === "Booking Link" ? (
+                        <Check className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-500" />
+                      )}
+                      <span>{copiedField === "Booking Link" ? "Copied" : "Copy Link"}</span>
+                    </button>
+                    <a
+                      href={bookingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-2 border border-blue-600 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium focus:outline-none flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Open Link</span>
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
