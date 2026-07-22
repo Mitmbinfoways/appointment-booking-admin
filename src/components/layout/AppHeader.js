@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSidebar } from "@/context/SidebarContext";
 import UserDropdown from "@/components/layout/UserDropdown";
 
@@ -47,11 +48,13 @@ const AppHeader = () => {
           </button>
 
           <Link href="/" className="md:hidden flex items-center gap-2">
-            <span className="h-10 w-10 aspect-square overflow-hidden rounded-full">
-              <img
+            <span className="h-10 w-10 aspect-square overflow-hidden rounded-full relative">
+              <Image
                 className="w-full h-full object-cover"
                 src="/user-avtar.png"
                 alt="User Avatar"
+                width={40}
+                height={40}
               />
             </span>
             <span className="font-bold text-xl flex items-center text-gray-800">

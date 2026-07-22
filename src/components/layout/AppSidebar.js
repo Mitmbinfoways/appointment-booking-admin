@@ -2,6 +2,7 @@
 
 import React, { useMemo, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { getMenuItemsByUserType } from "@/components/layout/menu";
@@ -232,13 +233,14 @@ const AppSidebar = () => {
           className="h-12 aspect-square flex items-center gap-2 transition-all duration-300 ease-in-out"
         >
           {isExpanded || isHovered || isMobileOpen ? (
-            <img src="/user-avtar.png" alt="Logo" className="w-10 h-10 rounded-full" />
+            <Image src="/user-avtar.png" alt="Logo" width={40} height={40} className="w-10 h-10 rounded-full" />
           ) : (
-            <img
+            <Image
               src="/user-avtar.png"
               alt="Logo"
-              className="w-8 h-8 rounded-full"
-              style={{ marginTop: "10px" }}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full mt-2.5"
             />
           )}
         </Link>

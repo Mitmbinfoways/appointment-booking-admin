@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { DropdownItem, Dropdown } from "@/components/UI/Dropdown";
 import { useDispatch, useSelector } from "react-redux";
 import { adminUpdateStates, logout } from "@/store/slices/authSlice";
@@ -75,10 +76,12 @@ export default function UserDropdown() {
         onClick={toggleDropdown}
         className="flex items-center text-gray-700 dropdown-toggle focus:outline-none"
       >
-        <span className="mr-3 overflow-hidden rounded-full h-10 w-10">
-          <img
+        <span className="mr-3 overflow-hidden rounded-full h-10 w-10 relative">
+          <Image
             src="/user-avtar.png"
             alt="User Avatar"
+            width={40}
+            height={40}
             className="w-full h-full object-cover"
           />
         </span>

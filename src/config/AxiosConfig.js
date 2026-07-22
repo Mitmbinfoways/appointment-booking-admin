@@ -4,7 +4,16 @@ import store from "@/store";
 import { logout as logoutAction } from "@/store/slices/authSlice";
 
 // Session check
-export const isSessionExpired = (message) => {
+export const isSessionExpired = (error) => {
+  if (error?.response?.status === 401 || error?.response?.status === 403) {
+    return true;
+  }
+
+  const message =
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    "";
   if (!message || typeof message !== "string") return false;
 
   const sessionExpiredMessages = [
@@ -14,6 +23,11 @@ export const isSessionExpired = (message) => {
     "Invalid token",
     "No token provided",
     "Your account has been inactivated",
+    "Account is deactivated",
+    "Unauthorized access",
+    "Unauthorized",
+    "jwt expired",
+    "jwt malformed",
   ];
 
   return sessionExpiredMessages.some((msg) =>
@@ -24,13 +38,7 @@ export const isSessionExpired = (message) => {
 let isLoggingOut = false;
 
 export const handleSessionExpiration = async (error) => {
-  const errorMessage =
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
-    error?.message ||
-    "";
-
-  if (!isSessionExpired(errorMessage)) {
+  if (!isSessionExpired(error)) {
     return false;
   }
 
@@ -45,26 +53,31 @@ export const handleSessionExpiration = async (error) => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("AppointmentBooking_token");
     localStorage.removeItem("AppointmentBooking_admin");
-    store.dispatch(logoutAction());
+    try {
+      store.dispatch(logoutAction());
+    } catch (e) {
+      // ignore
+    }
 
-    await Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "Session expired. Please login again!",
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      confirmButtonText: "OK",
-      confirmButtonColor: "#465fff",
-      zIndex: 99999,
-      customClass: {
-        confirmButton: "min-w-[100px] focus:outline-none focus:ring-0",
-      },
-    });
+    if (window.location.pathname !== loginPath) {
+      await Swal.fire({
+        icon: "error",
+        title: "Session Expired",
+        text: "Your session has expired or account is inactive. Please log in again.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        confirmButtonText: "Log In",
+        confirmButtonColor: "#465fff",
+        zIndex: 99999,
+        customClass: {
+          confirmButton: "min-w-[100px] focus:outline-none focus:ring-0 font-medium py-2 px-4 rounded-lg",
+        },
+      });
 
-    window.location.href = loginPath;
+      window.location.href = loginPath;
+    }
   }
 
-  isLoggingOut = false;
   return true;
 };
 
