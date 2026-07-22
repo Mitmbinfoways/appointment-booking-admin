@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
+import { format, parseISO, isBefore, startOfDay } from "date-fns";
 import {
   getAdminFormConfig,
   getAvailableSlotsList,
@@ -31,6 +32,7 @@ export default function CreateAppointmentPage() {
   const [newBookingDate, setNewBookingDate] = useState("");
   const [newBookingSlot, setNewBookingSlot] = useState("");
   const [newBookingResponses, setNewBookingResponses] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [availableSlots, setAvailableSlots] = useState([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
@@ -88,6 +90,7 @@ export default function CreateAppointmentPage() {
         if (formRes.status === 200 && formRes.data?.statusCode === 200) {
           const fields = formRes.data.data?.fields || [];
           setFormFields(fields);
+
 
           const initialResponses = {};
           fields.forEach((f) => {
@@ -205,6 +208,9 @@ export default function CreateAppointmentPage() {
       ...prev,
       [fieldKey]: value,
     }));
+    if (fieldErrors[fieldKey]) {
+      setFieldErrors((prev) => ({ ...prev, [fieldKey]: null }));
+    }
   };
 
   const getFileNameDisplay = (val, fieldKey, defaultLabel) => {
@@ -260,41 +266,93 @@ export default function CreateAppointmentPage() {
     reader.readAsDataURL(file);
   };
 
+  const validateDynamicResponses = () => {
+    const newErrors = {};
+    let firstErrorKey = null;
+
+    if (!newBookingSlot) {
+      newErrors.slot = "Time slot is required";
+      if (!firstErrorKey) firstErrorKey = "slot";
+    }
+
+    formFields.forEach((field) => {
+      const fieldKey = field.fieldKey || field.name || field.label;
+      const rawVal = newBookingResponses[fieldKey];
+      const val = rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : "";
+
+      const isEmail = field.type === "email";
+      const isNumeric = field.type === "tel" || field.type === "number";
+      const isDate = field.type === "date";
+
+      let hasError = false;
+
+      if (field.required && !val) {
+        newErrors[fieldKey] = `${field.label} is required`;
+        hasError = true;
+      } else if (val) {
+        if (isEmail) {
+          const emailRegex = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
+          if (!emailRegex.test(val)) {
+            newErrors[fieldKey] = "Please enter a valid email address";
+            hasError = true;
+          }
+        } else if (isNumeric) {
+          if (val.length !== 10 || !/^\d{10}$/.test(val)) {
+            newErrors[fieldKey] = "Phone number must be 10 digits";
+            hasError = true;
+          }
+        } else if (isDate) {
+          const isBirthDate = field.label?.toLowerCase().includes("birth") ||
+            field.label?.toLowerCase().includes("dob") ||
+            field.label?.toLowerCase().includes("bday");
+          if (isBirthDate) {
+            try {
+              const selectedDate = parseISO(val);
+              const today = startOfDay(new Date());
+              if (isBefore(today, selectedDate)) {
+                newErrors[fieldKey] = "Future dates are not allowed for birth date";
+                hasError = true;
+              }
+            } catch (e) {
+              const todayStr = format(new Date(), "yyyy-MM-dd");
+              if (val > todayStr) {
+                newErrors[fieldKey] = "Future dates are not allowed for birth date";
+                hasError = true;
+              }
+            }
+          }
+        }
+      }
+
+      if (hasError && !firstErrorKey) {
+        firstErrorKey = fieldKey;
+      }
+    });
+
+    setFieldErrors(newErrors);
+
+    if (firstErrorKey) {
+      setTimeout(() => {
+        const el = document.getElementById(`field-${firstErrorKey}`) || document.querySelector(`[data-field-key="${firstErrorKey}"]`);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    }
+
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     if (!newBookingDate) {
       Toast({ message: "Please select a date.", type: "error" });
       return;
     }
-    if (!newBookingSlot) {
-      Toast({ message: "Please select a time slot.", type: "error" });
+
+    if (!validateDynamicResponses()) {
       return;
-    }
-
-    let missingField = null;
-    formFields.forEach((f) => {
-      if (f.required && !newBookingResponses[f.fieldKey]) {
-        missingField = f.label;
-      }
-    });
-
-    if (missingField) {
-      Toast({ message: `Field "${missingField}" is required.`, type: "error" });
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    for (const f of formFields) {
-      const isEmail =
-        f.type === "email" || f.label?.toLowerCase().includes("email");
-      const val = newBookingResponses[f.fieldKey];
-      if (isEmail && val && !emailRegex.test(String(val).trim())) {
-        Toast({
-          message: `Please enter a valid email address for "${f.label}".`,
-          type: "error",
-        });
-        return;
-      }
     }
 
     const [startTime, endTime] = newBookingSlot.split("-");
@@ -355,7 +413,7 @@ export default function CreateAppointmentPage() {
           </p>
         </div>
 
-        <form onSubmit={handleCreateSubmit} className="p-4 sm:p-6">
+        <form onSubmit={handleCreateSubmit} noValidate className="p-4 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start w-full">
             {/* Left Column: Calendar Date Selection */}
             <div className="w-full space-y-4">
@@ -450,16 +508,15 @@ export default function CreateAppointmentPage() {
                           setNewBookingSlot("");
                         }}
                         className={`aspect-square rounded-lg flex items-center justify-center text-xs transition-all duration-200 select-none border relative
-                          ${
-                            isClosed || isPast
-                              ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
-                              : isFullDayHoliday
-                                ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
-                                : isSelected
-                                  ? "bg-blue-600 text-white border-blue-600 font-semibold cursor-pointer"
-                                  : isToday
-                                    ? "bg-green-50 text-green-700 border-green-300 font-bold cursor-pointer"
-                                    : "bg-white text-gray-800 hover:border-blue-600 border-gray-200 cursor-pointer"
+                          ${isClosed || isPast
+                            ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
+                            : isFullDayHoliday
+                              ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
+                              : isSelected
+                                ? "bg-blue-600 text-white border-blue-600 font-semibold cursor-pointer"
+                                : isToday
+                                  ? "bg-green-50 text-green-700 border-green-300 font-bold cursor-pointer"
+                                  : "bg-white text-gray-800 hover:border-blue-600 border-gray-200 cursor-pointer"
                           }
                         `}
                         title={
@@ -549,43 +606,59 @@ export default function CreateAppointmentPage() {
                         No slots available for {newBookingDate}.
                       </p>
                     ) : (
-                      <select
-                        value={newBookingSlot}
-                        required
-                        onChange={(e) => setNewBookingSlot(e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
-                      >
-                        <option value="">-- Select a Slot --</option>
-                        {(Array.isArray(availableSlots)
-                          ? availableSlots
-                          : []
-                        ).map((s) => {
-                          const isAvailable = s.status === "available";
-                          const isBooked = s.status === "booked";
-                          const isBreak = s.status === "break";
+                      <div>
+                        <select
+                          id="field-slot"
+                          data-field-key="slot"
+                          value={newBookingSlot}
+                          onChange={(e) => {
+                            setNewBookingSlot(e.target.value);
+                            if (fieldErrors.slot) {
+                              setFieldErrors((prev) => ({ ...prev, slot: null }));
+                            }
+                          }}
+                          className={`w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${fieldErrors.slot
+                            ? "border-red-500 focus:border-red-500"
+                            : "border-gray-300 focus:border-blue-500"
+                            }`}
+                        >
+                          <option value="">-- Select a Slot --</option>
+                          {(Array.isArray(availableSlots)
+                            ? availableSlots
+                            : []
+                          ).map((s) => {
+                            const isAvailable = s.status === "available";
+                            const isBooked = s.status === "booked";
+                            const isBreak = s.status === "break";
 
-                          let label = `${s.startTime} - ${s.endTime}`;
-                          if (isBooked) label += " (Already Booked)";
-                          else if (isBreak) label += " (Break Slot)";
+                            let label = `${s.startTime} - ${s.endTime}`;
+                            if (isBooked) label += " (Already Booked)";
+                            else if (isBreak) label += " (Break Slot)";
 
-                          return (
-                            <option
-                              key={`${s.startTime}-${s.endTime}`}
-                              value={
-                                isAvailable ? `${s.startTime}-${s.endTime}` : ""
-                              }
-                              disabled={!isAvailable}
-                              className={
-                                !isAvailable
-                                  ? "text-gray-400 bg-gray-100 font-normal"
-                                  : ""
-                              }
-                            >
-                              {label}
-                            </option>
-                          );
-                        })}
-                      </select>
+                            return (
+                              <option
+                                key={`${s.startTime}-${s.endTime}`}
+                                value={
+                                  isAvailable ? `${s.startTime}-${s.endTime}` : ""
+                                }
+                                disabled={!isAvailable}
+                                className={
+                                  !isAvailable
+                                    ? "text-gray-400 bg-gray-100 font-normal"
+                                    : ""
+                                }
+                              >
+                                {label}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        {fieldErrors.slot && (
+                          <p className="mt-1.5 text-xs text-red-500 font-bold">
+                            {fieldErrors.slot}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -594,18 +667,29 @@ export default function CreateAppointmentPage() {
                       Response Fields
                     </span>
                     {formFields.map((field) => {
-                      const val = newBookingResponses[field.fieldKey] || "";
+                      const fieldKey = field.fieldKey || field.name || field.label;
+                      const val = newBookingResponses[fieldKey] || "";
                       const isEmail =
-                        field.type === "email" ||
-                        field.label?.toLowerCase().includes("email");
+                        field.type === "email"
                       const isNumeric =
                         field.type === "tel" ||
-                        field.type === "number" ||
-                        field.label?.toLowerCase().includes("phone") ||
-                        field.label?.toLowerCase().includes("tel");
+                        field.type === "number"
+                      const isDate =
+                        field.type === "date"
+                      const isBirthDate =
+                        isDate &&
+                        (field.label?.toLowerCase().includes("birth") ||
+                          field.label?.toLowerCase().includes("dob") ||
+                          field.label?.toLowerCase().includes("bday"));
+                      const hasError = fieldErrors[fieldKey];
+
+                      const inputBaseClass = `w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${hasError
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-gray-300 focus:border-blue-500"
+                        }`;
 
                       return (
-                        <div key={field.fieldKey}>
+                        <div key={fieldKey}>
                           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                             {field.label}{" "}
                             {field.required && (
@@ -614,15 +698,16 @@ export default function CreateAppointmentPage() {
                           </label>
                           {field.type === "select" ? (
                             <select
+                              id={`field-${fieldKey}`}
+                              data-field-key={fieldKey}
                               value={val}
-                              required={field.required}
                               onChange={(e) =>
                                 handleNewResponseChange(
-                                  field.fieldKey,
+                                  fieldKey,
                                   e.target.value,
                                 )
                               }
-                              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              className={inputBaseClass}
                             >
                               <option value="">Select option</option>
                               {(field.options || []).map((opt) => (
@@ -633,15 +718,16 @@ export default function CreateAppointmentPage() {
                             </select>
                           ) : field.type === "textarea" ? (
                             <textarea
+                              id={`field-${fieldKey}`}
+                              data-field-key={fieldKey}
                               value={val}
-                              required={field.required}
                               onChange={(e) =>
                                 handleNewResponseChange(
-                                  field.fieldKey,
+                                  fieldKey,
                                   e.target.value,
                                 )
                               }
-                              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 min-h-20"
+                              className={`${inputBaseClass} min-h-20`}
                             />
                           ) : field.type === "image" ? (
                             <div className="space-y-2">
@@ -745,21 +831,27 @@ export default function CreateAppointmentPage() {
                             </div>
                           ) : (
                             <input
+                              id={`field-${fieldKey}`}
+                              data-field-key={fieldKey}
                               type={
                                 isNumeric
-                                  ? "tel"
-                                  : isEmail
-                                    ? "email"
-                                    : field.type === "number"
-                                      ? "number"
-                                      : "text"
+                                  ? "text"
+                                  : isDate
+                                    ? "date"
+                                    : isEmail
+                                      ? "email"
+                                      : field.type === "number"
+                                        ? "number"
+                                        : "text"
                               }
+                              inputMode={isNumeric ? "numeric" : undefined}
+                              maxLength={isNumeric ? 10 : undefined}
+                              max={isDate && isBirthDate ? format(new Date(), "yyyy-MM-dd") : undefined}
                               value={val}
-                              required={field.required}
                               onChange={(e) => {
                                 let inputVal = e.target.value;
                                 if (isNumeric) {
-                                  inputVal = inputVal.replace(/\D/g, "");
+                                  inputVal = inputVal.replace(/\D/g, "").slice(0, 10);
                                 }
                                 handleNewResponseChange(
                                   field.fieldKey,
@@ -786,8 +878,18 @@ export default function CreateAppointmentPage() {
                                   }
                                 }
                               }}
-                              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              onClick={(e) => {
+                                if (isDate && e.target && typeof e.target.showPicker === "function") {
+                                  try {
+                                    e.target.showPicker();
+                                  } catch (err) { }
+                                }
+                              }}
+                              className={`${inputBaseClass} ${isDate ? "cursor-pointer" : ""}`}
                             />
+                          )}
+                          {hasError && (
+                            <p className="mt-1.5 text-xs text-red-500 font-bold">{hasError}</p>
                           )}
                         </div>
                       );
@@ -804,7 +906,7 @@ export default function CreateAppointmentPage() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={isSaving || !newBookingSlot}
+                      disabled={isSaving}
                     >
                       {isSaving ? "Saving..." : "Create Appointment"}
                     </Button>

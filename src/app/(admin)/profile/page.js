@@ -29,6 +29,9 @@ export default function ProfilePage() {
   const [originalProfileData, setOriginalProfileData] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
 
+  const [profileErrors, setProfileErrors] = useState({});
+  const [passwordErrors, setPasswordErrors] = useState({});
+
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
     newPassword: "",
@@ -82,27 +85,85 @@ export default function ProfilePage() {
     fetchProfile();
   }, []);
 
+  const handlePhoneKeyDown = (e) => {
+    if (e.ctrlKey || e.metaKey) return;
+    const allowedKeys = [
+      "Backspace",
+      "Delete",
+      "ArrowLeft",
+      "ArrowRight",
+      "Tab",
+      "Enter",
+      "Home",
+      "End",
+    ];
+    if (allowedKeys.includes(e.key)) return;
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
-    setProfileData((prev) => ({ ...prev, [name]: value }));
+    let processedValue = value;
+    if (name === "phoneNumber") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+    setProfileData((prev) => ({ ...prev, [name]: processedValue }));
+    if (profileErrors[name]) {
+      setProfileErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handlePasswordInputChange = (e) => {
     const { name, value } = e.target;
     setPasswordData((prev) => ({ ...prev, [name]: value }));
+    if (passwordErrors[name]) {
+      setPasswordErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleCancelEdit = () => {
     if (originalProfileData) {
       setProfileData(originalProfileData);
     }
+    setProfileErrors({});
     setIsEditing(false);
   };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    if (!profileData.username || !profileData.email) {
-      Toast({ message: "Username and Email are required.", type: "error" });
+    const newErrors = {};
+
+    if (!profileData.username || profileData.username.trim() === "") {
+      newErrors.username = "Username is required";
+    }
+
+    if (!profileData.email || profileData.email.trim() === "") {
+      newErrors.email = "Email Address is required";
+    } else {
+      const emailRegex = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(profileData.email.trim())) {
+        newErrors.email = "Please enter a valid email address";
+      }
+    }
+
+    if (profileData.phoneNumber && profileData.phoneNumber.trim() !== "") {
+      if (profileData.phoneNumber.length !== 10 || !/^\d{10}$/.test(profileData.phoneNumber)) {
+        newErrors.phoneNumber = "Phone number must be 10 digits";
+      }
+    }
+
+    if (profileData.role === "Admin" && (!profileData.businessName || profileData.businessName.trim() === "")) {
+      newErrors.businessName = "Business Name is required";
+    }
+
+    setProfileErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstKey = Object.keys(newErrors)[0];
+      const el = document.getElementsByName(firstKey)?.[0];
+      if (el) el.focus();
       return;
     }
 
@@ -115,7 +176,7 @@ export default function ProfilePage() {
         phoneNumber: profileData.phoneNumber,
       });
 
-        if (res.status === 200 && res.data?.statusCode === 200) {
+      if (res.status === 200 && res.data?.statusCode === 200) {
         Toast({ message: "Profile updated successfully.", type: "success" });
         const user = res.data.data;
         const profileObj = {
@@ -131,7 +192,7 @@ export default function ProfilePage() {
         setProfileData(profileObj);
         setOriginalProfileData(profileObj);
         setIsEditing(false);
-        dispatch(setAdmin(user)); // Update global Redux header profile state immediately
+        dispatch(setAdmin(user));
       } else {
         Toast({ message: res.data?.message || "Failed to update profile", type: "error" });
       }
@@ -146,13 +207,30 @@ export default function ProfilePage() {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    if (!passwordData.oldPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
-      Toast({ message: "All password fields are required.", type: "error" });
-      return;
+    const newErrors = {};
+
+    if (!passwordData.oldPassword) {
+      newErrors.oldPassword = "Current Password is required";
     }
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      Toast({ message: "New passwords do not match.", type: "error" });
+    if (!passwordData.newPassword) {
+      newErrors.newPassword = "New Password is required";
+    } else if (passwordData.newPassword.length < 6) {
+      newErrors.newPassword = "Password must be at least 6 characters";
+    }
+
+    if (!passwordData.confirmPassword) {
+      newErrors.confirmPassword = "Confirm New Password is required";
+    } else if (passwordData.newPassword && passwordData.confirmPassword !== passwordData.newPassword) {
+      newErrors.confirmPassword = "New passwords do not match";
+    }
+
+    setPasswordErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstKey = Object.keys(newErrors)[0];
+      const el = document.getElementsByName(firstKey)?.[0];
+      if (el) el.focus();
       return;
     }
 
@@ -170,6 +248,7 @@ export default function ProfilePage() {
           newPassword: "",
           confirmPassword: "",
         });
+        setPasswordErrors({});
         setIsEditingPassword(false);
       } else {
         Toast({ message: res.data?.message || "Failed to change password.", type: "error" });
@@ -224,18 +303,25 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <form onSubmit={handleProfileSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleProfileSubmit} noValidate className="flex flex-col gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Username <span className="text-red-500 font-semibold">*</span>
+              </label>
               {isEditing ? (
-                <input
-                  type="text"
-                  name="username"
-                  value={profileData.username}
-                  onChange={handleProfileInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
-                />
+                <div>
+                  <input
+                    type="text"
+                    name="username"
+                    value={profileData.username}
+                    onChange={handleProfileInputChange}
+                    className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none bg-white ${profileErrors.username ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                      }`}
+                  />
+                  {profileErrors.username && (
+                    <p className="mt-1.5 text-xs text-red-500 font-bold">{profileErrors.username}</p>
+                  )}
+                </div>
               ) : (
                 <p className="w-full px-4 py-2 border border-gray-100 bg-gray-50/50 rounded-lg text-sm text-gray-800 font-medium">
                   {profileData.username || "N/A"}
@@ -244,16 +330,23 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Email Address <span className="text-red-500 font-semibold">*</span>
+              </label>
               {isEditing ? (
-                <input
-                  type="email"
-                  name="email"
-                  value={profileData.email}
-                  onChange={handleProfileInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
-                />
+                <div>
+                  <input
+                    type="text"
+                    name="email"
+                    value={profileData.email}
+                    onChange={handleProfileInputChange}
+                    className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none bg-white ${profileErrors.email ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                      }`}
+                  />
+                  {profileErrors.email && (
+                    <p className="mt-1.5 text-xs text-red-500 font-bold">{profileErrors.email}</p>
+                  )}
+                </div>
               ) : (
                 <p className="w-full px-4 py-2 border border-gray-100 bg-gray-50/50 rounded-lg text-sm text-gray-800 font-medium">
                   {profileData.email || "N/A"}
@@ -264,13 +357,23 @@ export default function ProfilePage() {
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone Number</label>
               {isEditing ? (
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={profileData.phoneNumber}
-                  onChange={handleProfileInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
-                />
+                <div>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    name="phoneNumber"
+                    value={profileData.phoneNumber}
+                    onKeyDown={handlePhoneKeyDown}
+                    onChange={handleProfileInputChange}
+                    placeholder="Enter 10-digit phone number"
+                    className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none bg-white ${profileErrors.phoneNumber ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                      }`}
+                  />
+                  {profileErrors.phoneNumber && (
+                    <p className="mt-1.5 text-xs text-red-500 font-bold">{profileErrors.phoneNumber}</p>
+                  )}
+                </div>
               ) : (
                 <p className="w-full px-4 py-2 border border-gray-100 bg-gray-50/50 rounded-lg text-sm text-gray-800 font-medium">
                   {profileData.phoneNumber || "N/A"}
@@ -280,16 +383,23 @@ export default function ProfilePage() {
 
             {profileData.role === "Admin" && (
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Business Name</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Business Name <span className="text-red-500 font-semibold">*</span>
+                </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="businessName"
-                    value={profileData.businessName}
-                    onChange={handleProfileInputChange}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      name="businessName"
+                      value={profileData.businessName}
+                      onChange={handleProfileInputChange}
+                      className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none bg-white ${profileErrors.businessName ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                        }`}
+                    />
+                    {profileErrors.businessName && (
+                      <p className="mt-1.5 text-xs text-red-500 font-bold">{profileErrors.businessName}</p>
+                    )}
+                  </div>
                 ) : (
                   <p className="w-full px-4 py-2 border border-gray-100 bg-gray-50/50 rounded-lg text-sm text-gray-800 font-medium">
                     {profileData.businessName || "N/A"}
@@ -328,6 +438,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={() => {
                   setPasswordData({ oldPassword: "", newPassword: "", confirmPassword: "" });
+                  setPasswordErrors({});
                   setIsEditingPassword(false);
                 }}
                 className="text-sm text-gray-500 hover:text-gray-700 font-semibold cursor-pointer focus:outline-none"
@@ -337,7 +448,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handlePasswordSubmit} noValidate className="flex flex-col gap-4">
             {!isEditingPassword ? (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
@@ -348,42 +459,57 @@ export default function ProfilePage() {
             ) : (
               <>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Current Password</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Current Password <span className="text-red-500 font-semibold">*</span>
+                  </label>
                   <input
                     type="password"
                     name="oldPassword"
                     value={passwordData.oldPassword}
                     onChange={handlePasswordInputChange}
-                    required
                     placeholder="Enter current password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                    className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none bg-white ${passwordErrors.oldPassword ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                      }`}
                   />
+                  {passwordErrors.oldPassword && (
+                    <p className="mt-1.5 text-xs text-red-500 font-bold">{passwordErrors.oldPassword}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">New Password</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    New Password <span className="text-red-500 font-semibold">*</span>
+                  </label>
                   <input
                     type="password"
                     name="newPassword"
                     value={passwordData.newPassword}
                     onChange={handlePasswordInputChange}
-                    required
                     placeholder="Enter new password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                    className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none bg-white ${passwordErrors.newPassword ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                      }`}
                   />
+                  {passwordErrors.newPassword && (
+                    <p className="mt-1.5 text-xs text-red-500 font-bold">{passwordErrors.newPassword}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Confirm New Password</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Confirm New Password <span className="text-red-500 font-semibold">*</span>
+                  </label>
                   <input
                     type="password"
                     name="confirmPassword"
                     value={passwordData.confirmPassword}
                     onChange={handlePasswordInputChange}
-                    required
                     placeholder="Re-enter new password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                    className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none bg-white ${passwordErrors.confirmPassword ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                      }`}
                   />
+                  {passwordErrors.confirmPassword && (
+                    <p className="mt-1.5 text-xs text-red-500 font-bold">{passwordErrors.confirmPassword}</p>
+                  )}
                 </div>
               </>
             )}

@@ -180,7 +180,7 @@ export default function AdminFormConfigPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
           {isLoading ? (
             <div className="text-center py-10 text-gray-400 text-sm">
               Loading form settings...

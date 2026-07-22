@@ -15,6 +15,7 @@ import {
   deleteAdmin,
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
+import { format, parseISO } from "date-fns";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 
@@ -35,7 +36,7 @@ export default function AdminsPage() {
     Toast({ message: `${label} copied to clipboard!`, type: "success" });
     setTimeout(() => setCopiedField(null), 2000);
   };
-  
+
   // Modals visibility states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -59,6 +60,9 @@ export default function AdminsPage() {
     businessName: "",
     phoneNumber: "",
   });
+
+  const [formErrors, setFormErrors] = useState({});
+  const [editFormErrors, setEditFormErrors] = useState({});
 
   const fetchAdmins = async () => {
     setIsLoading(true);
@@ -111,20 +115,96 @@ export default function AdminsPage() {
     }
   };
 
+  const handlePhoneKeyDown = (e) => {
+    if (e.ctrlKey || e.metaKey) return;
+    const allowedKeys = [
+      "Backspace",
+      "Delete",
+      "ArrowLeft",
+      "ArrowRight",
+      "Tab",
+      "Enter",
+      "Home",
+      "End",
+    ];
+    if (allowedKeys.includes(e.key)) return;
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let processedValue = value;
+    if (name === "phoneNumber") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+    setFormData((prev) => ({ ...prev, [name]: processedValue }));
+    if (formErrors[name]) {
+      setFormErrors((prev) => ({ ...prev, [name]: null }));
+    }
   };
 
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
-    setEditFormData((prev) => ({ ...prev, [name]: value }));
+    let processedValue = value;
+    if (name === "phoneNumber") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+    setEditFormData((prev) => ({ ...prev, [name]: processedValue }));
+    if (editFormErrors[name]) {
+      setEditFormErrors((prev) => ({ ...prev, [name]: null }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.username || !formData.email || !formData.password || !formData.businessName) {
-      Toast({ message: "Please fill all required fields", type: "error" });
+    const errors = {};
+    let firstErrorKey = null;
+
+    if (!formData.username.trim()) {
+      errors.username = "Username is required";
+      if (!firstErrorKey) firstErrorKey = "create-username";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email Address is required";
+      if (!firstErrorKey) firstErrorKey = "create-email";
+    } else {
+      const emailRegex = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        errors.email = "Please enter a valid email address";
+        if (!firstErrorKey) firstErrorKey = "create-email";
+      }
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required";
+      if (!firstErrorKey) firstErrorKey = "create-password";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+      if (!firstErrorKey) firstErrorKey = "create-password";
+    }
+
+    if (!formData.businessName.trim()) {
+      errors.businessName = "Business Name is required";
+      if (!firstErrorKey) firstErrorKey = "create-businessName";
+    }
+
+    if (formData.phoneNumber && formData.phoneNumber.trim() !== "") {
+      if (formData.phoneNumber.length !== 10 || !/^\d{10}$/.test(formData.phoneNumber)) {
+        errors.phoneNumber = "Phone number must be 10 digits";
+        if (!firstErrorKey) firstErrorKey = "create-phoneNumber";
+      }
+    }
+
+    setFormErrors(errors);
+
+    if (firstErrorKey) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrorKey);
+        if (el) el.focus();
+      }, 50);
       return;
     }
 
@@ -133,6 +213,7 @@ export default function AdminsPage() {
       if (res.status === 201 && res.data?.statusCode === 201) {
         Toast({ message: "Admin account registered successfully", type: "success" });
         setIsModalOpen(false);
+        setFormErrors({});
         setFormData({
           username: "",
           email: "",
@@ -154,6 +235,7 @@ export default function AdminsPage() {
 
   const handleEditClick = (admin) => {
     setSelectedAdmin(admin);
+    setEditFormErrors({});
     setEditFormData({
       username: admin.username,
       email: admin.email,
@@ -165,8 +247,44 @@ export default function AdminsPage() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!editFormData.username || !editFormData.email || !editFormData.businessName) {
-      Toast({ message: "Please fill all required fields", type: "error" });
+    const errors = {};
+    let firstErrorKey = null;
+
+    if (!editFormData.username.trim()) {
+      errors.username = "Username is required";
+      if (!firstErrorKey) firstErrorKey = "edit-username";
+    }
+
+    if (!editFormData.email.trim()) {
+      errors.email = "Email Address is required";
+      if (!firstErrorKey) firstErrorKey = "edit-email";
+    } else {
+      const emailRegex = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(editFormData.email.trim())) {
+        errors.email = "Please enter a valid email address";
+        if (!firstErrorKey) firstErrorKey = "edit-email";
+      }
+    }
+
+    if (!editFormData.businessName.trim()) {
+      errors.businessName = "Business Name is required";
+      if (!firstErrorKey) firstErrorKey = "edit-businessName";
+    }
+
+    if (editFormData.phoneNumber && editFormData.phoneNumber.trim() !== "") {
+      if (editFormData.phoneNumber.length !== 10 || !/^\d{10}$/.test(editFormData.phoneNumber)) {
+        errors.phoneNumber = "Phone number must be 10 digits";
+        if (!firstErrorKey) firstErrorKey = "edit-phoneNumber";
+      }
+    }
+
+    setEditFormErrors(errors);
+
+    if (firstErrorKey) {
+      setTimeout(() => {
+        const el = document.getElementById(firstErrorKey);
+        if (el) el.focus();
+      }, 50);
       return;
     }
 
@@ -175,6 +293,7 @@ export default function AdminsPage() {
       if (res.status === 200 && res.data?.statusCode === 200) {
         Toast({ message: "Admin account updated successfully", type: "success" });
         setIsEditModalOpen(false);
+        setEditFormErrors({});
         fetchAdmins();
       } else {
         Toast({ message: res.data?.message || "Failed to update Admin", type: "error" });
@@ -281,7 +400,7 @@ export default function AdminsPage() {
                     </TD>
                     <TD className="text-sm font-semibold text-gray-900">{admin.username}</TD>
                     <TD className="text-sm text-gray-700">{admin.email}</TD>
-                    <TD className="text-sm text-gray-600">{admin.phoneNumber || "N/A"}</TD>
+                    <TD className="text-sm text-gray-600">{admin.phoneNumber || "--"}</TD>
                     <TD className="text-sm text-gray-600">{admin.businessName}</TD>
                     <TD className="text-sm">
                       <div className="flex items-center gap-1.5 w-fit">
@@ -318,32 +437,28 @@ export default function AdminsPage() {
                       <button
                         type="button"
                         onClick={() => handleToggleCredentials(admin._id)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
-                          admin.showApiCredentials ? "bg-blue-600" : "bg-gray-200"
-                        }`}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${admin.showApiCredentials ? "bg-blue-600" : "bg-gray-200"
+                          }`}
                         title={admin.showApiCredentials ? "API Credentials Visible on Admin Profile (Click to Hide)" : "API Credentials Hidden from Admin Profile (Click to Show)"}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            admin.showApiCredentials ? "translate-x-5" : "translate-x-0"
-                          }`}
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${admin.showApiCredentials ? "translate-x-5" : "translate-x-0"
+                            }`}
                         />
                       </button>
                     </TD>
                     <TD className="text-sm text-gray-500">
-                      {new Date(admin.createdAt).toLocaleDateString()}
+                      {admin.createdAt ? format(new Date(admin.createdAt), "dd-MM-yyyy") : "N/A"}
                     </TD>
                     <TD>
                       <button
                         onClick={() => handleToggleActive(admin._id)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
-                          admin.isActive ? "bg-blue-600" : "bg-gray-200"
-                        }`}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${admin.isActive ? "bg-blue-600" : "bg-gray-200"
+                          }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            admin.isActive ? "translate-x-5" : "translate-x-0"
-                          }`}
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${admin.isActive ? "translate-x-5" : "translate-x-0"
+                            }`}
                         />
                       </button>
                     </TD>
@@ -421,20 +536,24 @@ export default function AdminsPage() {
             <p className="text-sm text-gray-500">Add a new admin account to deploy their booking slots.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Username <span className="text-red-500">*</span>
               </label>
               <input
+                id="create-username"
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${formErrors.username ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
                 placeholder="e.g. clinic_admin"
               />
+              {formErrors.username && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{formErrors.username}</p>
+              )}
             </div>
 
             <div>
@@ -442,14 +561,18 @@ export default function AdminsPage() {
                 Email Address <span className="text-red-500">*</span>
               </label>
               <input
+                id="create-email"
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${formErrors.email ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
                 placeholder="e.g. admin@clinic.com"
               />
+              {formErrors.email && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{formErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -457,14 +580,18 @@ export default function AdminsPage() {
                 Password <span className="text-red-500">*</span>
               </label>
               <input
+                id="create-password"
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${formErrors.password ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
                 placeholder="••••••••"
               />
+              {formErrors.password && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{formErrors.password}</p>
+              )}
             </div>
 
             <div>
@@ -472,14 +599,18 @@ export default function AdminsPage() {
                 Business Name <span className="text-red-500">*</span>
               </label>
               <input
+                id="create-businessName"
                 type="text"
                 name="businessName"
                 value={formData.businessName}
                 onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${formErrors.businessName ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
                 placeholder="e.g. Apollo Clinic"
               />
+              {formErrors.businessName && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{formErrors.businessName}</p>
+              )}
             </div>
 
             <div>
@@ -487,13 +618,21 @@ export default function AdminsPage() {
                 Phone Number
               </label>
               <input
-                type="text"
+                id="create-phoneNumber"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 name="phoneNumber"
                 value={formData.phoneNumber}
+                onKeyDown={handlePhoneKeyDown}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                placeholder="e.g. +91 9898989801"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${formErrors.phoneNumber ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
+                placeholder="e.g. 9898989801"
               />
+              {formErrors.phoneNumber && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{formErrors.phoneNumber}</p>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200">
@@ -516,19 +655,23 @@ export default function AdminsPage() {
             <p className="text-sm text-gray-500">Update admin credentials and business details.</p>
           </div>
 
-          <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleEditSubmit} noValidate className="flex flex-col gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Username <span className="text-red-500">*</span>
               </label>
               <input
+                id="edit-username"
                 type="text"
                 name="username"
                 value={editFormData.username}
                 onChange={handleEditInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${editFormErrors.username ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
               />
+              {editFormErrors.username && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{editFormErrors.username}</p>
+              )}
             </div>
 
             <div>
@@ -536,13 +679,17 @@ export default function AdminsPage() {
                 Email Address <span className="text-red-500">*</span>
               </label>
               <input
+                id="edit-email"
                 type="email"
                 name="email"
                 value={editFormData.email}
                 onChange={handleEditInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${editFormErrors.email ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
               />
+              {editFormErrors.email && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{editFormErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -550,13 +697,17 @@ export default function AdminsPage() {
                 Business Name <span className="text-red-500">*</span>
               </label>
               <input
+                id="edit-businessName"
                 type="text"
                 name="businessName"
                 value={editFormData.businessName}
                 onChange={handleEditInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${editFormErrors.businessName ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
               />
+              {editFormErrors.businessName && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{editFormErrors.businessName}</p>
+              )}
             </div>
 
             <div>
@@ -564,13 +715,21 @@ export default function AdminsPage() {
                 Phone Number
               </label>
               <input
-                type="text"
+                id="edit-phoneNumber"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 name="phoneNumber"
                 value={editFormData.phoneNumber}
+                onKeyDown={handlePhoneKeyDown}
                 onChange={handleEditInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                placeholder="e.g. +91 9898989801"
+                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${editFormErrors.phoneNumber ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"
+                  }`}
+                placeholder="e.g. 9898989801"
               />
+              {editFormErrors.phoneNumber && (
+                <p className="mt-1.5 text-xs text-red-500 font-bold">{editFormErrors.phoneNumber}</p>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200">

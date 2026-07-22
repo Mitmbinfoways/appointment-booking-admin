@@ -5,11 +5,12 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
-import { 
-  getAdminFormConfig, 
-  getAvailableSlotsList, 
-  updateAdminBookingRecord, 
-  getHolidaysList, 
+import { format, parseISO, isBefore, startOfDay } from "date-fns";
+import {
+  getAdminFormConfig,
+  getAvailableSlotsList,
+  updateAdminBookingRecord,
+  getHolidaysList,
   getAdminSlotSettings,
   getBookings
 } from "@/config/AxiosConfig";
@@ -34,6 +35,7 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
   const [editStatus, setEditStatus] = useState("confirmed");
   const [editResponses, setEditResponses] = useState({});
   const [fileNames, setFileNames] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [newBookingDate, setNewBookingDate] = useState("");
   const [newBookingSlot, setNewBookingSlot] = useState("");
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -112,7 +114,7 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
         if (formRes.status === 200 && formRes.data?.statusCode === 200) {
           const fields = formRes.data.data?.fields || [];
           setFormFields(fields);
-          
+
           if (currentBooking) {
             const responses = {};
             fields.forEach(f => {
@@ -162,7 +164,7 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
       const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
 
       const weekdayName = currentDateObj.toLocaleDateString("en-US", { weekday: "long" });
-      
+
       let isClosedDay = false;
       if (slotSettings && slotSettings.workingDays) {
         const dayConfig = slotSettings.workingDays.find((wd) => wd.day === weekdayName);
@@ -215,10 +217,91 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
   }, [newBookingDate, admin?._id]);
 
   const handleEditResponseChange = (fieldKey, value) => {
-    setEditResponses(prev => ({
+    setEditResponses((prev) => ({
       ...prev,
-      [fieldKey]: value
+      [fieldKey]: value,
     }));
+    if (fieldErrors[fieldKey]) {
+      setFieldErrors((prev) => ({ ...prev, [fieldKey]: null }));
+    }
+  };
+
+  const validateDynamicResponses = () => {
+    const newErrors = {};
+    let firstErrorKey = null;
+
+    if (!newBookingSlot) {
+      newErrors.slot = "Time slot is required";
+      if (!firstErrorKey) firstErrorKey = "slot";
+    }
+
+    formFields.forEach((field) => {
+      const fieldKey = field.fieldKey || field.name || field.label;
+      const rawVal = editResponses[fieldKey];
+      const val = rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : "";
+
+      const isEmail = field.type === "email" || field.label?.toLowerCase().includes("email");
+      const isNumeric = field.type === "tel" || field.type === "number" || field.label?.toLowerCase().includes("phone") || field.label?.toLowerCase().includes("tel") || field.label?.toLowerCase().includes("mobile");
+      const isDate = field.type === "date" || field.label?.toLowerCase().includes("date");
+
+      let hasError = false;
+
+      if (field.required && !val) {
+        newErrors[fieldKey] = `${field.label} is required`;
+        hasError = true;
+      } else if (val) {
+        if (isEmail) {
+          const emailRegex = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
+          if (!emailRegex.test(val)) {
+            newErrors[fieldKey] = "Please enter a valid email address";
+            hasError = true;
+          }
+        } else if (isNumeric) {
+          if (val.length !== 10 || !/^\d{10}$/.test(val)) {
+            newErrors[fieldKey] = "Phone number must be 10 digits";
+            hasError = true;
+          }
+        } else if (isDate) {
+          const isBirthDate = field.label?.toLowerCase().includes("birth") ||
+            field.label?.toLowerCase().includes("dob") ||
+            field.label?.toLowerCase().includes("bday");
+          if (isBirthDate) {
+            try {
+              const selectedDate = parseISO(val);
+              const today = startOfDay(new Date());
+              if (isBefore(today, selectedDate)) {
+                newErrors[fieldKey] = "Future dates are not allowed for birth date";
+                hasError = true;
+              }
+            } catch (e) {
+              const todayStr = format(new Date(), "dd-MM-yyyy");
+              if (val > todayStr) {
+                newErrors[fieldKey] = "Future dates are not allowed for birth date";
+                hasError = true;
+              }
+            }
+          }
+        }
+      }
+
+      if (hasError && !firstErrorKey) {
+        firstErrorKey = fieldKey;
+      }
+    });
+
+    setFieldErrors(newErrors);
+
+    if (firstErrorKey) {
+      setTimeout(() => {
+        const el = document.getElementById(`field-${firstErrorKey}`) || document.querySelector(`[data-field-key="${firstErrorKey}"]`);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    }
+
+    return Object.keys(newErrors).length === 0;
   };
 
   const getFileNameDisplay = (val, fieldKey, defaultLabel) => {
@@ -277,31 +360,9 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
       Toast({ message: "Please select a date.", type: "error" });
       return;
     }
-    if (!newBookingSlot) {
-      Toast({ message: "Please select a time slot.", type: "error" });
+
+    if (!validateDynamicResponses()) {
       return;
-    }
-
-    let missingField = null;
-    formFields.forEach(f => {
-      if (f.required && !editResponses[f.fieldKey]) {
-        missingField = f.label;
-      }
-    });
-
-    if (missingField) {
-      Toast({ message: `Field "${missingField}" is required.`, type: "error" });
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    for (const f of formFields) {
-      const isEmail = f.type === "email" || f.label?.toLowerCase().includes("email");
-      const val = editResponses[f.fieldKey];
-      if (isEmail && val && !emailRegex.test(String(val).trim())) {
-        Toast({ message: `Please enter a valid email address for "${f.label}".`, type: "error" });
-        return;
-      }
     }
 
     const [startTime, endTime] = newBookingSlot.split("-");
@@ -348,7 +409,7 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
           <p className="text-sm text-gray-500 font-medium">Update appointment date, time window, status, and response details below.</p>
         </div>
 
-        <form onSubmit={handleEditSubmit} className="p-4 sm:p-6">
+        <form onSubmit={handleEditSubmit} noValidate className="p-4 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start w-full">
             {/* Left Column: Calendar Date Selection */}
             <div className="w-full space-y-4">
@@ -499,72 +560,99 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                     {isLoadingSlots ? (
                       <p className="text-xs text-gray-400">Loading available slots...</p>
                     ) : (
-                      <select
-                        value={newBookingSlot}
-                        required
-                        onChange={(e) => setNewBookingSlot(e.target.value)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
-                      >
-                        <option value="">-- Select a Slot --</option>
-                        {(() => {
-                          const slotsArray = Array.isArray(availableSlots) ? availableSlots : [];
-                          const renderedSlots = [...slotsArray];
-                          if (selectedBooking && selectedBooking.slotStartTime && selectedBooking.slotEndTime) {
-                            const currentSlotKey = `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
-                            const exists = renderedSlots.some(s => `${s.startTime}-${s.endTime}` === currentSlotKey);
-                            if (!exists) {
-                              renderedSlots.unshift({
-                                startTime: selectedBooking.slotStartTime,
-                                endTime: selectedBooking.slotEndTime,
-                                status: "available"
-                              });
+                      <div>
+                        <select
+                          id="field-slot"
+                          data-field-key="slot"
+                          value={newBookingSlot}
+                          onChange={(e) => {
+                            setNewBookingSlot(e.target.value);
+                            if (fieldErrors.slot) {
+                              setFieldErrors((prev) => ({ ...prev, slot: null }));
                             }
-                          }
-                          return renderedSlots.map((s) => {
-                            const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
-                            const isAvailable = s.status === "available" || isCurrentSlot;
-                            const isBooked = s.status === "booked" && !isCurrentSlot;
-                            const isBreak = s.status === "break";
+                          }}
+                          className={`w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${fieldErrors.slot
+                            ? "border-red-500 focus:border-red-500"
+                            : "border-gray-300 focus:border-blue-500"
+                            }`}
+                        >
+                          <option value="">-- Select a Slot --</option>
+                          {(() => {
+                            const slotsArray = Array.isArray(availableSlots) ? availableSlots : [];
+                            const renderedSlots = Array.isArray(availableSlots) ? [...slotsArray] : [];
+                            if (selectedBooking && selectedBooking.slotStartTime && selectedBooking.slotEndTime) {
+                              const currentSlotKey = `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                              const exists = renderedSlots.some(s => `${s.startTime}-${s.endTime}` === currentSlotKey);
+                              if (!exists) {
+                                renderedSlots.unshift({
+                                  startTime: selectedBooking.slotStartTime,
+                                  endTime: selectedBooking.slotEndTime,
+                                  status: "available"
+                                });
+                              }
+                            }
+                            return renderedSlots.map((s) => {
+                              const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
+                              const isAvailable = s.status === "available" || isCurrentSlot;
+                              const isBooked = s.status === "booked" && !isCurrentSlot;
+                              const isBreak = s.status === "break";
 
-                            let label = `${s.startTime} - ${s.endTime}`;
-                            if (isCurrentSlot) label += " (Current Slot)";
-                            else if (isBooked) label += " (Already Booked)";
-                            else if (isBreak) label += " (Break Slot)";
+                              let label = `${s.startTime} - ${s.endTime}`;
+                              if (isCurrentSlot) label += " (Current Slot)";
+                              else if (isBooked) label += " (Already Booked)";
+                              else if (isBreak) label += " (Break Slot)";
 
-                            return (
-                              <option
-                                key={`${s.startTime}-${s.endTime}`}
-                                value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
-                                disabled={!isAvailable}
-                                className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
-                              >
-                                {label}
-                              </option>
-                            );
-                          });
-                        })()}
-                      </select>
+                              return (
+                                <option
+                                  key={`${s.startTime}-${s.endTime}`}
+                                  value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
+                                  disabled={!isAvailable}
+                                  className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
+                                >
+                                  {label}
+                                </option>
+                              );
+                            });
+                          })()}
+                        </select>
+                        {fieldErrors.slot && (
+                          <p className="mt-1.5 text-xs text-red-500 font-bold">{fieldErrors.slot}</p>
+                        )}
+                      </div>
                     )}
                   </div>
 
                   <div className="space-y-4 border-t border-gray-100 pt-5">
                     <span className="block text-sm font-bold text-gray-550 border-b pb-1.5">Response Fields</span>
                     {formFields.map((field) => {
-                      const val = editResponses[field.fieldKey] || "";
+                      const fieldKey = field.fieldKey || field.name || field.label;
+                      const val = editResponses[fieldKey] || "";
                       const isEmail = field.type === "email" || field.label?.toLowerCase().includes("email");
-                      const isNumeric = field.type === "tel" || field.type === "number" || field.label?.toLowerCase().includes("phone") || field.label?.toLowerCase().includes("tel");
+                      const isNumeric = field.type === "tel" || field.type === "number" || field.label?.toLowerCase().includes("phone") || field.label?.toLowerCase().includes("tel") || field.label?.toLowerCase().includes("mobile");
+                      const isDate = field.type === "date" || field.label?.toLowerCase().includes("date");
+                      const hasError = fieldErrors[fieldKey];
+
+                      const inputBaseClass = `w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${hasError
+                        ? "border-red-500 focus:border-red-500"
+                        : "border-gray-300 focus:border-blue-500"
+                        }`;
+
+                      const isBirthDate = field.label?.toLowerCase().includes("birth") ||
+                        field.label?.toLowerCase().includes("dob") ||
+                        field.label?.toLowerCase().includes("bday");
 
                       return (
-                        <div key={field.fieldKey}>
+                        <div key={fieldKey}>
                           <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                            {field.label} {field.required && <span className="text-red-500">*</span>}
+                            {field.label} {field.required && <span className="text-red-500 font-semibold">*</span>}
                           </label>
                           {field.type === "select" ? (
                             <select
+                              id={`field-${fieldKey}`}
+                              data-field-key={fieldKey}
                               value={val}
-                              required={field.required}
-                              onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              onChange={(e) => handleEditResponseChange(fieldKey, e.target.value)}
+                              className={inputBaseClass}
                             >
                               <option value="">Select option</option>
                               {(field.options || []).map((opt) => (
@@ -573,10 +661,12 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                             </select>
                           ) : field.type === "textarea" ? (
                             <textarea
+                              id={`field-${fieldKey}`}
+                              data-field-key={fieldKey}
                               value={val}
                               required={field.required}
                               onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
-                              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 min-h-20"
+                              className={`${inputBaseClass} min-h-20`}
                             />
                           ) : field.type === "image" ? (
                             <div className="space-y-2">
@@ -676,26 +766,40 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                             </div>
                           ) : (
                             <input
-                              type={isNumeric ? "tel" : isEmail ? "email" : field.type === "number" ? "number" : "text"}
+                              id={`field-${fieldKey}`}
+                              data-field-key={fieldKey}
+                              type={isNumeric ? "text" : isDate ? "date" : isEmail ? "email" : "text"}
+                              inputMode={isNumeric ? "numeric" : undefined}
+                              maxLength={isNumeric ? 10 : undefined}
+                              max={isDate && isBirthDate ? format(new Date(), "yyyy-MM-dd") : undefined}
                               value={val}
-                              required={field.required}
                               onChange={(e) => {
                                 let inputVal = e.target.value;
                                 if (isNumeric) {
-                                  inputVal = inputVal.replace(/\D/g, "");
+                                  inputVal = inputVal.replace(/\D/g, "").slice(0, 10);
                                 }
-                                handleEditResponseChange(field.fieldKey, inputVal);
+                                handleEditResponseChange(fieldKey, inputVal);
                               }}
                               onKeyDown={(e) => {
                                 if (isNumeric) {
-                                  const allowedKeys = ["Backspace", "Tab", "Delete", "ArrowLeft", "ArrowRight", "Enter"];
+                                  const allowedKeys = ["Backspace", "Tab", "Delete", "ArrowLeft", "ArrowRight", "Enter", "Home", "End"];
                                   if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key) && !e.ctrlKey && !e.metaKey) {
                                     e.preventDefault();
                                   }
                                 }
                               }}
-                              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500"
+                              onClick={(e) => {
+                                if (isDate && e.target && typeof e.target.showPicker === "function") {
+                                  try {
+                                    e.target.showPicker();
+                                  } catch (err) { }
+                                }
+                              }}
+                              className={`${inputBaseClass} ${isDate ? "cursor-pointer" : ""}`}
                             />
+                          )}
+                          {hasError && (
+                            <p className="mt-1.5 text-xs text-red-500 font-bold">{hasError}</p>
                           )}
                         </div>
                       );

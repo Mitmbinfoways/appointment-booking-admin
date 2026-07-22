@@ -43,35 +43,17 @@ export default function LoginPage() {
   const passwordRef = useRef(null);
 
   const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const re = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
     return re.test(email);
-  };
-
-  const validateMobile = (mobile) => {
-    const re = /^[0-9]{10}$/;
-    return re.test(mobile);
-  };
-
-  const getIdentifierType = (identifier) => {
-    if (validateEmail(identifier)) return "email";
-    if (validateMobile(identifier)) return "mobile";
-    return null;
   };
 
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.identifier || formData.identifier.trim() === "") {
-      newErrors.identifier = "Email or mobile number is required";
-    } else {
-      const identifierType = getIdentifierType(formData.identifier);
-      if (!identifierType) {
-        if (/^[0-9]+$/.test(formData.identifier)) {
-          newErrors.identifier = "Mobile number must be exactly 10 digits";
-        } else {
-          newErrors.identifier = "Please enter a valid email address or mobile number";
-        }
-      }
+      newErrors.identifier = "Email address is required";
+    } else if (!validateEmail(formData.identifier.trim())) {
+      newErrors.identifier = "Please enter a valid email address";
     }
 
     if (!formData.password) {
@@ -136,18 +118,9 @@ export default function LoginPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    let processedValue = value;
-
-    if (name === "identifier") {
-      const isMobileInput = /^[0-9]/.test(value) && !value.includes("@");
-      if (isMobileInput) {
-        processedValue = value.replace(/\D/g, "").slice(0, 10);
-      }
-    }
-
     setFormData((prev) => ({
       ...prev,
-      [name]: processedValue,
+      [name]: value,
     }));
 
     if (errors[name]) {
@@ -178,7 +151,6 @@ export default function LoginPage() {
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Welcome Back</h1>
             <p className="text-gray-600 mt-2">Login to your Booking Admin account</p>
-            <p className="text-xs text-gray-400 mt-1">Hint: Enter any valid email/mobile & 6+ digit password</p>
           </div>
 
           {submitSuccess && (
@@ -189,6 +161,7 @@ export default function LoginPage() {
           )}
 
           <form
+            noValidate
             onSubmit={(e) => {
               e.preventDefault();
               handleSubmit();
@@ -197,7 +170,7 @@ export default function LoginPage() {
           >
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email or Mobile Number <span className="text-red-500">*</span>
+                Email Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Mail
@@ -220,7 +193,7 @@ export default function LoginPage() {
                       ? "border-blue-500 bg-gray-50 focus:border-blue-500"
                       : "border-blue-200 hover:border-blue-300 focus:border-blue-500"
                   }`}
-                  placeholder="Enter email or mobile number"
+                  placeholder="Enter your email address"
                 />
               </div>
               {errors.identifier && (

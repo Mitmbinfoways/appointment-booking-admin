@@ -171,9 +171,12 @@ export default function HolidaysPage() {
     return days;
   }, [selectedYear, selectedMonth, holidays, slotSettings]);
 
+  const [holidayTitleError, setHolidayTitleError] = useState("");
+
   const handleDateClick = (dayObj) => {
     if (!dayObj.dateStr) return;
     setActiveDate(dayObj.dateStr);
+    setHolidayTitleError("");
 
     const existing = holidays.find((h) => h.date === dayObj.dateStr);
     if (existing) {
@@ -195,9 +198,14 @@ export default function HolidaysPage() {
   const handleSaveHoliday = async (e) => {
     e.preventDefault();
     if (!holidayTitle.trim()) {
-      Toast({ message: "Please enter a holiday title / reason", type: "error" });
+      setHolidayTitleError("Holiday Title / Reason is required");
+      setTimeout(() => {
+        const el = document.getElementById("holiday-title-input");
+        if (el) el.focus();
+      }, 50);
       return;
     }
+    setHolidayTitleError("");
 
     const payload = {
       date: toDbDateFormat(activeDate),
@@ -559,7 +567,7 @@ export default function HolidaysPage() {
 
       {/* Set/Update Holiday Modal */}
       <CustomModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <form onSubmit={handleSaveHoliday} className="space-y-4">
+        <form onSubmit={handleSaveHoliday} noValidate className="space-y-4">
           <h4 className="text-xl font-bold text-gray-800 mb-1">
             {holidays.some((h) => h.date === activeDate) ? "Update Holiday" : "Configure Holiday"}
           </h4>
@@ -572,13 +580,19 @@ export default function HolidaysPage() {
               Holiday Title / Reason <span className="text-red-500">*</span>
             </label>
             <input
+              id="holiday-title-input"
               type="text"
-              required
               value={holidayTitle}
-              onChange={(e) => setHolidayTitle(e.target.value)}
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white text-gray-800"
+              onChange={(e) => {
+                setHolidayTitle(e.target.value);
+                if (holidayTitleError) setHolidayTitleError("");
+              }}
+              className={`w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${holidayTitleError ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"}`}
               placeholder="e.g. Independence Day, Eid, Christmas"
             />
+            {holidayTitleError && (
+              <p className="mt-1.5 text-xs text-red-500 font-bold">{holidayTitleError}</p>
+            )}
           </div>
 
           <div>

@@ -352,7 +352,7 @@ export default function AdminSlotSettingsPage() {
             Loading slot settings...
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} noValidate className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -598,7 +598,6 @@ export default function AdminSlotSettingsPage() {
                                           type="text"
                                           value={brk.name}
                                           onChange={(e) => handleDayBreakChange(dayName, bIdx, "name", e.target.value)}
-                                          required
                                           placeholder="Break Name"
                                           className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none w-24 text-gray-800 font-semibold"
                                         />
@@ -607,7 +606,6 @@ export default function AdminSlotSettingsPage() {
                                           value={brk.startTime}
                                           onChange={(e) => handleDayBreakChange(dayName, bIdx, "startTime", e.target.value)}
                                           onClick={(e) => { try { e.target.showPicker(); } catch (err) { } }}
-                                          required
                                           className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
                                         />
                                         <span className="text-gray-400 text-xs">to</span>
@@ -616,7 +614,6 @@ export default function AdminSlotSettingsPage() {
                                           value={brk.endTime}
                                           onChange={(e) => handleDayBreakChange(dayName, bIdx, "endTime", e.target.value)}
                                           onClick={(e) => { try { e.target.showPicker(); } catch (err) { } }}
-                                          required
                                           className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
                                         />
                                         <button
