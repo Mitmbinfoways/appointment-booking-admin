@@ -376,7 +376,7 @@ export default function Dashboard() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
-                  onClick={() => router.push("/admins")}
+                  onClick={() => router.push("/admins?action=create")}
                   className="flex items-center justify-between p-4 rounded-lg border border-blue-100 bg-blue-50/40 hover:bg-blue-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
                 >
                   <div className="flex items-center gap-3">

@@ -31,6 +31,10 @@ export default function AdminsPage() {
   useEffect(() => {
     const statusP = searchParams?.get("status") || "";
     setStatusFilter(statusP);
+    const actionP = searchParams?.get("action") || searchParams?.get("create") || "";
+    if (actionP === "create" || actionP === "true") {
+      setIsModalOpen(true);
+    }
   }, [searchParams]);
 
   const toggleSecretVisibility = (id) => {
@@ -553,7 +557,7 @@ export default function AdminsPage() {
       <CustomModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <div className="w-full">
           <div className="border-b border-gray-200 pb-4 mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Create Sub-Admin</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Create Admin</h3>
             <p className="text-sm text-gray-500">Add a new admin account to deploy their booking slots.</p>
           </div>
 
