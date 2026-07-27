@@ -786,6 +786,7 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                               required={field.required}
                               onChange={(e) => handleEditResponseChange(field.fieldKey, e.target.value)}
                               className={`${inputBaseClass} min-h-20`}
+                              placeholder={`Enter ${field.label.toLowerCase()}`}
                             />
                           ) : field.type === "image" ? (
                             <div className="space-y-2">
@@ -919,6 +920,7 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                                   } catch (err) { }
                                 }
                               }}
+                              placeholder={isDate ? undefined : `Enter ${field.label.toLowerCase()}`}
                               className={`${inputBaseClass} ${isDate ? "cursor-pointer" : ""}`}
                             />
                           )}

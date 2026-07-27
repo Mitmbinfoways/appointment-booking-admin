@@ -844,6 +844,7 @@ export default function CreateAppointmentPage() {
                                 )
                               }
                               className={`${inputBaseClass} min-h-20`}
+                              placeholder={`Enter ${field.label.toLowerCase()}`}
                             />
                           ) : field.type === "image" ? (
                             <div className="space-y-2">
@@ -1006,6 +1007,7 @@ export default function CreateAppointmentPage() {
                                   } catch (err) { }
                                 }
                               }}
+                              placeholder={isDate ? undefined : `Enter ${field.label.toLowerCase()}`}
                               className={`${inputBaseClass} ${isDate ? "cursor-pointer" : ""}`}
                             />
                           )}

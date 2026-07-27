@@ -588,7 +588,7 @@ export default function HolidaysPage() {
                 if (holidayTitleError) setHolidayTitleError("");
               }}
               className={`w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${holidayTitleError ? "border-red-500 focus:border-red-500" : "border-gray-300 focus:border-blue-500"}`}
-              placeholder="e.g. Independence Day, Eid, Christmas"
+              placeholder="e.g. Independence Day"
             />
             {holidayTitleError && (
               <p className="mt-1.5 text-xs text-red-500 font-bold">{holidayTitleError}</p>

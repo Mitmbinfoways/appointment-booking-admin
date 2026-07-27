@@ -584,7 +584,7 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
               value={holidayTitle}
               onChange={(e) => setHolidayTitle(e.target.value)}
               className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white text-gray-800"
-              placeholder="e.g. Independence Day, Eid, Christmas"
+              placeholder="e.g. Independence Day"
             />
           </div>
 
