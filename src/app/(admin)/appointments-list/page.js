@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import {
@@ -35,6 +35,7 @@ const getStatusClass = (status) => {
 
 export default function AppointmentsListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const adminState = useSelector((state) => state.admin) || {};
   const { admin } = adminState;
 
@@ -51,6 +52,46 @@ export default function AppointmentsListPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // Parse URL parameters from card clicks
+  useEffect(() => {
+    const statusP = searchParams?.get("status");
+    const filterP = searchParams?.get("filter");
+    const startP = searchParams?.get("startDate");
+    const endP = searchParams?.get("endDate");
+
+    const formatYMD = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    if (statusP) {
+      setStatusFilter(statusP);
+    }
+    if (filterP === "today") {
+      const todayStr = formatYMD(new Date());
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (filterP === "week") {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + distanceToMonday);
+
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      setStartDate(formatYMD(monday));
+      setEndDate(formatYMD(sunday));
+    } else {
+      if (startP) setStartDate(startP);
+      if (endP) setEndDate(endP);
+    }
+  }, [searchParams]);
 
   const getNumericBookingId = (b) => {
     if (!b) return "";
@@ -162,8 +203,15 @@ export default function AppointmentsListPage() {
     });
   }, [formFields]);
 
-  // Bookings are already filtered by backend, pass through directly
-  const filteredBookings = bookingsList;
+  // Apply fallback client-side filter on bookingsList to ensure responsive filtering
+  const filteredBookings = useMemo(() => {
+    return bookingsList.filter((b) => {
+      if (startDate && b.slotDate && b.slotDate < startDate) return false;
+      if (endDate && b.slotDate && b.slotDate > endDate) return false;
+      if (statusFilter && b.status && b.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
+      return true;
+    });
+  }, [bookingsList, startDate, endDate, statusFilter]);
 
   // Action Triggers
   const handleViewClick = (booking) => {

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import Button from "@/components/UI/Button";
@@ -20,10 +21,17 @@ import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 
 export default function AdminsPage() {
+  const searchParams = useSearchParams();
   const [adminsList, setAdminsList] = useState([]);
   const [visibleSecrets, setVisibleSecrets] = useState({});
   const [copiedField, setCopiedField] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+
+  useEffect(() => {
+    const statusP = searchParams?.get("status") || "";
+    setStatusFilter(statusP);
+  }, [searchParams]);
 
   const toggleSecretVisibility = (id) => {
     setVisibleSecrets((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -64,10 +72,12 @@ export default function AdminsPage() {
   const [formErrors, setFormErrors] = useState({});
   const [editFormErrors, setEditFormErrors] = useState({});
 
-  const fetchAdmins = async () => {
+  const fetchAdmins = async (statusVal = statusFilter) => {
     setIsLoading(true);
     try {
-      const res = await getAdminsList();
+      const params = {};
+      if (statusVal) params.status = statusVal;
+      const res = await getAdminsList(params);
       if (res.status === 200 && res.data?.statusCode === 200) {
         setAdminsList(res.data.data);
       } else {
@@ -82,8 +92,8 @@ export default function AdminsPage() {
   };
 
   useEffect(() => {
-    fetchAdmins();
-  }, []);
+    fetchAdmins(statusFilter);
+  }, [statusFilter]);
 
   const handleToggleActive = async (adminId) => {
     try {
@@ -341,9 +351,20 @@ export default function AdminsPage() {
             <h3 className="text-lg font-semibold text-gray-900">Admin Accounts</h3>
             <p className="text-sm text-gray-500">Create, review, edit, and toggle active status of sub-admin accounts.</p>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} variant="primary" size="md">
-            Create Admin
-          </Button>
+          <div className="flex items-center gap-3">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700 bg-white cursor-pointer"
+            >
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <Button onClick={() => setIsModalOpen(true)} variant="primary" size="md">
+              Create Admin
+            </Button>
+          </div>
         </div>
 
         {/* Table Section */}

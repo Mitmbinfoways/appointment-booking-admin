@@ -184,22 +184,8 @@ export const updateUserPassword = async (data) => {
   return await axiosInstance.put("/api/admin/profile/change-password", data);
 };
 
-export const getDashboardStats = async () => {
-  // Return stats for Appointment Booking: Bookings, Revenue, Staff, Services
-  return {
-    status: 200,
-    data: {
-      status: true,
-      data: [
-        {
-          totalBookings: { current: 154, percentage_increase: 12 },
-          activeStaff: { current: 8, percentage_increase: 0 },
-          activeServices: { current: 15, percentage_increase: 5 },
-          totalRevenue: { current: 145000, percentage_increase: 18 },
-        },
-      ],
-    },
-  };
+export const getDashboardStats = async (payload = { type: "Admin" }) => {
+  return await axiosInstance.post("/api/admin/dashboard/stats", payload);
 };
 
 export const getBookings = async (params = {}) => {
@@ -259,8 +245,8 @@ export const getCustomersList = async () => {
   };
 };
 
-export const getAdminsList = async () => {
-  return await axiosInstance.get("/api/superadmin/admins");
+export const getAdminsList = async (params = {}) => {
+  return await axiosInstance.get("/api/superadmin/admins", { params });
 };
 
 export const registerAdmin = async (data) => {
