@@ -15,10 +15,10 @@ import {
   getBookings
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
-import Button from "@/components/UI/Button";
 import Tooltip from "@/components/UI/Tooltip";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import FileViewModal from "@/components/UI/FileViewModal";
+import MultiSelectDropdown from "@/components/UI/MultiSelectDropdown";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function EditAppointmentPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
@@ -696,6 +696,87 @@ export default function EditAppointmentPage({ params: paramsPromise }) {
                                 <option key={opt} value={opt}>{opt}</option>
                               ))}
                             </select>
+                          ) : field.type === "multiselect_select" ? (
+                            <MultiSelectDropdown
+                              id={`field-${fieldKey}`}
+                              dataFieldKey={fieldKey}
+                              options={field.options || []}
+                              value={val}
+                              hasError={hasError}
+                              onChange={(selected) => handleEditResponseChange(fieldKey, selected)}
+                              placeholder={`Select ${field.label.toLowerCase()}`}
+                            />
+                          ) : field.type === "checkbox" ? (
+                            <label className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded-lg cursor-pointer select-none">
+                              <input
+                                id={`field-${fieldKey}`}
+                                data-field-key={fieldKey}
+                                type="checkbox"
+                                checked={val === true || val === "true" || val === "1" || val === 1}
+                                onChange={(e) => handleEditResponseChange(fieldKey, e.target.checked)}
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              />
+                              <span className="text-xs font-semibold text-gray-700">{field.label}</span>
+                            </label>
+                          ) : field.type === "multiselect_checkbox" ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-gray-50 border border-gray-300 rounded-lg">
+                              {(field.options || []).map((opt, optIdx) => {
+                                const selectedArr = Array.isArray(val)
+                                  ? val
+                                  : typeof val === "string" && val
+                                    ? val.split(",").map((s) => s.trim())
+                                    : [];
+                                const isChecked = selectedArr.includes(opt);
+                                return (
+                                  <label
+                                    key={optIdx}
+                                    className={`flex items-center gap-2 p-2 rounded border transition-all cursor-pointer select-none ${
+                                      isChecked ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-white border-gray-200 text-gray-700"
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => {
+                                        let updated;
+                                        if (isChecked) {
+                                          updated = selectedArr.filter((i) => i !== opt);
+                                        } else {
+                                          updated = [...selectedArr, opt];
+                                        }
+                                        handleEditResponseChange(fieldKey, updated);
+                                      }}
+                                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    />
+                                    <span className="text-xs font-medium">{opt}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          ) : field.type === "radio" ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-gray-50 border border-gray-300 rounded-lg">
+                              {(field.options || []).map((opt, optIdx) => {
+                                const isSelected = val === opt;
+                                return (
+                                  <label
+                                    key={optIdx}
+                                    className={`flex items-center gap-2 p-2 rounded border transition-all cursor-pointer select-none ${
+                                      isSelected ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-white border-gray-200 text-gray-700"
+                                    }`}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name={`radio-${fieldKey}`}
+                                      value={opt}
+                                      checked={isSelected}
+                                      onChange={() => handleEditResponseChange(fieldKey, opt)}
+                                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                    />
+                                    <span className="text-xs font-medium">{opt}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
                           ) : field.type === "textarea" ? (
                             <textarea
                               id={`field-${fieldKey}`}

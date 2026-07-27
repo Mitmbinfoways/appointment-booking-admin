@@ -8,7 +8,7 @@ import { getAdminFormConfigSuper, updateAdminFormConfigSuper } from "@/config/Ax
 import { Toast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
 
-const FIELD_TYPES = ["text", "number", "email", "tel", "date", "textarea", "select", "image", "video"];
+const FIELD_TYPES = ["text", "number", "email", "tel", "date", "textarea", "select", "multiselect_select", "checkbox", "multiselect_checkbox", "radio", "image", "video"];
 
 export default function AdminFormConfigPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
@@ -71,7 +71,7 @@ export default function AdminFormConfigPage({ params: paramsPromise }) {
       prev.map((f, idx) => {
         if (idx === index) {
           const updated = { ...f, [field]: value };
-          if (field === "type" && value === "select" && !Array.isArray(updated.options)) {
+          if (field === "type" && ["select", "multiselect_select", "multiselect_checkbox", "radio"].includes(value) && !Array.isArray(updated.options)) {
             updated.options = [];
           }
           return updated;
@@ -155,8 +155,8 @@ export default function AdminFormConfigPage({ params: paramsPromise }) {
         Toast({ message: "Field labels cannot be empty.", type: "error" });
         return;
       }
-      if (f.type === "select" && (!f.options || f.options.length === 0)) {
-        Toast({ message: `Please add at least one option for select field "${f.label}".`, type: "error" });
+      if (["select", "multiselect_select", "multiselect_checkbox", "radio"].includes(f.type) && (!f.options || f.options.length === 0)) {
+        Toast({ message: `Please add at least one option for field "${f.label}".`, type: "error" });
         return;
       }
     }
@@ -286,7 +286,7 @@ export default function AdminFormConfigPage({ params: paramsPromise }) {
                       </button>
                     </div>
 
-                    {field.type === "select" && (
+                    {["select", "multiselect_select", "multiselect_checkbox", "radio"].includes(field.type) && (
                       <div className="mt-1 pt-3 border-t border-gray-200 w-full pl-8">
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
                           Select Options
