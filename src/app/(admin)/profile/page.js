@@ -265,8 +265,18 @@ export default function ProfilePage() {
   const clientBaseUrl = typeof window !== "undefined"
     ? `${window.location.protocol}//${window.location.hostname}:3000`
     : "http://localhost:3000";
+
+  const encodeBookingToken = (adminId, secretKey) => {
+    if (!adminId || !secretKey) return "";
+    const raw = `${adminId}:${secretKey}`;
+    return btoa(raw)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  };
+
   const bookingUrl = (profileData.id && profileData.secretKey)
-    ? `${clientBaseUrl}/?adminId=${profileData.id}&key=${profileData.secretKey}`
+    ? `${clientBaseUrl}/?token=${encodeBookingToken(profileData.id, profileData.secretKey)}`
     : "";
 
   return (
