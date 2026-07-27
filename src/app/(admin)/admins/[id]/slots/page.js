@@ -46,10 +46,12 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingDuration, setIsEditingDuration] = useState(false);
+  const [isEditingNotice, setIsEditingNotice] = useState(false);
   const [isEditingCapacity, setIsEditingCapacity] = useState(false);
 
   const [slotSettings, setSlotSettings] = useState({
     slotDurationMinutes: 30,
+    minAdvanceNoticeMinutes: 0,
     capacityPerSlot: 1,
     workingDays: [],
   });
@@ -83,8 +85,9 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
         });
 
         setSlotSettings({
-          slotDurationMinutes: res.data.data.slotDurationMinutes,
-          capacityPerSlot: res.data.data.capacityPerSlot,
+          slotDurationMinutes: res.data.data.slotDurationMinutes || 30,
+          minAdvanceNoticeMinutes: res.data.data.minAdvanceNoticeMinutes || 0,
+          capacityPerSlot: res.data.data.capacityPerSlot || 1,
           workingDays: mappedDays,
         });
       } else {
@@ -164,6 +167,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
 
         setSlotSettings({
           slotDurationMinutes: res.data.data.slotDurationMinutes,
+          minAdvanceNoticeMinutes: res.data.data.minAdvanceNoticeMinutes,
           capacityPerSlot: res.data.data.capacityPerSlot,
           workingDays: mappedDays,
         });
@@ -351,7 +355,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
         ]}
       />
 
-      <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs p-6 max-w-4xl mx-auto">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs p-6">
         <div className="border-b border-gray-200 pb-4 mb-6">
           <h3 className="text-lg font-semibold text-gray-900">Configure Booking Slots & Working Days</h3>
           <p className="text-sm text-gray-500">Edit default slot sizing, hourly limits, and daily availability with custom breaks.</p>
@@ -363,7 +367,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-semibold text-gray-700">
@@ -434,6 +438,88 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                       />
                       <span className="text-xs text-blue-600 font-medium">
                         {formatDurationLabel(slotSettings.slotDurationMinutes)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Minimum Advance Notice (Minutes) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Minimum Advance Notice (Minutes)
+                  </label>
+                  {!isEditingNotice ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingNotice(true)}
+                      className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
+                      title="Edit Minimum Advance Notice"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Edit
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingNotice(false);
+                        saveSlotSettings(slotSettings, false);
+                      }}
+                      className="h-6 px-2.5 text-xs text-white bg-green-600 hover:bg-green-700 font-semibold rounded transition-all duration-150 flex items-center gap-1 focus:outline-none cursor-pointer shadow-sm"
+                      title="Save Minimum Advance Notice"
+                    >
+                      Save
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingNotice ? (
+                  <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 font-medium flex items-center justify-between">
+                    <span>
+                      {slotSettings.minAdvanceNoticeMinutes > 0
+                        ? formatDurationLabel(slotSettings.minAdvanceNoticeMinutes)
+                        : "0 Minutes (Immediate)"}
+                    </span>
+                    <span className="text-xs text-gray-400">({slotSettings.minAdvanceNoticeMinutes || 0} mins)</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    <select
+                      value={[0, 15, 30, 45, 60, 90, 120].includes(slotSettings.minAdvanceNoticeMinutes) ? slotSettings.minAdvanceNoticeMinutes : "custom"}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val !== "custom") {
+                          handleSlotSettingsChange("minAdvanceNoticeMinutes", Number(val));
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
+                    >
+                      <option value={0}>0 Minutes (Immediate Booking)</option>
+                      <option value={15}>15 Minutes Notice</option>
+                      <option value={30}>30 Minutes Notice</option>
+                      <option value={45}>45 Minutes Notice</option>
+                      <option value={60}>60 Minutes (1 Hour Notice)</option>
+                      <option value={90}>90 Minutes (1.5 Hours Notice)</option>
+                      <option value={120}>120 Minutes (2 Hours Notice)</option>
+                      <option value="custom">Custom Minutes...</option>
+                    </select>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs font-semibold text-gray-600">Custom Minutes:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        value={slotSettings.minAdvanceNoticeMinutes || 0}
+                        onChange={(e) => handleSlotSettingsChange("minAdvanceNoticeMinutes", Math.max(0, Number(e.target.value)))}
+                        className="w-28 p-1.5 border border-gray-300 rounded-md text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 font-semibold"
+                        placeholder="e.g. 15, 30"
+                      />
+                      <span className="text-xs text-blue-600 font-medium">
+                        {formatDurationLabel(slotSettings.minAdvanceNoticeMinutes)}
                       </span>
                     </div>
                   </div>

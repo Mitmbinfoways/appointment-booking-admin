@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
-import { format, parseISO, isBefore, startOfDay } from "date-fns";
+import { format, parseISO, isBefore, isEqual, startOfDay } from "date-fns";
 import {
   getAdminFormConfigSuper,
   getAvailableSlotsList,
@@ -201,6 +201,8 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
     return days;
   }, [selectedYear, selectedMonth, holidays, slotSettings]);
 
+  const [minAdvanceNoticeMinutes, setMinAdvanceNoticeMinutes] = useState(0);
+
   // Load available slots when date changes
   useEffect(() => {
     const loadSlots = async () => {
@@ -211,6 +213,7 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
         if (res.status === 200 && res.data?.statusCode === 200) {
           const rawData = res.data.data;
           const slotsList = Array.isArray(rawData) ? rawData : (rawData?.slots || []);
+          setMinAdvanceNoticeMinutes(rawData?.minAdvanceNoticeMinutes || 0);
           setAvailableSlots(slotsList);
         } else {
           setAvailableSlots([]);
@@ -607,22 +610,53 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
                               }
                             }
                             return renderedSlots.map((s) => {
+                              let isPastOrCurrent = false;
+                              if (newBookingDate && s.startTime) {
+                                try {
+                                  const formattedTime = s.startTime.includes(":")
+                                    ? s.startTime.split(":").map(p => p.padStart(2, "0")).join(":")
+                                    : s.startTime;
+                                  const slotStartDateTime = parseISO(`${newBookingDate}T${formattedTime}:00`);
+                                  const now = new Date();
+                                  const effectiveMinNotice = (typeof minAdvanceNoticeMinutes === "number" && minAdvanceNoticeMinutes > 0)
+                                    ? minAdvanceNoticeMinutes
+                                    : (slotSettings?.minAdvanceNoticeMinutes || 0);
+                                  const cutoffTime = effectiveMinNotice > 0
+                                    ? new Date(now.getTime() + effectiveMinNotice * 60 * 1000)
+                                    : now;
+                                  isPastOrCurrent = isBefore(slotStartDateTime, cutoffTime) || isEqual(slotStartDateTime, cutoffTime);
+                                } catch (e) { }
+                              }
+
                               const isCurrentSlot = selectedBooking && `${s.startTime}-${s.endTime}` === `${selectedBooking.slotStartTime}-${selectedBooking.slotEndTime}`;
-                              const isAvailable = s.status === "available" || isCurrentSlot;
+                              const isAvailable = (s.status === "available" || isCurrentSlot) && !isPastOrCurrent;
                               const isBooked = s.status === "booked" && !isCurrentSlot;
                               const isBreak = s.status === "break";
 
                               let label = `${s.startTime} - ${s.endTime}`;
-                              if (isCurrentSlot) label += " (Current Slot)";
-                              else if (isBooked) label += " (Already Booked)";
-                              else if (isBreak) label += " (Break Slot)";
+                              let optionClass = "";
+
+                              if (isCurrentSlot && !isPastOrCurrent) {
+                                label += " (Current Slot)";
+                                optionClass = "bg-blue-50 text-blue-700 font-bold";
+                              } else if (isBooked) {
+                                label += " (Booked)";
+                                optionClass = "bg-gray-100 text-gray-400 font-normal";
+                              } else if (isBreak) {
+                                label += " (Break Slot)";
+                                optionClass = "bg-gray-100 text-gray-400 font-normal";
+                              } else if (isPastOrCurrent) {
+                                optionClass = "bg-gray-100 text-gray-400 font-normal";
+                              } else {
+                                optionClass = "bg-white text-gray-800 font-semibold";
+                              }
 
                               return (
                                 <option
                                   key={`${s.startTime}-${s.endTime}`}
                                   value={isAvailable ? `${s.startTime}-${s.endTime}` : ""}
                                   disabled={!isAvailable}
-                                  className={!isAvailable ? "text-gray-400 bg-gray-100 font-normal" : ""}
+                                  className={optionClass}
                                 >
                                   {label}
                                 </option>
@@ -759,15 +793,15 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
                                       </button>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                      <div 
-                                         onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
-                                         className="cursor-pointer"
-                                       >
-                                         <video
-                                           src={val}
-                                           className="w-44 h-28 object-cover rounded-lg border border-gray-200 shadow-xs bg-black pointer-events-none"
-                                         />
-                                       </div>
+                                      <div
+                                        onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                                        className="cursor-pointer"
+                                      >
+                                        <video
+                                          src={val}
+                                          className="w-44 h-28 object-cover rounded-lg border border-gray-200 shadow-xs bg-black pointer-events-none"
+                                        />
+                                      </div>
                                       <label
                                         htmlFor={`file_input_${field.fieldKey}`}
                                         className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors shadow-2xs"

@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
-import { format, parseISO, isBefore, startOfDay } from "date-fns";
+import { format, parseISO, isBefore, isEqual, startOfDay } from "date-fns";
 import {
   getAdminFormConfig,
   getAvailableSlotsList,
@@ -180,6 +180,8 @@ export default function CreateAppointmentPage() {
     return days;
   }, [selectedYear, selectedMonth, holidays, slotSettings]);
 
+  const [minAdvanceNoticeMinutes, setMinAdvanceNoticeMinutes] = useState(0);
+
   // Load available slots when date changes
   useEffect(() => {
     const loadSlots = async () => {
@@ -192,6 +194,10 @@ export default function CreateAppointmentPage() {
           const slotsList = Array.isArray(rawData)
             ? rawData
             : rawData?.slots || [];
+          const notice = (rawData && !Array.isArray(rawData) && typeof rawData.minAdvanceNoticeMinutes === "number")
+            ? rawData.minAdvanceNoticeMinutes
+            : (slotSettings?.minAdvanceNoticeMinutes || 0);
+          setMinAdvanceNoticeMinutes(notice);
           setAvailableSlots(slotsList);
         } else {
           setAvailableSlots([]);
@@ -630,13 +636,42 @@ export default function CreateAppointmentPage() {
                             ? availableSlots
                             : []
                           ).map((s) => {
-                            const isAvailable = s.status === "available";
+                            let isPastOrCurrent = false;
+                            if (newBookingDate && s.startTime) {
+                              try {
+                                const formattedTime = s.startTime.includes(":")
+                                  ? s.startTime.split(":").map(p => p.padStart(2, "0")).join(":")
+                                  : s.startTime;
+                                const slotStartDateTime = parseISO(`${newBookingDate}T${formattedTime}:00`);
+                                const now = new Date();
+                                const effectiveMinNotice = (typeof minAdvanceNoticeMinutes === "number" && minAdvanceNoticeMinutes > 0)
+                                  ? minAdvanceNoticeMinutes
+                                  : (slotSettings?.minAdvanceNoticeMinutes || 0);
+                                const cutoffTime = effectiveMinNotice > 0
+                                  ? new Date(now.getTime() + effectiveMinNotice * 60 * 1000)
+                                  : now;
+                                isPastOrCurrent = isBefore(slotStartDateTime, cutoffTime) || isEqual(slotStartDateTime, cutoffTime);
+                              } catch (e) { }
+                            }
+
                             const isBooked = s.status === "booked";
                             const isBreak = s.status === "break";
+                            const isAvailable = s.status === "available" && !isPastOrCurrent;
 
                             let label = `${s.startTime} - ${s.endTime}`;
-                            if (isBooked) label += " (Already Booked)";
-                            else if (isBreak) label += " (Break Slot)";
+                            let optionClass = "";
+
+                            if (isBooked) {
+                              label += " (Booked)";
+                              optionClass = "bg-gray-100 text-gray-400 font-normal";
+                            } else if (isBreak) {
+                              label += " (Break Slot)";
+                              optionClass = "bg-gray-100 text-gray-400 font-normal";
+                            } else if (isPastOrCurrent) {
+                              optionClass = "bg-gray-100 text-gray-400 font-normal";
+                            } else {
+                              optionClass = "bg-white text-gray-800 font-semibold";
+                            }
 
                             return (
                               <option
@@ -645,11 +680,7 @@ export default function CreateAppointmentPage() {
                                   isAvailable ? `${s.startTime}-${s.endTime}` : ""
                                 }
                                 disabled={!isAvailable}
-                                className={
-                                  !isAvailable
-                                    ? "text-gray-400 bg-gray-100 font-normal"
-                                    : ""
-                                }
+                                className={optionClass}
                               >
                                 {label}
                               </option>
@@ -816,7 +847,7 @@ export default function CreateAppointmentPage() {
                                       </button>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                      <div 
+                                      <div
                                         onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
                                         className="cursor-pointer"
                                       >
