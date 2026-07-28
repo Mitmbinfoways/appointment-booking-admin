@@ -535,7 +535,7 @@ export default function ProfilePage() {
         </div>
 
         {/* API & Booking Integration Credentials Card */}
-        {profileData.role !== "SuperAdmin" && profileData.role !== "superadmin" && (
+        {profileData.role !== "SuperAdmin" && profileData.role !== "superadmin" && profileData.showApiCredentials && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs p-6 lg:col-span-2">
             <div className="border-b border-gray-200 pb-4 mb-6">
               <h3 className="text-lg font-semibold text-gray-900">API & Integration Credentials</h3>
