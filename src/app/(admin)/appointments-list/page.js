@@ -8,7 +8,7 @@ import PageBreadcrumb from "@/components/PageBreadcrumb";
 import {
   getAdminFormConfig,
   getBookings,
-  deleteAdminBookingRecord
+  deleteAdminBookingRecord,
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
@@ -47,8 +47,16 @@ export default function AppointmentsListPage() {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [filePreview, setFilePreview] = useState({ isOpen: false, url: "", type: "image", title: "" });
-  const [prescriptionModal, setPrescriptionModal] = useState({ isOpen: false, booking: null });
+  const [filePreview, setFilePreview] = useState({
+    isOpen: false,
+    url: "",
+    type: "image",
+    title: "",
+  });
+  const [prescriptionModal, setPrescriptionModal] = useState({
+    isOpen: false,
+    booking: null,
+  });
   const [searchFilter, setSearchFilter] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -192,14 +200,14 @@ export default function AppointmentsListPage() {
 
   // Columns classification
   const mediaFields = useMemo(() => {
-    return formFields.filter(f => {
+    return formFields.filter((f) => {
       const type = f.type || f.inputType;
       return type === "image" || type === "video";
     });
   }, [formFields]);
 
   const regularFields = useMemo(() => {
-    return formFields.filter(f => {
+    return formFields.filter((f) => {
       const type = f.type || f.inputType;
       return type !== "image" && type !== "video";
     });
@@ -210,7 +218,12 @@ export default function AppointmentsListPage() {
     return bookingsList.filter((b) => {
       if (startDate && b.slotDate && b.slotDate < startDate) return false;
       if (endDate && b.slotDate && b.slotDate > endDate) return false;
-      if (statusFilter && b.status && b.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
+      if (
+        statusFilter &&
+        b.status &&
+        b.status.toLowerCase() !== statusFilter.toLowerCase()
+      )
+        return false;
       return true;
     });
   }, [bookingsList, startDate, endDate, statusFilter]);
@@ -249,9 +262,15 @@ export default function AppointmentsListPage() {
 
   return (
     <>
-      <PageMeta title="Appointments List - Booking Admin" description="Manage user appointments" />
+      <PageMeta
+        title="Appointments List - Booking Admin"
+        description="Manage user appointments"
+      />
       <PageBreadcrumb
-        items={[{ label: "Home", to: "/" }, { label: "Appointments List", to: "/appointments-list" }]}
+        items={[
+          { label: "Home", to: "/" },
+          { label: "Appointments List", to: "/appointments-list" },
+        ]}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
@@ -271,7 +290,11 @@ export default function AppointmentsListPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              onClick={(e) => { try { e.target.showPicker(); } catch (err) { } }}
+              onClick={(e) => {
+                try {
+                  e.target.showPicker();
+                } catch (err) {}
+              }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
             />
             <span className="text-gray-500 text-sm hidden sm:inline">to</span>
@@ -279,7 +302,11 @@ export default function AppointmentsListPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              onClick={(e) => { try { e.target.showPicker(); } catch (err) { } }}
+              onClick={(e) => {
+                try {
+                  e.target.showPicker();
+                } catch (err) {}
+              }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
             />
             {/* Status Filter */}
@@ -294,7 +321,12 @@ export default function AppointmentsListPage() {
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
-          <Button onClick={handleCreateClick} variant="primary" size="md" className="shrink-0">
+          <Button
+            onClick={handleCreateClick}
+            variant="primary"
+            size="md"
+            className="shrink-0"
+          >
             Create Appointment
           </Button>
         </div>
@@ -305,12 +337,10 @@ export default function AppointmentsListPage() {
             <THead>
               <TR>
                 <TH>SR NO</TH>
-                {/* Dynamically render Media Columns (Image / Video) first */}
                 {mediaFields.map((field) => (
                   <TH key={field.fieldKey}>{field.label}</TH>
                 ))}
                 <TH>Booking ID</TH>
-                {/* Dynamically render Regular Form Columns */}
                 {regularFields.map((field) => (
                   <TH key={field.fieldKey}>{field.label}</TH>
                 ))}
@@ -323,13 +353,19 @@ export default function AppointmentsListPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={5 + formFields.length}
+                    className="px-6 py-10 text-center text-gray-400 text-sm"
+                  >
                     Loading bookings...
                   </TD>
                 </TR>
               ) : filteredBookings.length === 0 ? (
                 <TR>
-                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={5 + formFields.length}
+                    className="px-6 py-10 text-center text-gray-400 text-sm"
+                  >
                     No bookings found.
                   </TD>
                 </TR>
@@ -337,12 +373,15 @@ export default function AppointmentsListPage() {
                 filteredBookings.map((b, idx) => (
                   <TR key={b._id}>
                     <TD className="text-sm text-gray-500">{idx + 1}</TD>
-
-                    {/* Render matching dynamic responses for Media Columns */}
                     {mediaFields.map((field) => {
-                      const val = b.dynamicResponses?.[field.fieldKey] || b.dynamicResponses?.get?.(field.fieldKey);
+                      const val =
+                        b.dynamicResponses?.[field.fieldKey] ||
+                        b.dynamicResponses?.get?.(field.fieldKey);
                       const fieldType = field.type || field.inputType;
-                      const isImage = fieldType === "image" || (typeof val === "string" && val.startsWith("data:image/"));
+                      const isImage =
+                        fieldType === "image" ||
+                        (typeof val === "string" &&
+                          val.startsWith("data:image/"));
                       return (
                         <TD key={field.fieldKey} className="text-sm">
                           {val ? (
@@ -350,12 +389,26 @@ export default function AppointmentsListPage() {
                               <img
                                 src={val}
                                 alt={field.label}
-                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                                onClick={() =>
+                                  setFilePreview({
+                                    isOpen: true,
+                                    url: val,
+                                    type: "image",
+                                    title: field.label,
+                                  })
+                                }
                                 className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                               />
                             ) : (
                               <div
-                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                                onClick={() =>
+                                  setFilePreview({
+                                    isOpen: true,
+                                    url: val,
+                                    type: "video",
+                                    title: field.label,
+                                  })
+                                }
                                 className="cursor-pointer inline-block"
                               >
                                 <video
@@ -377,21 +430,44 @@ export default function AppointmentsListPage() {
 
                     {/* Render matching dynamic responses for Regular Form Columns */}
                     {regularFields.map((field) => {
-                      const val = b.dynamicResponses?.[field.fieldKey] || b.dynamicResponses?.get?.(field.fieldKey);
-                      const isImage = typeof val === "string" && val.startsWith("data:image/");
-                      const isVideo = typeof val === "string" && val.startsWith("data:video/");
+                      const val =
+                        b.dynamicResponses?.[field.fieldKey] ||
+                        b.dynamicResponses?.get?.(field.fieldKey);
+                      const isImage =
+                        typeof val === "string" &&
+                        val.startsWith("data:image/");
+                      const isVideo =
+                        typeof val === "string" &&
+                        val.startsWith("data:video/");
                       return (
-                        <TD key={field.fieldKey} className="text-sm text-gray-700">
+                        <TD
+                          key={field.fieldKey}
+                          className="text-sm text-gray-700"
+                        >
                           {isImage ? (
                             <img
                               src={val}
                               alt={field.label}
-                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                              onClick={() =>
+                                setFilePreview({
+                                  isOpen: true,
+                                  url: val,
+                                  type: "image",
+                                  title: field.label,
+                                })
+                              }
                               className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                             />
                           ) : isVideo ? (
                             <div
-                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                              onClick={() =>
+                                setFilePreview({
+                                  isOpen: true,
+                                  url: val,
+                                  type: "video",
+                                  title: field.label,
+                                })
+                              }
                               className="cursor-pointer inline-block"
                             >
                               <video
@@ -409,16 +485,21 @@ export default function AppointmentsListPage() {
                     })}
 
                     <TD className="text-gray-600 text-sm">
-                      <span className="block font-semibold text-gray-900">{formatDateDDMMYYYY(b.slotDate)}</span>
-                      <span className="block text-xs text-gray-550">{b.slotStartTime} - {b.slotEndTime}</span>
+                      <span className="block font-semibold text-gray-900">
+                        {formatDateDDMMYYYY(b.slotDate)}
+                      </span>
+                      <span className="block text-xs text-gray-550">
+                        {b.slotStartTime} - {b.slotEndTime}
+                      </span>
                     </TD>
                     <TD className="text-sm font-medium text-gray-700">
-                      {formatBookedDate(b.createdAt) || formatDateDDMMYYYY(b.slotDate)}
+                      {formatBookedDate(b.createdAt) ||
+                        formatDateDDMMYYYY(b.slotDate)}
                     </TD>
                     <TD>
                       <span
                         className={`inline-flex px-2.5 py-1 text-xs font-semibold border rounded-full ${getStatusClass(
-                          b.status
+                          b.status,
                         )}`}
                       >
                         {b.status}
@@ -426,34 +507,56 @@ export default function AppointmentsListPage() {
                     </TD>
                     <TD className="text-right">
                       <div className="flex items-center justify-end gap-3.5">
-                        <button
-                          onClick={() => setPrescriptionModal({ isOpen: true, booking: b })}
-                          title="Write / Print Prescription"
-                          className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
-                        >
-                          <FileText size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleViewClick(b)}
-                          title="View Details"
-                          className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleEditClick(b)}
-                          title="Edit Booking"
-                          className="text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(b)}
-                          title="Delete Booking"
-                          className="text-gray-500 hover:text-red-650 transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        <div className="relative group">
+                          <button
+                            onClick={() =>
+                              setPrescriptionModal({ isOpen: true, booking: b })
+                            }
+                            className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                          >
+                            <FileText size={18} />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                            Prescription
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => handleViewClick(b)}
+                            className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                            View
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => handleEditClick(b)}
+                            className="text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                            Edit
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                          </span>
+                        </div>
+                        <div className="relative group">
+                          <button
+                            onClick={() => handleDeleteClick(b)}
+                            className="text-gray-500 hover:text-red-650 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                            Delete
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                          </span>
+                        </div>
                       </div>
                     </TD>
                   </TR>
@@ -472,21 +575,31 @@ export default function AppointmentsListPage() {
         maxWidth="max-w-[720px]"
       >
         {selectedBooking && (
-          <div className="space-y-6 max-h-[75vh] overflow-y-auto custom-scrollbar pr-1">
+          <div className="space-y-6 pr-1">
             {/* Top Banner Card */}
             <div className="bg-gradient-to-r from-slate-50 via-blue-50/20 to-slate-50 p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between border-b border-slate-200/60 pb-3 mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Booking ID</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Booking ID
+                  </span>
                   <span className="px-2.5 py-0.5 text-xs font-mono font-bold text-blue-700 bg-blue-100/80 border border-blue-200 rounded-md">
                     #{getNumericBookingId(selectedBooking)}
                   </span>
                 </div>
                 <div>
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold border rounded-full shadow-xs ${getStatusClass(selectedBooking.status)}`}>
-                    <span className={`w-2 h-2 rounded-full ${selectedBooking.status?.toLowerCase() === "confirmed" ? "bg-green-500" :
-                        selectedBooking.status?.toLowerCase() === "pending" ? "bg-yellow-500" : "bg-red-500"
-                      }`}></span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold border rounded-full shadow-xs ${getStatusClass(selectedBooking.status)}`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        selectedBooking.status?.toLowerCase() === "confirmed"
+                          ? "bg-green-500"
+                          : selectedBooking.status?.toLowerCase() === "pending"
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                      }`}
+                    ></span>
                     <span className="capitalize">{selectedBooking.status}</span>
                   </span>
                 </div>
@@ -495,17 +608,29 @@ export default function AppointmentsListPage() {
               {/* Appointment Meta Highlights */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Appointment Date</span>
-                  <span className="text-sm font-bold text-slate-900">{formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Appointment Date
+                  </span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {formatDateDDMMYYYY(selectedBooking.slotDate)}
+                  </span>
                 </div>
                 <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Time Slot</span>
-                  <span className="text-sm font-bold text-slate-900">{selectedBooking.slotStartTime} - {selectedBooking.slotEndTime}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Time Slot
+                  </span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {selectedBooking.slotStartTime} -{" "}
+                    {selectedBooking.slotEndTime}
+                  </span>
                 </div>
                 <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Booked On</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Booked On
+                  </span>
                   <span className="text-sm font-bold text-blue-600">
-                    {formatBookedDate(selectedBooking.createdAt) || formatDateDDMMYYYY(selectedBooking.slotDate)}
+                    {formatBookedDate(selectedBooking.createdAt) ||
+                      formatDateDDMMYYYY(selectedBooking.slotDate)}
                   </span>
                 </div>
               </div>
@@ -514,24 +639,37 @@ export default function AppointmentsListPage() {
             {/* Customer Responses Section */}
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Customer Submitted Responses</h4>
-                <span className="text-xs font-medium text-slate-400">{formFields.length} Fields Configured</span>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Customer Submitted Responses
+                </h4>
+                <span className="text-xs font-medium text-slate-400">
+                  {formFields.length} Fields Configured
+                </span>
               </div>
 
               {/* Dynamic Responses Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {formFields.map((field) => {
                   const fieldType = field.type || field.inputType;
-                  const val = selectedBooking.dynamicResponses?.[field.fieldKey] || selectedBooking.dynamicResponses?.get?.(field.fieldKey);
-                  const isImageVal = typeof val === "string" && val.startsWith("data:image/");
-                  const isVideoVal = typeof val === "string" && val.startsWith("data:video/");
-                  const isMedia = fieldType === "image" || fieldType === "video" || isImageVal || isVideoVal;
+                  const val =
+                    selectedBooking.dynamicResponses?.[field.fieldKey] ||
+                    selectedBooking.dynamicResponses?.get?.(field.fieldKey);
+                  const isImageVal =
+                    typeof val === "string" && val.startsWith("data:image/");
+                  const isVideoVal =
+                    typeof val === "string" && val.startsWith("data:video/");
+                  const isMedia =
+                    fieldType === "image" ||
+                    fieldType === "video" ||
+                    isImageVal ||
+                    isVideoVal;
 
                   return (
                     <div
                       key={field.fieldKey}
-                      className={`p-3.5 rounded-xl border border-slate-200/80 bg-white transition-all hover:border-slate-300 ${isMedia ? "sm:col-span-2 bg-slate-50/50" : ""
-                        }`}
+                      className={`p-3.5 rounded-xl border border-slate-200/80 bg-white transition-all hover:border-slate-300 ${
+                        isMedia ? "sm:col-span-2 bg-slate-50/50" : ""
+                      }`}
                     >
                       <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                         {field.label}
@@ -559,7 +697,11 @@ export default function AppointmentsListPage() {
                         ) : fieldType === "video" || isVideoVal ? (
                           <div className="mt-1">
                             <div className="max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-black">
-                              <video src={val} className="w-full max-h-56 object-contain" controls />
+                              <video
+                                src={val}
+                                className="w-full max-h-56 object-contain"
+                                controls
+                              />
                             </div>
                           </div>
                         ) : (
@@ -568,7 +710,9 @@ export default function AppointmentsListPage() {
                           </span>
                         )
                       ) : (
-                        <span className="text-xs text-slate-400 italic font-normal">No response provided</span>
+                        <span className="text-xs text-slate-400 italic font-normal">
+                          No response provided
+                        </span>
                       )}
                     </div>
                   );
@@ -578,7 +722,11 @@ export default function AppointmentsListPage() {
 
             {/* Modal Footer */}
             <div className="flex justify-end pt-4 border-t border-slate-200">
-              <Button onClick={() => setIsViewModalOpen(false)} variant="secondary" size="md">
+              <Button
+                onClick={() => setIsViewModalOpen(false)}
+                variant="secondary"
+                size="md"
+              >
                 Close
               </Button>
             </div>
@@ -606,7 +754,9 @@ export default function AppointmentsListPage() {
       {/* Full Screen File View Modal */}
       <FileViewModal
         isOpen={filePreview.isOpen}
-        onClose={() => setFilePreview({ isOpen: false, url: "", type: "image", title: "" })}
+        onClose={() =>
+          setFilePreview({ isOpen: false, url: "", type: "image", title: "" })
+        }
         fileUrl={filePreview.url}
         fileType={filePreview.type}
         title={filePreview.title}
