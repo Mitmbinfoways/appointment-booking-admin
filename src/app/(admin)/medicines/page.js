@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useSelector } from "react-redux";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
@@ -25,6 +26,10 @@ import {
 } from "lucide-react";
 
 export default function MedicinesPage() {
+  const adminState = useSelector((state) => state.admin) || {};
+  const admin = adminState.admin;
+  const adminId = admin?._id || (typeof window !== "undefined" ? localStorage.getItem("adminId") : null);
+
   const [medicinesList, setMedicinesList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,10 +64,11 @@ export default function MedicinesPage() {
 
   const [formErrors, setFormErrors] = useState({});
 
-  const fetchMedicines = async () => {
+  const fetchMedicines = useCallback(async () => {
+    if (!adminId) return;
     setIsLoading(true);
     try {
-      const res = await getMedicinesListApi();
+      const res = await getMedicinesListApi(adminId);
       if (res.status === 200 && res.data?.statusCode === 200) {
         setMedicinesList(res.data.data);
       } else {
@@ -74,11 +80,11 @@ export default function MedicinesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [adminId]);
 
   useEffect(() => {
     fetchMedicines();
-  }, []);
+  }, [fetchMedicines]);
 
   const categories = ["All", ...Array.from(new Set(medicinesList.map((m) => m.category || "General")))];
 
@@ -119,7 +125,7 @@ export default function MedicinesPage() {
     }
 
     try {
-      const res = await createMedicineRecord(formData);
+      const res = await createMedicineRecord({ ...formData, adminId });
       if (res.status === 201 && res.data?.statusCode === 201) {
         Toast({ message: "Medicine item added successfully!", type: "success" });
         setIsAddModalOpen(false);
@@ -159,7 +165,7 @@ export default function MedicinesPage() {
     }
 
     try {
-      const res = await updateMedicineRecord(selectedMedicine._id, editFormData);
+      const res = await updateMedicineRecord(selectedMedicine._id, { ...editFormData, adminId });
       if (res.status === 200) {
         Toast({ message: "Medicine record updated successfully!", type: "success" });
         setIsEditModalOpen(false);
@@ -181,7 +187,7 @@ export default function MedicinesPage() {
   const handleConfirmDelete = async () => {
     if (!selectedMedicine) return;
     try {
-      const res = await deleteMedicineRecord(selectedMedicine._id);
+      const res = await deleteMedicineRecord(selectedMedicine._id, adminId);
       if (res.status === 200) {
         Toast({ message: "Medicine record deleted successfully!", type: "success" });
         setIsDeleteModalOpen(false);
@@ -304,7 +310,7 @@ export default function MedicinesPage() {
                 <TH>DOSAGE</TH>
                 <TH>CATEGORY</TH>
                 <TH>STOCK LEVEL</TH>
-                <TH>PRICE ($)</TH>
+                <TH>PRICE</TH>
                 <TH>EXPIRY DATE</TH>
                 <TH>MANUFACTURER</TH>
                 <TH className="text-right">ACTIONS</TH>
@@ -448,7 +454,7 @@ export default function MedicinesPage() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Unit Price ($) <span className="text-red-500">*</span>
+                Unit Price <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -557,7 +563,7 @@ export default function MedicinesPage() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Unit Price ($) <span className="text-red-500">*</span>
+                Unit Price <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"

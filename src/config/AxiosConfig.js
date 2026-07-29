@@ -399,5 +399,14 @@ export const deleteSubUserRecord = async (id, adminId) => {
   return await axiosInstance.delete(`/api/user-management/${id}?adminId=${adminId}`);
 };
 
+// Prescription API Endpoints
+export const getPrescriptionByBookingApi = async (bookingId) => {
+  return await axiosInstance.get(`/api/prescriptions/${bookingId}`);
+};
+
+export const savePrescriptionApi = async (data) => {
+  return await axiosInstance.post(`/api/prescriptions`, data);
+};
+
 export default axiosInstance;
 

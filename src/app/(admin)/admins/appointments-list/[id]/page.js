@@ -14,7 +14,8 @@ import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
 import FileViewModal from "@/components/UI/FileViewModal";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import PrescriptionModal from "@/components/UI/PrescriptionModal";
+import { Eye, Pencil, Trash2, FileText } from "lucide-react";
 import Button from "@/components/UI/Button";
 
 const getStatusClass = (status) => {
@@ -54,6 +55,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [filePreview, setFilePreview] = useState({ isOpen: false, url: "", type: "image", title: "" });
+  const [prescriptionModal, setPrescriptionModal] = useState({ isOpen: false, booking: null });
 
   const getNumericBookingId = (b) => {
     if (!b) return "";
@@ -395,6 +397,13 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                     <TD className="text-right">
                       <div className="flex items-center justify-end gap-3.5">
                         <button
+                          onClick={() => setPrescriptionModal({ isOpen: true, booking: b })}
+                          title="Write / Print Prescription"
+                          className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                        >
+                          <FileText size={18} />
+                        </button>
+                        <button
                           onClick={() => handleViewClick(b)}
                           title="View Details"
                           className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
@@ -557,6 +566,14 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
         onConfirm={handleConfirmDelete}
         title="Delete Appointment"
         message="Are you sure you want to permanently delete this appointment? This action cannot be undone."
+      />
+
+      {/* Prescription Modal */}
+      <PrescriptionModal
+        isOpen={prescriptionModal.isOpen}
+        onClose={() => setPrescriptionModal({ isOpen: false, booking: null })}
+        booking={prescriptionModal.booking}
+        admin={adminUser}
       />
 
       {/* Full Screen File View Modal */}
