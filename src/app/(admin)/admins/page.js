@@ -14,11 +14,13 @@ import {
   toggleAdminApiCredentials,
   updateAdmin,
   deleteAdmin,
+  toggleUserModuleApi,
+  getUserModulesApi,
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { format, parseISO } from "date-fns";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
-import { Eye, EyeOff, Copy, Check } from "lucide-react";
+import { Eye, EyeOff, Copy, Check, Layers } from "lucide-react";
 
 export default function AdminsPage() {
   const searchParams = useSearchParams();
@@ -53,8 +55,10 @@ export default function AdminsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
 
   const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [moduleModalAdmin, setModuleModalAdmin] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -76,6 +80,36 @@ export default function AdminsPage() {
   const [formErrors, setFormErrors] = useState({});
   const [editFormErrors, setEditFormErrors] = useState({});
 
+  const [adminModules, setAdminModules] = useState({});
+
+  const handleToggleModule = async (adminId, moduleName, currentEnabled) => {
+    try {
+      const res = await toggleUserModuleApi({
+        adminId,
+        moduleName,
+        enabled: !currentEnabled,
+      });
+      if (res.status === 200) {
+        Toast({
+          message: `${moduleName} ${!currentEnabled ? "enabled" : "disabled"} successfully!`,
+          type: "success",
+        });
+        setAdminModules((prev) => ({
+          ...prev,
+          [adminId]: {
+            ...prev[adminId],
+            [moduleName]: !currentEnabled,
+          },
+        }));
+      } else {
+        Toast({ message: res.data?.message || "Failed to toggle module", type: "error" });
+      }
+    } catch (err) {
+      console.error("Error toggling module:", err);
+      Toast({ message: "Failed to toggle module.", type: "error" });
+    }
+  };
+
   const fetchAdmins = async (statusVal = statusFilter) => {
     setIsLoading(true);
     try {
@@ -83,7 +117,24 @@ export default function AdminsPage() {
       if (statusVal) params.status = statusVal;
       const res = await getAdminsList(params);
       if (res.status === 200 && res.data?.statusCode === 200) {
-        setAdminsList(res.data.data);
+        const list = res.data.data;
+        setAdminsList(list);
+
+        // Fetch modules for each admin
+        const moduleMap = {};
+        await Promise.all(
+          list.map(async (adm) => {
+            try {
+              const modRes = await getUserModulesApi(adm._id);
+              if (modRes.status === 200 && modRes.data?.data) {
+                moduleMap[adm._id] = modRes.data.data;
+              }
+            } catch (e) {
+              // ignore single fetch error
+            }
+          })
+        );
+        setAdminModules(moduleMap);
       } else {
         Toast({ message: res.data?.message || "Failed to fetch admins", type: "error" });
       }
@@ -392,13 +443,13 @@ export default function AdminsPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={11} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={10} className="px-6 py-10 text-center text-gray-400 text-sm">
                     Loading admin list...
                   </TD>
                 </TR>
               ) : adminsList.length === 0 ? (
                 <TR>
-                  <TD colSpan={11} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD colSpan={10} className="px-6 py-10 text-center text-gray-400 text-sm">
                     No Admin profiles found.
                   </TD>
                 </TR>
@@ -488,61 +539,133 @@ export default function AdminsPage() {
                       </button>
                     </TD>
                     <TD>
-                      <div className="flex items-center justify-end gap-4 font-medium text-right text-xs">
-                        <Link
-                          href={`/admins/${admin._id}/form`}
-                          title="Form Config"
-                          className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
-                        >
-                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                        </Link>
-                        <Link
-                          href={`/admins/${admin._id}/slots`}
-                          title="Slots Settings"
-                          className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
-                        >
-                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </Link>
-                        <Link
-                          href={`/admins/${admin._id}/holidays`}
-                          title="Holiday Management"
-                          className="text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
-                        >
-                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                        </Link>
-                        <Link
-                          href={`/admins/appointments-list/${admin._id}`}
-                          title="Appointments List"
-                          className="text-gray-500 hover:text-amber-500 transition-colors cursor-pointer"
-                        >
-                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                          </svg>
-                        </Link>
-                        <button
-                          onClick={() => handleEditClick(admin)}
-                          title="Edit Profile"
-                          className="text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
-                        >
-                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(admin)}
-                          title="Delete Account"
-                          className="text-gray-500 hover:text-red-600 transition-colors cursor-pointer"
-                        >
-                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                      <div className="flex items-center justify-end gap-3 font-medium text-right text-xs">
+                        {/* 1. Form Config */}
+                        <div className="relative group/tooltip inline-flex items-center justify-center">
+                          <Link
+                            href={`/admins/${admin._id}/form`}
+                            className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </Link>
+                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                              Form Config
+                            </span>
+                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                          </span>
+                        </div>
+
+                        {/* 2. Slots Settings */}
+                        <div className="relative group/tooltip inline-flex items-center justify-center">
+                          <Link
+                            href={`/admins/${admin._id}/slots`}
+                            className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </Link>
+                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                              Slots Settings
+                            </span>
+                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                          </span>
+                        </div>
+
+                        {/* 3. Holiday Management */}
+                        <div className="relative group/tooltip inline-flex items-center justify-center">
+                          <Link
+                            href={`/admins/${admin._id}/holidays`}
+                            className="text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </Link>
+                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                              Holiday Management
+                            </span>
+                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                          </span>
+                        </div>
+
+                        {/* 4. Appointments List */}
+                        <div className="relative group/tooltip inline-flex items-center justify-center">
+                          <Link
+                            href={`/admins/appointments-list/${admin._id}`}
+                            className="text-gray-500 hover:text-amber-500 transition-colors cursor-pointer"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                          </Link>
+                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                              Appointments List
+                            </span>
+                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                          </span>
+                        </div>
+
+                        {/* 5. Manage Module Access */}
+                        <div className="relative group/tooltip inline-flex items-center justify-center">
+                          <button
+                            onClick={() => {
+                              setModuleModalAdmin(admin);
+                              setIsModuleModalOpen(true);
+                            }}
+                            className="text-gray-500 hover:text-purple-600 transition-colors cursor-pointer"
+                          >
+                            <Layers size={20} />
+                          </button>
+                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                              Manage Module Access
+                            </span>
+                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                          </span>
+                        </div>
+
+                        {/* 6. Edit Profile */}
+                        <div className="relative group/tooltip inline-flex items-center justify-center">
+                          <button
+                            onClick={() => handleEditClick(admin)}
+                            className="text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                              Edit Profile
+                            </span>
+                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                          </span>
+                        </div>
+
+                        {/* 7. Delete Account */}
+                        <div className="relative group/tooltip inline-flex items-center justify-center">
+                          <button
+                            onClick={() => handleDeleteClick(admin)}
+                            className="text-gray-500 hover:text-red-600 transition-colors cursor-pointer"
+                          >
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                              Delete Account
+                            </span>
+                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                          </span>
+                        </div>
                       </div>
                     </TD>
                   </TR>
@@ -778,6 +901,61 @@ export default function AdminsPage() {
         message="Are you sure you want to delete this Admin account? This action will set the account to deleted and inactive, preventing any future logins."
         itemName={selectedAdmin?.username || ""}
       />
+
+      {/* Manage Module Access Modal */}
+      <CustomModal
+        isOpen={isModuleModalOpen}
+        onClose={() => setIsModuleModalOpen(false)}
+        title={`Manage Module Access - ${moduleModalAdmin?.username || ""}`}
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">
+            Enable or disable specific feature modules for <span className="font-bold text-gray-900">{moduleModalAdmin?.username}</span> ({moduleModalAdmin?.businessName}).
+          </p>
+
+          <div className="space-y-3 pt-2">
+            {/* Medicine Module */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  💊
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Medicine Inventory Module</h4>
+                  <p className="text-xs text-slate-500">Allows Admin to manage medicine catalog, stock levels, and pricing.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  moduleModalAdmin &&
+                  handleToggleModule(
+                    moduleModalAdmin._id,
+                    "medicineModule",
+                    adminModules[moduleModalAdmin._id]?.medicineModule || false
+                  )
+                }
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  adminModules[moduleModalAdmin?._id]?.medicineModule ? "bg-emerald-600" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    adminModules[moduleModalAdmin?._id]?.medicineModule ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-slate-200">
+            <Button onClick={() => setIsModuleModalOpen(false)} variant="primary">
+              Done
+            </Button>
+          </div>
+        </div>
+      </CustomModal>
     </>
   );
 }

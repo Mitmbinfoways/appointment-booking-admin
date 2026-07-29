@@ -8,6 +8,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { getMenuItemsByUserType } from "@/components/layout/menu";
 import { ChevronDownIcon, HorizontalDotsIcon } from "@/Icons";
 import { useSelector } from "react-redux";
+import { getUserModulesApi } from "@/config/AxiosConfig";
 
 const AppSidebar = () => {
   const subMenuRefs = useRef({});
@@ -19,11 +20,33 @@ const AppSidebar = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
   const adminState = useSelector((state) => state.admin) || {};
   const admin = adminState.admin;
+  const [userModules, setUserModules] = useState({ medicineModule: false });
+
+  useEffect(() => {
+    const fetchModules = async () => {
+      if (admin?._id && admin?.role !== "SuperAdmin") {
+        try {
+          const res = await getUserModulesApi(admin._id);
+          if (res.status === 200 && res.data?.data) {
+            setUserModules(res.data.data);
+          }
+        } catch (err) {
+          console.error("Error loading user modules:", err);
+        }
+      }
+    };
+    fetchModules();
+  }, [admin?._id, admin?.role]);
 
   const navItems = useMemo(() => {
     const userRole = admin?.role || admin?.type || "Admin";
-    return getMenuItemsByUserType(userRole);
-  }, [admin]);
+    const items = getMenuItemsByUserType(userRole);
+    if (userRole === "SuperAdmin") return items;
+    return items.filter((item) => {
+      if (!item.isModule) return true;
+      return userModules[item.isModule] === true;
+    });
+  }, [admin, userModules]);
 
   const isActive = useCallback(
     (item) => {

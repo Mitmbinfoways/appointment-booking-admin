@@ -353,5 +353,51 @@ export const createBookingRecord = async (adminId, data) => {
   return await axiosInstance.post(`/api/bookings/${adminId}`, data);
 };
 
+// UserModule & Medicine API Endpoints
+export const toggleUserModuleApi = async (data) => {
+  return await axiosInstance.post(`/api/user-modules/toggle`, data);
+};
+
+export const getUserModulesApi = async (adminId) => {
+  return await axiosInstance.get(`/api/user-modules/${adminId}`);
+};
+
+export const getMedicinesListApi = async (adminId) => {
+  return await axiosInstance.get(`/api/medicines?adminId=${adminId}`);
+};
+
+export const createMedicineRecord = async (data) => {
+  return await axiosInstance.post(`/api/medicines`, data);
+};
+
+export const updateMedicineRecord = async (id, data) => {
+  return await axiosInstance.put(`/api/medicines/${id}`, data);
+};
+
+export const deleteMedicineRecord = async (id, adminId) => {
+  return await axiosInstance.delete(`/api/medicines/${id}?adminId=${adminId}`);
+};
+
+// Sub-User / User Management API Endpoints
+export const getSubUsersListApi = async (adminId) => {
+  return await axiosInstance.get(`/api/user-management?adminId=${adminId}`);
+};
+
+export const createSubUserRecord = async (data) => {
+  return await axiosInstance.post(`/api/user-management`, data);
+};
+
+export const updateSubUserRecord = async (id, data) => {
+  return await axiosInstance.put(`/api/user-management/${id}`, data);
+};
+
+export const toggleSubUserActiveApi = async (id, adminId) => {
+  return await axiosInstance.patch(`/api/user-management/${id}/toggle-active`, { adminId });
+};
+
+export const deleteSubUserRecord = async (id, adminId) => {
+  return await axiosInstance.delete(`/api/user-management/${id}?adminId=${adminId}`);
+};
+
 export default axiosInstance;
 
