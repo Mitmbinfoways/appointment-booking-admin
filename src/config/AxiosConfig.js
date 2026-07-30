@@ -408,5 +408,9 @@ export const savePrescriptionApi = async (data) => {
   return await axiosInstance.post(`/api/prescriptions`, data);
 };
 
+export const getMedicineSuggestionsApi = async (search) => {
+  return await axiosInstance.get(`/api/prescriptions/suggestions/medicines`, { params: { search } });
+};
+
 export default axiosInstance;
 

@@ -270,9 +270,20 @@ export default function AppointmentsListPage() {
         items={[
           { label: "Home", to: "/" },
           { label: "Appointments List", to: "/appointments-list" },
+          ...(prescriptionModal.isOpen
+            ? [{ label: "Prescription" }]
+            : []),
         ]}
       />
 
+      {prescriptionModal.isOpen ? (
+        <PrescriptionModal
+          isOpen={prescriptionModal.isOpen}
+          onClose={() => setPrescriptionModal({ isOpen: false, booking: null })}
+          booking={prescriptionModal.booking}
+          admin={admin}
+        />
+      ) : (
       <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
         {/* Header Section */}
         <div className="flex flex-col gap-4 p-4 border-b border-gray-200 sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -566,6 +577,7 @@ export default function AppointmentsListPage() {
           </Table>
         </div>
       </div>
+      )}
 
       {/* View Modal */}
       <CustomModal
@@ -743,13 +755,7 @@ export default function AppointmentsListPage() {
         message="Are you sure you want to permanently delete this appointment? This action cannot be undone."
       />
 
-      {/* Prescription Modal */}
-      <PrescriptionModal
-        isOpen={prescriptionModal.isOpen}
-        onClose={() => setPrescriptionModal({ isOpen: false, booking: null })}
-        booking={prescriptionModal.booking}
-        admin={admin}
-      />
+
 
       {/* Full Screen File View Modal */}
       <FileViewModal

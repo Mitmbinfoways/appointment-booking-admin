@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { CustomModal } from "./Modal";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Button from "./Button";
 import { Toast } from "@/components/Toast";
 import {
@@ -9,6 +8,7 @@ import {
   getMedicinesListApi,
   getPrescriptionByBookingApi,
   savePrescriptionApi,
+  getMedicineSuggestionsApi,
 } from "@/config/AxiosConfig";
 import {
   Plus,
@@ -17,6 +17,7 @@ import {
   Download,
   Stethoscope,
   Pill,
+  ArrowLeft,
 } from "lucide-react";
 
 export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
@@ -32,6 +33,39 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
   const [diagnosis, setDiagnosis] = useState("");
   const [notes, setNotes] = useState("");
   const [medicines, setMedicines] = useState([]);
+
+  // Medicine suggestions state
+  const [suggestions, setSuggestions] = useState([]);
+  const [activeSuggestionIdx, setActiveSuggestionIdx] = useState(null);
+  const suggestionTimer = useRef(null);
+
+  const fetchSuggestions = (idx, value) => {
+    setActiveSuggestionIdx(idx);
+    if (suggestionTimer.current) clearTimeout(suggestionTimer.current);
+    if (!value || value.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    suggestionTimer.current = setTimeout(async () => {
+      try {
+        const res = await getMedicineSuggestionsApi(value.trim());
+        if (res.status === 200 && Array.isArray(res.data?.data)) {
+          setSuggestions(res.data.data);
+        } else {
+          setSuggestions([]);
+        }
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300);
+  };
+
+  const handleSelectSuggestion = (idx, suggestion) => {
+    handleFieldChange(idx, "name", suggestion.name);
+    if (suggestion.dosage) handleFieldChange(idx, "dosage", suggestion.dosage);
+    setSuggestions([]);
+    setActiveSuggestionIdx(null);
+  };
 
   // Check module access & fetch data
   const initModalData = useCallback(async () => {
@@ -387,7 +421,7 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
     }
   };
 
-  if (!booking) return null;
+  if (!isOpen || !booking) return null;
 
   const patientFullName =
     `${booking.firstName || ""} ${booking.lastName || ""}`.trim() ||
@@ -396,12 +430,24 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
 
   return (
     <>
-      <CustomModal
-        isOpen={isOpen}
-        onClose={onClose}
-        title={`Write Prescription - ${patientFullName}`}
-        maxWidth="max-w-[900px]"
-      >
+      <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
+        {/* Header Bar */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-bold text-gray-900">
+              Write Prescription - {patientFullName}
+            </h2>
+          </div>
+        </div>
+
+        <div className="p-6">
         {isLoading ? (
           <div className="py-12 text-center text-gray-400 text-sm">
             Loading prescription data...
@@ -487,27 +533,69 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                           </select>
 
                           {item.isCustom && (
-                            <input
-                              type="text"
-                              placeholder="Enter custom medicine name..."
-                              value={item.name}
-                              onChange={(e) =>
-                                handleFieldChange(idx, "name", e.target.value)
-                              }
-                              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                            />
+                            <div className="relative">
+                              <input
+                                type="text"
+                                placeholder="Enter custom medicine name..."
+                                value={item.name}
+                                onChange={(e) => {
+                                  handleFieldChange(idx, "name", e.target.value);
+                                  fetchSuggestions(idx, e.target.value);
+                                }}
+                                onBlur={() => setTimeout(() => { if (activeSuggestionIdx === idx) { setSuggestions([]); setActiveSuggestionIdx(null); } }, 200)}
+                                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                                autoComplete="off"
+                              />
+                              {activeSuggestionIdx === idx && suggestions.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                                  {suggestions.map((s, sIdx) => (
+                                    <button
+                                      key={sIdx}
+                                      type="button"
+                                      onMouseDown={(e) => e.preventDefault()}
+                                      onClick={() => handleSelectSuggestion(idx, s)}
+                                      className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                                    >
+                                      <span className="font-semibold text-gray-900">{s.name}</span>
+                                      {s.dosage && <span className="text-gray-500 ml-1">({s.dosage})</span>}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       ) : (
-                        <input
-                          type="text"
-                          placeholder="Enter medicine name..."
-                          value={item.name}
-                          onChange={(e) =>
-                            handleFieldChange(idx, "name", e.target.value)
-                          }
-                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="Enter medicine name..."
+                            value={item.name}
+                            onChange={(e) => {
+                              handleFieldChange(idx, "name", e.target.value);
+                              fetchSuggestions(idx, e.target.value);
+                            }}
+                            onBlur={() => setTimeout(() => { if (activeSuggestionIdx === idx) { setSuggestions([]); setActiveSuggestionIdx(null); } }, 200)}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                            autoComplete="off"
+                          />
+                          {activeSuggestionIdx === idx && suggestions.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                              {suggestions.map((s, sIdx) => (
+                                <button
+                                  key={sIdx}
+                                  type="button"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  onClick={() => handleSelectSuggestion(idx, s)}
+                                  className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                                >
+                                  <span className="font-semibold text-gray-900">{s.name}</span>
+                                  {s.dosage && <span className="text-gray-500 ml-1">({s.dosage})</span>}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -676,7 +764,8 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
             </div>
           </div>
         )}
-      </CustomModal>
+        </div>
+      </div>
 
       {/* Hidden Printable Medical Rx Layout */}
       <div
