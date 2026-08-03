@@ -8,6 +8,7 @@ import {
   Pill,
   UserCheck,
   Layers,
+  Stethoscope,
 } from "lucide-react";
 
 export const superAdminMenuItems = [
@@ -73,6 +74,12 @@ export const adminMenuItems = [
     name: "User Management",
     path: "/users",
     isModule: "userManagementModule",
+  },
+  {
+    icon: Stethoscope,
+    name: "Medical Prescriptions",
+    path: "/medical",
+    isModule: "medicalModule",
   },
 ];
 

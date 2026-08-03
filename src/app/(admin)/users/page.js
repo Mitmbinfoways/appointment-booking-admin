@@ -53,6 +53,7 @@ export default function UserManagementPage() {
     email: "",
     phoneNumber: "",
     role: "Staff",
+    hasMedicalAccess: false,
   });
 
   const [editFormData, setEditFormData] = useState({
@@ -60,6 +61,7 @@ export default function UserManagementPage() {
     email: "",
     phoneNumber: "",
     role: "Staff",
+    hasMedicalAccess: false,
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -155,6 +157,7 @@ export default function UserManagementPage() {
       email: usr.email || "",
       phoneNumber: usr.phoneNumber || "",
       role: usr.role || "Staff",
+      hasMedicalAccess: Boolean(usr.hasMedicalAccess),
     });
     setFormErrors({});
     setIsEditModalOpen(true);
@@ -517,6 +520,19 @@ export default function UserManagementPage() {
             </div>
           </div>
 
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="addHasMedicalAccess"
+              checked={formData.hasMedicalAccess}
+              onChange={(e) => setFormData({ ...formData, hasMedicalAccess: e.target.checked })}
+              className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 cursor-pointer"
+            />
+            <label htmlFor="addHasMedicalAccess" className="text-sm font-semibold text-gray-700 cursor-pointer">
+              Grant Medical Module Access (Can receive & fulfill prescriptions)
+            </label>
+          </div>
+
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <Button type="button" onClick={() => setIsAddModalOpen(false)} variant="outline">
               Cancel
@@ -587,6 +603,19 @@ export default function UserManagementPage() {
                 <option value="Pharmacist">Pharmacist</option>
               </select>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="editHasMedicalAccess"
+              checked={editFormData.hasMedicalAccess}
+              onChange={(e) => setEditFormData({ ...editFormData, hasMedicalAccess: e.target.checked })}
+              className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 cursor-pointer"
+            />
+            <label htmlFor="editHasMedicalAccess" className="text-sm font-semibold text-gray-700 cursor-pointer">
+              Grant Medical Module Access (Can receive & fulfill prescriptions)
+            </label>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">

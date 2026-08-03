@@ -412,5 +412,18 @@ export const getMedicineSuggestionsApi = async (search) => {
   return await axiosInstance.get(`/api/prescriptions/suggestions/medicines`, { params: { search } });
 };
 
+// Medical Module API Endpoints
+export const getMedicalSubUsersApi = async (adminId) => {
+  return await axiosInstance.get(`/api/user-management/medical-users?adminId=${adminId}`);
+};
+
+export const getMedicalPrescriptionsApi = async (params = {}) => {
+  return await axiosInstance.get(`/api/prescriptions/medical/list`, { params });
+};
+
+export const updatePrescriptionFulfillmentStatusApi = async (id, fulfillmentStatus) => {
+  return await axiosInstance.patch(`/api/prescriptions/medical/${id}/status`, { fulfillmentStatus });
+};
+
 export default axiosInstance;
 

@@ -9,15 +9,18 @@ import {
   getPrescriptionByBookingApi,
   savePrescriptionApi,
   getMedicineSuggestionsApi,
+  getMedicalSubUsersApi,
 } from "@/config/AxiosConfig";
 import {
   Plus,
+  Pencil,
   Trash2,
   Printer,
   Download,
   Stethoscope,
   Pill,
   ArrowLeft,
+  Send,
 } from "lucide-react";
 
 export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
@@ -27,8 +30,12 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
 
   const [hasMedicineModule, setHasMedicineModule] = useState(false);
   const [catalogMedicines, setCatalogMedicines] = useState([]);
+  const [medicalUsers, setMedicalUsers] = useState([]);
+  const [selectedMedicalUser, setSelectedMedicalUser] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [existingPrescription, setExistingPrescription] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const [diagnosis, setDiagnosis] = useState("");
   const [notes, setNotes] = useState("");
@@ -90,33 +97,54 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         }
       }
 
-      // 3. Fetch existing prescription
+      // 3. Fetch sub-users with Medical Access
+      try {
+        const medUserRes = await getMedicalSubUsersApi(adminId);
+        if (medUserRes.status === 200 && Array.isArray(medUserRes.data?.data)) {
+          setMedicalUsers(medUserRes.data.data);
+        }
+      } catch {
+        setMedicalUsers([]);
+      }
+
+      // 4. Fetch existing prescription
       const presRes = await getPrescriptionByBookingApi(
         booking._id || booking.bookingId,
       );
       if (presRes.status === 200 && presRes.data?.data) {
         const pres = presRes.data.data;
+        setExistingPrescription(pres);
+        // If saved but not sent, show read-only view; otherwise show form
+        if (pres.fulfillmentStatus === 'not_sent') {
+          setIsEditMode(false);
+        } else {
+          setIsEditMode(true);
+        }
         setDiagnosis(pres.diagnosis || "");
         setNotes(pres.notes || "");
+        setSelectedMedicalUser(pres.sentToMedicalUser?._id || pres.sentToMedicalUser || "");
         if (Array.isArray(pres.medicines) && pres.medicines.length > 0) {
           setMedicines(
-            pres.medicines.map((m) => ({
-              medicineId: m.medicineId?._id || m.medicineId || "",
-              isCustom: Boolean(m.isCustom),
-              name: m.name || "",
-              dosage: m.dosage || "",
-              frequency: m.frequency || "1-0-1",
-              duration: m.duration || "5 Days",
-              instructions: m.instructions || "",
-              quantity: m.quantity || 1,
-              timing: m.timing || "After Food",
-            })),
+            pres.medicines.map((m) => {
+              const medId = m.medicineId?._id || m.medicineId || "";
+              return {
+                medicineId: medId,
+                isCustom: Boolean(m.isCustom) || !medId,
+                name: m.name || "",
+                dosage: m.dosage || "",
+                frequency: m.frequency || "1-0-1",
+                duration: m.duration || "5 Days",
+                instructions: m.instructions || "",
+                quantity: m.quantity || 1,
+                timing: m.timing || "After Food",
+              };
+            }),
           );
         } else {
           setMedicines([
             {
               medicineId: "",
-              isCustom: !hasMed,
+              isCustom: true,
               name: "",
               dosage: "",
               frequency: "1-0-1",
@@ -128,12 +156,15 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
           ]);
         }
       } else {
+        setExistingPrescription(null);
+        setIsEditMode(true);
         setDiagnosis("");
         setNotes("");
+        setSelectedMedicalUser("");
         setMedicines([
           {
             medicineId: "",
-            isCustom: !hasMed,
+            isCustom: true,
             name: "",
             dosage: "",
             frequency: "1-0-1",
@@ -162,7 +193,7 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       ...prev,
       {
         medicineId: "",
-        isCustom: !hasMedicineModule,
+        isCustom: true,
         name: "",
         dosage: "",
         frequency: "1-0-1",
@@ -215,7 +246,7 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
     );
   };
 
-  const handleSavePrescription = async () => {
+  const handleSavePrescription = async (targetMedicalUser = null) => {
     if (!booking) return;
 
     // Validate medicines
@@ -230,28 +261,79 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       return;
     }
 
+    const recipientUser = targetMedicalUser || selectedMedicalUser || null;
+
+    // Sanitize validMedicines before sending payload
+    const sanitizedMedicines = validMedicines.map((m) => ({
+      name: m.name || "",
+      dosage: m.dosage || "",
+      frequency: m.frequency || "1-0-1",
+      duration: m.duration || "5 Days",
+      instructions: m.instructions || "",
+      quantity: Number(m.quantity) || 1,
+      timing: m.timing || "After Food",
+      medicineId: m.isCustom || !m.medicineId || m.medicineId === "custom" ? null : m.medicineId,
+      isCustom: Boolean(m.isCustom || !m.medicineId || m.medicineId === "custom"),
+    }));
+
+    // Extract patient details helper - scans booking props and dynamicResponses by key/label
+    const getPatientDetail = (b, keywords, defaultVal = "") => {
+      if (!b) return defaultVal;
+      const dyn = b.dynamicResponses || {};
+
+      // 1. Direct match on booking top-level props
+      for (const k of keywords) {
+        if (b[k]) return String(b[k]);
+      }
+
+      // 2. Direct key match in dynamicResponses
+      for (const k of keywords) {
+        if (typeof dyn.get === "function" && dyn.get(k)) return String(dyn.get(k));
+        if (dyn[k]) return String(dyn[k]);
+      }
+
+      // 3. Scan dynamicResponses by key substring (handles generated fieldKeys)
+      const entries = typeof dyn.entries === "function" ? Array.from(dyn.entries()) : Object.entries(dyn);
+      for (const [key, val] of entries) {
+        if (!val) continue;
+        const lowerKey = String(key).toLowerCase().replace(/[_\-\s]+/g, "");
+        for (const kw of keywords) {
+          const lowerKw = kw.toLowerCase().replace(/[_\-\s]+/g, "");
+          if (lowerKey.includes(lowerKw)) return String(val);
+        }
+      }
+
+      return defaultVal;
+    };
+
+    const pFirstName = getPatientDetail(booking, ["firstName", "first_name", "fname", "first name"]);
+    const pLastName = getPatientDetail(booking, ["lastName", "last_name", "lname", "last name"]);
+    const computedName = `${pFirstName} ${pLastName}`.trim() || getPatientDetail(booking, ["name", "patientName", "patient_name", "full_name", "patient name", "full name"], "Patient");
+    const computedEmail = getPatientDetail(booking, ["email", "patientEmail", "patient_email", "email_address", "userEmail", "e-mail"]);
+    const computedPhone = getPatientDetail(booking, ["phoneNumber", "phone_number", "phone", "mobile", "patientPhone", "patient_phone", "contact", "tel"]);
+
     setIsSaving(true);
     try {
       const payload = {
         bookingId: booking._id || booking.bookingId,
         adminId,
-        patientName:
-          `${booking.firstName || ""} ${booking.lastName || ""}`.trim() ||
-          booking.name ||
-          "Patient",
-        patientEmail: booking.email || "",
-        patientPhone: booking.phoneNumber || booking.phone || "",
+        patientName: computedName,
+        patientEmail: computedEmail,
+        patientPhone: computedPhone,
         doctorName: admin?.username || "Doctor",
         businessName: admin?.businessName || "Medical Clinic",
         diagnosis,
         notes,
-        medicines: validMedicines,
+        medicines: sanitizedMedicines,
+        sentToMedicalUser: recipientUser || null,
       };
 
       const res = await savePrescriptionApi(payload);
       if (res.status === 200) {
         Toast({
-          message: "Prescription issued and stock updated successfully!",
+          message: recipientUser
+            ? "Prescription sent to Medical User successfully!"
+            : "Prescription saved and stock updated successfully!",
           type: "success",
         });
         onClose();
@@ -263,7 +345,10 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       }
     } catch (err) {
       console.error("Error saving prescription:", err);
-      Toast({ message: "Failed to save prescription.", type: "error" });
+      Toast({
+        message: err?.response?.data?.message || err?.message || "Failed to save prescription.",
+        type: "error",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -428,6 +513,123 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
     booking.name ||
     "Patient";
 
+  // Read-only text view for saved (not_sent) prescriptions
+  const renderReadOnlyView = () => {
+    if (!existingPrescription) return null;
+    const pres = existingPrescription;
+    return (
+      <div className="space-y-6">
+        {/* Diagnosis & Notes */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Diagnosis / Medical Condition</span>
+            <span className="text-sm font-semibold text-gray-900">{pres.diagnosis || "--"}</span>
+          </div>
+          <div>
+            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Doctor Notes / Advice</span>
+            <span className="text-sm text-gray-700 italic">{pres.notes || "--"}</span>
+          </div>
+        </div>
+
+        {/* Medicines Table */}
+        <div>
+          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+            <Pill className="w-4 h-4 text-blue-600" /> Prescribed Medicines (Rx)
+          </h4>
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-gray-100 border-b border-gray-200 font-bold text-gray-700 uppercase">
+                  <th className="p-3">#</th>
+                  <th className="p-3">Medicine & Dosage</th>
+                  <th className="p-3">Frequency</th>
+                  <th className="p-3">Duration</th>
+                  <th className="p-3">Meal Timing</th>
+                  <th className="p-3">Instructions</th>
+                  <th className="p-3 text-center">Qty</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {(pres.medicines || []).map((m, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="p-3 font-semibold text-gray-500">{idx + 1}</td>
+                    <td className="p-3 font-bold text-gray-900">{m.name} {m.dosage ? `(${m.dosage})` : ""}</td>
+                    <td className="p-3 font-semibold text-gray-700">{m.frequency}</td>
+                    <td className="p-3 text-gray-700">{m.duration}</td>
+                    <td className="p-3 text-gray-700">{m.timing || "After Food"}</td>
+                    <td className="p-3 text-gray-600">{m.instructions || "--"}</td>
+                    <td className="p-3 text-center font-bold text-gray-900">{m.quantity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Selected Medical User info */}
+        {pres.sentToMedicalUser && (
+          <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
+            <span className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+              <Send className="w-4 h-4 text-purple-600" /> Assigned Medical User / Pharmacy
+            </span>
+            <span className="text-sm font-medium text-purple-800">
+              {typeof pres.sentToMedicalUser === 'object' ? (pres.sentToMedicalUser.name || pres.sentToMedicalUser.username || 'Medical User') : 'Assigned'}
+            </span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              type="button"
+              onClick={handleDownloadPDF}
+              variant="outline"
+              disabled={isDownloadingPDF}
+              startIcon={<Download className="w-4 h-4 text-emerald-600" />}
+              className="w-full sm:w-auto border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            >
+              {isDownloadingPDF ? "Generating PDF..." : "Download PDF"}
+            </Button>
+            <Button
+              type="button"
+              onClick={handlePrint}
+              variant="outline"
+              startIcon={<Printer className="w-4 h-4 text-gray-600" />}
+              className="w-full sm:w-auto"
+            >
+              Print
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+            <Button type="button" onClick={onClose} variant="outline">
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setIsEditMode(true)}
+              variant="outline"
+              startIcon={<Pencil className="w-4 h-4 text-blue-600" />}
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              Edit
+            </Button>
+            <Button
+              type="button"
+              onClick={() => handleSavePrescription(selectedMedicalUser)}
+              variant="primary"
+              disabled={isSaving || !selectedMedicalUser}
+              startIcon={<Send className="w-4 h-4" />}
+              className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+            >
+              {isSaving ? "Sending..." : "Send to Medical"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
@@ -436,13 +638,13 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => { if (!isEditMode && existingPrescription) { onClose(); } else if (isEditMode && existingPrescription && existingPrescription.fulfillmentStatus === 'not_sent') { setIsEditMode(false); } else { onClose(); } }}
               className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h2 className="text-lg font-bold text-gray-900">
-              Write Prescription - {patientFullName}
+              {isEditMode ? 'Write Prescription' : 'Prescription'} - {patientFullName}
             </h2>
           </div>
         </div>
@@ -452,6 +654,8 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
           <div className="py-12 text-center text-gray-400 text-sm">
             Loading prescription data...
           </div>
+        ) : !isEditMode && existingPrescription && existingPrescription.fulfillmentStatus === 'not_sent' ? (
+          renderReadOnlyView()
         ) : (
           <div className="space-y-6">
             {/* Diagnosis & Clinical Notes */}
@@ -514,7 +718,7 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                       {hasMedicineModule ? (
                         <div className="space-y-1">
                           <select
-                            value={item.isCustom ? "custom" : item.medicineId}
+                            value={item.isCustom || !item.medicineId ? "custom" : item.medicineId}
                             onChange={(e) =>
                               handleMedicineSelectChange(idx, e.target.value)
                             }
@@ -532,12 +736,12 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                             ))}
                           </select>
 
-                          {item.isCustom && (
+                          {(item.isCustom || !item.medicineId || item.medicineId === "custom") && (
                             <div className="relative">
                               <input
                                 type="text"
                                 placeholder="Enter custom medicine name..."
-                                value={item.name}
+                                value={item.name || ""}
                                 onChange={(e) => {
                                   handleFieldChange(idx, "name", e.target.value);
                                   fetchSuggestions(idx, e.target.value);
@@ -723,6 +927,32 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
               </div>
             </div>
 
+            {/* Send to Medical Module User Section */}
+            <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
+              <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Send className="w-4 h-4 text-purple-600" /> Send Prescription to Medical User / Pharmacy
+              </label>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <select
+                  value={selectedMedicalUser}
+                  onChange={(e) => setSelectedMedicalUser(e.target.value)}
+                  className="w-full sm:flex-1 px-3.5 py-2 border border-purple-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:border-purple-500 font-medium"
+                >
+                  <option value="">-- Select Medical Module User / Pharmacy Store --</option>
+                  {medicalUsers.map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name} ({u.role || "Medical Staff"}) - {u.email}
+                    </option>
+                  ))}
+                </select>
+                {medicalUsers.length === 0 && (
+                  <span className="text-xs text-amber-700 font-medium italic">
+                    (No Medical Users or Pharmacy Accounts with Medical Access found)
+                  </span>
+                )}
+              </div>
+            </div>
+
             {/* Modal Actions Footer */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200">
               <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -748,17 +978,27 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                 </Button>
               </div>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
                 <Button type="button" onClick={onClose} variant="outline">
                   Cancel
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleSavePrescription}
-                  variant="primary"
+                  onClick={() => handleSavePrescription()}
+                  variant="outline"
                   disabled={isSaving}
                 >
-                  {isSaving ? "Saving..." : "Save & Issue Prescription"}
+                  {isSaving ? "Saving..." : "Save Only"}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleSavePrescription(selectedMedicalUser)}
+                  variant="primary"
+                  disabled={isSaving}
+                  startIcon={<Send className="w-4 h-4" />}
+                  className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                >
+                  {isSaving ? "Sending..." : "Send to Medical"}
                 </Button>
               </div>
             </div>
