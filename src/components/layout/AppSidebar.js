@@ -43,6 +43,9 @@ const AppSidebar = () => {
     const items = getMenuItemsByUserType(userRole);
     if (userRole === "SuperAdmin") return items;
     return items.filter((item) => {
+      if (userModules?.medicalModule && item.hideInMedicalModule) {
+        return false;
+      }
       if (!item.isModule) return true;
       return userModules[item.isModule] === true;
     });

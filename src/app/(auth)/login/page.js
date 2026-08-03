@@ -39,7 +39,7 @@ export default function LoginPage() {
   const [focusedField, setFocusedField] = useState(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  const identifierRef = useRef(null);
+  const identifierRef = useRef(null); 
   const passwordRef = useRef(null);
 
   const validateEmail = (email) => {

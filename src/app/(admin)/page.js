@@ -13,6 +13,7 @@ import {
   getBookings,
   getAdminsList,
   getAdminFormConfig,
+  getUserModulesApi,
 } from "@/config/AxiosConfig";
 import { adminUpdateStates } from "@/store/slices/authSlice";
 import {
@@ -38,6 +39,8 @@ import {
   Building,
   Crown,
   Settings,
+  Stethoscope,
+  Pill,
 } from "lucide-react";
 
 /**
@@ -151,6 +154,7 @@ export default function Dashboard() {
   const [formFields, setFormFields] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [userModules, setUserModules] = useState({ medicineModule: false, medicalModule: false });
 
   // Fetch Dashboard Data strictly based on logged-in role
   const fetchDashboardData = useCallback(async () => {
@@ -201,8 +205,18 @@ export default function Dashboard() {
           console.error("SuperAdmin admins list fetch error:", err);
         }
       } else {
-        // Fetch Regular Admin Recent Bookings & Form Config
+        // Fetch Regular Admin Recent Bookings, Form Config, and User Modules
         try {
+          if (admin?._id) {
+            getUserModulesApi(admin._id)
+              .then((res) => {
+                if (res.status === 200 && res.data?.data) {
+                  setUserModules(res.data.data);
+                }
+              })
+              .catch(() => {});
+          }
+
           const [resBookings, resForm] = await Promise.all([
             getBookings(),
             getAdminFormConfig().catch(() => null),
@@ -615,42 +629,44 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-6">
             {/* Admin Stat Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <StatCard
-                title="Total Bookings"
-                value={formatNumber(stats.totalBookings)}
-                icon={Calendar}
-                color="blue"
-                loading={isLoading}
-                onClick={() => router.push("/appointments-list")}
-              />
-              <StatCard
-                title="Week Bookings"
-                value={formatNumber(stats.weekBookings || 0)}
-                icon={CalendarDays}
-                color="purple"
-                loading={isLoading}
-                onClick={() => router.push("/appointments-list?filter=week")}
-              />
-              <StatCard
-                title="Today Bookings"
-                value={formatNumber(stats.todayBookings || 0)}
-                icon={Clock}
-                color="green"
-                loading={isLoading}
-                onClick={() => router.push("/appointments-list?filter=today")}
-              />
-              <StatCard
-                title="Pending Bookings"
-                value={formatNumber(
-                  stats.pendingBookings || statusCounts.pending || 0,
-                )}
-                icon={AlertCircle}
-                color="orange"
-                loading={isLoading}
-                onClick={() => router.push("/appointments-list?status=pending")}
-              />
-            </div>
+            {!userModules.medicalModule && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <StatCard
+                  title="Total Bookings"
+                  value={formatNumber(stats.totalBookings)}
+                  icon={Calendar}
+                  color="blue"
+                  loading={isLoading}
+                  onClick={() => router.push("/appointments-list")}
+                />
+                <StatCard
+                  title="Week Bookings"
+                  value={formatNumber(stats.weekBookings || 0)}
+                  icon={CalendarDays}
+                  color="purple"
+                  loading={isLoading}
+                  onClick={() => router.push("/appointments-list?filter=week")}
+                />
+                <StatCard
+                  title="Today Bookings"
+                  value={formatNumber(stats.todayBookings || 0)}
+                  icon={Clock}
+                  color="green"
+                  loading={isLoading}
+                  onClick={() => router.push("/appointments-list?filter=today")}
+                />
+                <StatCard
+                  title="Pending Bookings"
+                  value={formatNumber(
+                    stats.pendingBookings || statusCounts.pending || 0,
+                  )}
+                  icon={AlertCircle}
+                  color="orange"
+                  loading={isLoading}
+                  onClick={() => router.push("/appointments-list?status=pending")}
+                />
+              </div>
+            )}
 
             {/* Admin Quick Actions */}
             <div className="bg-white rounded-lg border border-gray-200/80 p-6 shadow-xs">
@@ -659,91 +675,139 @@ export default function Dashboard() {
                 Quick Actions
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button
-                  onClick={() =>
-                    router.push("/appointments-list/create-appointment")
-                  }
-                  className="flex items-center justify-between p-4 rounded-lg border border-indigo-100 bg-indigo-50/40 hover:bg-indigo-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-indigo-600 text-white group-hover:bg-white group-hover:text-indigo-600 transition-colors">
-                      <PlusCircle className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
-                        Create Booking
-                      </h4>
-                      <p className="text-xs text-gray-500 group-hover:text-indigo-100">
-                        Schedule new appointment
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
-                </button>
+                {userModules.medicalModule ? (
+                  <>
+                    <button
+                      onClick={() => router.push("/medical")}
+                      className="flex items-center justify-between p-4 rounded-lg border border-purple-100 bg-purple-50/40 hover:bg-purple-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-lg bg-purple-600 text-white group-hover:bg-white group-hover:text-purple-600 transition-colors">
+                          <Stethoscope className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
+                            Medical Prescriptions
+                          </h4>
+                          <p className="text-xs text-gray-500 group-hover:text-purple-100">
+                            View & fulfill prescriptions
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                    </button>
+                    {userModules.medicineModule && (
+                      <button
+                        onClick={() => router.push("/medicines")}
+                        className="flex items-center justify-between p-4 rounded-lg border border-emerald-100 bg-emerald-50/40 hover:bg-emerald-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-lg bg-emerald-600 text-white group-hover:bg-white group-hover:text-emerald-600 transition-colors">
+                            <Pill className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
+                              Medicine Inventory
+                            </h4>
+                            <p className="text-xs text-gray-500 group-hover:text-emerald-100">
+                              Manage medicines & stock
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() =>
+                        router.push("/appointments-list/create-appointment")
+                      }
+                      className="flex items-center justify-between p-4 rounded-lg border border-indigo-100 bg-indigo-50/40 hover:bg-indigo-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-lg bg-indigo-600 text-white group-hover:bg-white group-hover:text-indigo-600 transition-colors">
+                          <PlusCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
+                            Create Booking
+                          </h4>
+                          <p className="text-xs text-gray-500 group-hover:text-indigo-100">
+                            Schedule new appointment
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                    </button>
 
-                <button
-                  onClick={() => router.push("/appointments-list")}
-                  className="flex items-center justify-between p-4 rounded-lg border border-blue-100 bg-blue-50/40 hover:bg-blue-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-blue-600 text-white group-hover:bg-white group-hover:text-blue-600 transition-colors">
-                      <CalendarDays className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
-                        All Appointments
-                      </h4>
-                      <p className="text-xs text-gray-500 group-hover:text-blue-100">
-                        View & edit list
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
-                </button>
+                    <button
+                      onClick={() => router.push("/appointments-list")}
+                      className="flex items-center justify-between p-4 rounded-lg border border-blue-100 bg-blue-50/40 hover:bg-blue-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-lg bg-blue-600 text-white group-hover:bg-white group-hover:text-blue-600 transition-colors">
+                          <CalendarDays className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
+                            All Appointments
+                          </h4>
+                          <p className="text-xs text-gray-500 group-hover:text-blue-100">
+                            View & edit list
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                    </button>
 
-                <button
-                  onClick={() => router.push("/holidays")}
-                  className="flex items-center justify-between p-4 rounded-lg border border-purple-100 bg-purple-50/40 hover:bg-purple-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-purple-600 text-white group-hover:bg-white group-hover:text-purple-600 transition-colors">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
-                        Holidays Calendar
-                      </h4>
-                      <p className="text-xs text-gray-500 group-hover:text-purple-100">
-                        Set breaks & off days
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
-                </button>
+                    <button
+                      onClick={() => router.push("/holidays")}
+                      className="flex items-center justify-between p-4 rounded-lg border border-purple-100 bg-purple-50/40 hover:bg-purple-600 hover:text-white group transition-all duration-200 text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-lg bg-purple-600 text-white group-hover:bg-white group-hover:text-purple-600 transition-colors">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
+                            Holidays Calendar
+                          </h4>
+                          <p className="text-xs text-gray-500 group-hover:text-purple-100">
+                            Set breaks & off days
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                    </button>
 
-                <button
-                  onClick={() => router.push("/settings/slots")}
-                  className="flex items-center justify-between p-4 rounded-lg border border-slate-200 bg-slate-50/40 hover:bg-slate-800 hover:text-white group transition-all duration-200 text-left cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-slate-800 text-white group-hover:bg-white group-hover:text-slate-800 transition-colors">
-                      <Briefcase className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
-                        Slot Settings
-                      </h4>
-                      <p className="text-xs text-gray-500 group-hover:text-slate-200">
-                        Configure time slots
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
-                </button>
+                    <button
+                      onClick={() => router.push("/settings/slots")}
+                      className="flex items-center justify-between p-4 rounded-lg border border-slate-200 bg-slate-50/40 hover:bg-slate-800 hover:text-white group transition-all duration-200 text-left cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-lg bg-slate-800 text-white group-hover:bg-white group-hover:text-slate-800 transition-colors">
+                          <Briefcase className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900 group-hover:text-white">
+                            Slot Settings
+                          </h4>
+                          <p className="text-xs text-gray-500 group-hover:text-slate-200">
+                            Configure time slots
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-white" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Main Content Grid: Recent Appointments & Status Breakdown */}
+            {!userModules.medicalModule && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column: Recent Appointments Table */}
               <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200/80 shadow-xs overflow-hidden flex flex-col">
@@ -956,9 +1020,10 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
+    </div>
 
       {/* Quick View Details Modal */}
       <CustomModal

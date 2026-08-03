@@ -43,6 +43,7 @@ export const adminMenuItems = [
     icon: CalendarCheck,
     name: "Appointments List",
     path: "/appointments-list",
+    hideInMedicalModule: true,
     isActive: [
       "/appointments-list",
       "/appointments-list/", // prefix matches sub-routes like `/appointments-list/create-appointment` and `/appointments-list/edit-appointment/[bookingId]`
@@ -52,16 +53,19 @@ export const adminMenuItems = [
     icon: ClipboardList,
     name: "Form Configuration",
     path: "/settings/form",
+    hideInMedicalModule: true,
   },
   {
     icon: Clock,
     name: "Slots Settings",
     path: "/settings/slots",
+    hideInMedicalModule: true,
   },
   {
     icon: Calendar,
     name: "Holidays Management",
     path: "/holidays",
+    hideInMedicalModule: true,
   },
   {
     icon: Pill,

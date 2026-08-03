@@ -540,77 +540,81 @@ export default function AdminsPage() {
                     </TD>
                     <TD>
                       <div className="flex items-center justify-end gap-3 font-medium text-right text-xs">
-                        {/* 1. Form Config */}
-                        <div className="relative group/tooltip inline-flex items-center justify-center">
-                          <Link
-                            href={`/admins/${admin._id}/form`}
-                            className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
-                          >
-                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </Link>
-                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
-                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
-                              Form Config
-                            </span>
-                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
-                          </span>
-                        </div>
+                        {!adminModules[admin._id]?.medicalModule && (
+                          <>
+                            {/* 1. Form Config */}
+                            <div className="relative group/tooltip inline-flex items-center justify-center">
+                              <Link
+                                href={`/admins/${admin._id}/form`}
+                                className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
+                              >
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </Link>
+                              <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                                <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                                  Form Config
+                                </span>
+                                <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                              </span>
+                            </div>
 
-                        {/* 2. Slots Settings */}
-                        <div className="relative group/tooltip inline-flex items-center justify-center">
-                          <Link
-                            href={`/admins/${admin._id}/slots`}
-                            className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
-                          >
-                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </Link>
-                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
-                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
-                              Slots Settings
-                            </span>
-                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
-                          </span>
-                        </div>
+                            {/* 2. Slots Settings */}
+                            <div className="relative group/tooltip inline-flex items-center justify-center">
+                              <Link
+                                href={`/admins/${admin._id}/slots`}
+                                className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                              >
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </Link>
+                              <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                                <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                                  Slots Settings
+                                </span>
+                                <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                              </span>
+                            </div>
 
-                        {/* 3. Holiday Management */}
-                        <div className="relative group/tooltip inline-flex items-center justify-center">
-                          <Link
-                            href={`/admins/${admin._id}/holidays`}
-                            className="text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
-                          >
-                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                          </Link>
-                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
-                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
-                              Holiday Management
-                            </span>
-                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
-                          </span>
-                        </div>
+                            {/* 3. Holiday Management */}
+                            <div className="relative group/tooltip inline-flex items-center justify-center">
+                              <Link
+                                href={`/admins/${admin._id}/holidays`}
+                                className="text-gray-500 hover:text-red-500 transition-colors cursor-pointer"
+                              >
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                              </Link>
+                              <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                                <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                                  Holiday Management
+                                </span>
+                                <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                              </span>
+                            </div>
 
-                        {/* 4. Appointments List */}
-                        <div className="relative group/tooltip inline-flex items-center justify-center">
-                          <Link
-                            href={`/admins/appointments-list/${admin._id}`}
-                            className="text-gray-500 hover:text-amber-500 transition-colors cursor-pointer"
-                          >
-                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                          </Link>
-                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
-                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
-                              Appointments List
-                            </span>
-                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
-                          </span>
-                        </div>
+                            {/* 4. Appointments List */}
+                            <div className="relative group/tooltip inline-flex items-center justify-center">
+                              <Link
+                                href={`/admins/appointments-list/${admin._id}`}
+                                className="text-gray-500 hover:text-amber-500 transition-colors cursor-pointer"
+                              >
+                                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                              </Link>
+                              <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
+                                <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
+                                  Appointments List
+                                </span>
+                                <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
+                              </span>
+                            </div>
+                          </>
+                        )}
 
                         {/* 5. Manage Module Access */}
                         <div className="relative group/tooltip inline-flex items-center justify-center">
