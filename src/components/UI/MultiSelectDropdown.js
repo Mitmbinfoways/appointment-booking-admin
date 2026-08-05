@@ -17,8 +17,8 @@ export default function MultiSelectDropdown({
   const selectedArray = Array.isArray(value)
     ? value
     : typeof value === "string" && value
-    ? value.split(",").map((s) => s.trim())
-    : [];
+      ? value.split(",").map((s) => s.trim())
+      : [];
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -61,13 +61,15 @@ export default function MultiSelectDropdown({
           hasError
             ? "border-red-500"
             : isOpen
-            ? "border-blue-500 ring-2 ring-blue-500/10"
-            : "border-gray-300"
+              ? "border-blue-500 ring-2 ring-blue-500/10"
+              : "border-gray-300"
         }`}
       >
         <div className="flex flex-wrap items-center gap-1.5 overflow-hidden pr-2">
           {selectedArray.length === 0 ? (
-            <span className="text-gray-400 text-xs font-normal">{placeholder}</span>
+            <span className="text-gray-400 text-xs font-normal">
+              {placeholder}
+            </span>
           ) : selectedArray.length > 3 ? (
             <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md px-2.5 py-1 text-xs font-semibold">
               {selectedArray.length} Selected
@@ -136,7 +138,9 @@ export default function MultiSelectDropdown({
                     />
                     <span>{optLabel}</span>
                   </div>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                  {isSelected && (
+                    <Check className="w-3.5 h-3.5 text-blue-600" />
+                  )}
                 </div>
               );
             })

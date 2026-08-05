@@ -45,10 +45,11 @@ export default function AdminLayout({ children }) {
         <Backdrop />
       </div>
       <div
-        className={`flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out w-full overflow-x-hidden ${isExpanded || isHovered
-          ? `${isExpanded ? "md:ml-[290px]" : "md:ml-0"} lg:ml-[290px]`
-          : "md:ml-0 lg:ml-[90px]"
-          } ${isMobileOpen ? "ml-0" : ""}`}
+        className={`flex-1 flex flex-col h-screen transition-all duration-300 ease-in-out w-full overflow-x-hidden ${
+          isExpanded || isHovered
+            ? `${isExpanded ? "md:ml-[290px]" : "md:ml-0"} lg:ml-[290px]`
+            : "md:ml-0 lg:ml-[90px]"
+        } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <AppHeader />
         <div className="relative flex-1 overflow-y-auto overflow-x-hidden bg-gray-50">

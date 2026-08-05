@@ -22,9 +22,7 @@ const PageBreadcrumb = ({ items = [] }) => {
                   {item.label}
                 </Link>
               ) : (
-                <span className="text-sm text-gray-800">
-                  {item.label}
-                </span>
+                <span className="text-sm text-gray-800">{item.label}</span>
               )}
               {idx < items.length - 1 && (
                 <MdKeyboardArrowRight className="text-gray-500" />

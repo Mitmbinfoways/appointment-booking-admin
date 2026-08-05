@@ -270,9 +270,7 @@ export default function AppointmentsListPage() {
         items={[
           { label: "Home", to: "/" },
           { label: "Appointments List", to: "/appointments-list" },
-          ...(prescriptionModal.isOpen
-            ? [{ label: "Prescription" }]
-            : []),
+          ...(prescriptionModal.isOpen ? [{ label: "Prescription" }] : []),
         ]}
       />
 
@@ -284,119 +282,178 @@ export default function AppointmentsListPage() {
           admin={admin}
         />
       ) : (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
-        {/* Header Section */}
-        <div className="flex flex-col gap-4 p-4 border-b border-gray-200 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder="Search appointments..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 w-full sm:w-60"
-            />
-            {/* Date Filters */}
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              onClick={(e) => {
-                try {
-                  e.target.showPicker();
-                } catch (err) {}
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
-            />
-            <span className="text-gray-500 text-sm hidden sm:inline">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              onClick={(e) => {
-                try {
-                  e.target.showPicker();
-                } catch (err) {}
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
-            />
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700 bg-white"
+        <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
+          {/* Header Section */}
+          <div className="flex flex-col gap-4 p-4 border-b border-gray-200 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search Input */}
+              <input
+                type="text"
+                placeholder="Search appointments..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 w-full sm:w-60"
+              />
+              {/* Date Filters */}
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    e.target.showPicker();
+                  } catch (err) {}
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
+              />
+              <span className="text-gray-500 text-sm hidden sm:inline">to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                onClick={(e) => {
+                  try {
+                    e.target.showPicker();
+                  } catch (err) {}
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
+              />
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700 bg-white"
+              >
+                <option value="">All Statuses</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <Button
+              onClick={handleCreateClick}
+              variant="primary"
+              size="md"
+              className="shrink-0"
             >
-              <option value="">All Statuses</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="pending">Pending</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              Create Appointment
+            </Button>
           </div>
-          <Button
-            onClick={handleCreateClick}
-            variant="primary"
-            size="md"
-            className="shrink-0"
-          >
-            Create Appointment
-          </Button>
-        </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto custom-scrollbar">
-          <Table>
-            <THead>
-              <TR>
-                <TH>SR NO</TH>
-                {mediaFields.map((field) => (
-                  <TH key={field.fieldKey}>{field.label}</TH>
-                ))}
-                <TH>Booking ID</TH>
-                {regularFields.map((field) => (
-                  <TH key={field.fieldKey}>{field.label}</TH>
-                ))}
-                <TH>Appointment Date & Time</TH>
-                <TH>Date</TH>
-                <TH>Status</TH>
-                <TH className="text-right">Actions</TH>
-              </TR>
-            </THead>
-            <TBody>
-              {isLoading ? (
+          {/* Table Content */}
+          <div className="overflow-x-auto custom-scrollbar">
+            <Table>
+              <THead>
                 <TR>
-                  <TD
-                    colSpan={5 + formFields.length}
-                    className="px-6 py-10 text-center text-gray-400 text-sm"
-                  >
-                    Loading bookings...
-                  </TD>
+                  <TH>SR NO</TH>
+                  {mediaFields.map((field) => (
+                    <TH key={field.fieldKey}>{field.label}</TH>
+                  ))}
+                  <TH>Booking ID</TH>
+                  {regularFields.map((field) => (
+                    <TH key={field.fieldKey}>{field.label}</TH>
+                  ))}
+                  <TH>Appointment Date & Time</TH>
+                  <TH>Date</TH>
+                  <TH>Status</TH>
+                  <TH className="text-right">Actions</TH>
                 </TR>
-              ) : filteredBookings.length === 0 ? (
-                <TR>
-                  <TD
-                    colSpan={5 + formFields.length}
-                    className="px-6 py-10 text-center text-gray-400 text-sm"
-                  >
-                    No bookings found.
-                  </TD>
-                </TR>
-              ) : (
-                filteredBookings.map((b, idx) => (
-                  <TR key={b._id}>
-                    <TD className="text-sm text-gray-500">{idx + 1}</TD>
-                    {mediaFields.map((field) => {
-                      const val =
-                        b.dynamicResponses?.[field.fieldKey] ||
-                        b.dynamicResponses?.get?.(field.fieldKey);
-                      const fieldType = field.type || field.inputType;
-                      const isImage =
-                        fieldType === "image" ||
-                        (typeof val === "string" &&
-                          val.startsWith("data:image/"));
-                      return (
-                        <TD key={field.fieldKey} className="text-sm">
-                          {val ? (
-                            isImage ? (
+              </THead>
+              <TBody>
+                {isLoading ? (
+                  <TR>
+                    <TD
+                      colSpan={5 + formFields.length}
+                      className="px-6 py-10 text-center text-gray-400 text-sm"
+                    >
+                      Loading bookings...
+                    </TD>
+                  </TR>
+                ) : filteredBookings.length === 0 ? (
+                  <TR>
+                    <TD
+                      colSpan={5 + formFields.length}
+                      className="px-6 py-10 text-center text-gray-400 text-sm"
+                    >
+                      No bookings found.
+                    </TD>
+                  </TR>
+                ) : (
+                  filteredBookings.map((b, idx) => (
+                    <TR key={b._id}>
+                      <TD className="text-sm text-gray-500">{idx + 1}</TD>
+                      {mediaFields.map((field) => {
+                        const val =
+                          b.dynamicResponses?.[field.fieldKey] ||
+                          b.dynamicResponses?.get?.(field.fieldKey);
+                        const fieldType = field.type || field.inputType;
+                        const isImage =
+                          fieldType === "image" ||
+                          (typeof val === "string" &&
+                            val.startsWith("data:image/"));
+                        return (
+                          <TD key={field.fieldKey} className="text-sm">
+                            {val ? (
+                              isImage ? (
+                                <img
+                                  src={val}
+                                  alt={field.label}
+                                  onClick={() =>
+                                    setFilePreview({
+                                      isOpen: true,
+                                      url: val,
+                                      type: "image",
+                                      title: field.label,
+                                    })
+                                  }
+                                  className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
+                                />
+                              ) : (
+                                <div
+                                  onClick={() =>
+                                    setFilePreview({
+                                      isOpen: true,
+                                      url: val,
+                                      type: "video",
+                                      title: field.label,
+                                    })
+                                  }
+                                  className="cursor-pointer inline-block"
+                                >
+                                  <video
+                                    src={val}
+                                    className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none"
+                                  />
+                                </div>
+                              )
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </TD>
+                        );
+                      })}
+
+                      <TD className="text-sm font-semibold text-gray-900">
+                        {getNumericBookingId(b)}
+                      </TD>
+
+                      {/* Render matching dynamic responses for Regular Form Columns */}
+                      {regularFields.map((field) => {
+                        const val =
+                          b.dynamicResponses?.[field.fieldKey] ||
+                          b.dynamicResponses?.get?.(field.fieldKey);
+                        const isImage =
+                          typeof val === "string" &&
+                          val.startsWith("data:image/");
+                        const isVideo =
+                          typeof val === "string" &&
+                          val.startsWith("data:video/");
+                        return (
+                          <TD
+                            key={field.fieldKey}
+                            className="text-sm text-gray-700"
+                          >
+                            {isImage ? (
                               <img
                                 src={val}
                                 alt={field.label}
@@ -410,7 +467,7 @@ export default function AppointmentsListPage() {
                                 }
                                 className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                               />
-                            ) : (
+                            ) : isVideo ? (
                               <div
                                 onClick={() =>
                                   setFilePreview({
@@ -427,156 +484,100 @@ export default function AppointmentsListPage() {
                                   className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none"
                                 />
                               </div>
-                            )
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </TD>
-                      );
-                    })}
+                            ) : val !== undefined && val !== null ? (
+                              String(val)
+                            ) : (
+                              "-"
+                            )}
+                          </TD>
+                        );
+                      })}
 
-                    <TD className="text-sm font-semibold text-gray-900">
-                      {getNumericBookingId(b)}
-                    </TD>
-
-                    {/* Render matching dynamic responses for Regular Form Columns */}
-                    {regularFields.map((field) => {
-                      const val =
-                        b.dynamicResponses?.[field.fieldKey] ||
-                        b.dynamicResponses?.get?.(field.fieldKey);
-                      const isImage =
-                        typeof val === "string" &&
-                        val.startsWith("data:image/");
-                      const isVideo =
-                        typeof val === "string" &&
-                        val.startsWith("data:video/");
-                      return (
-                        <TD
-                          key={field.fieldKey}
-                          className="text-sm text-gray-700"
+                      <TD className="text-gray-600 text-sm">
+                        <span className="block font-semibold text-gray-900">
+                          {formatDateDDMMYYYY(b.slotDate)}
+                        </span>
+                        <span className="block text-xs text-gray-550">
+                          {b.slotStartTime} - {b.slotEndTime}
+                        </span>
+                      </TD>
+                      <TD className="text-sm font-medium text-gray-700">
+                        {formatBookedDate(b.createdAt) ||
+                          formatDateDDMMYYYY(b.slotDate)}
+                      </TD>
+                      <TD>
+                        <span
+                          className={`inline-flex px-2.5 py-1 text-xs font-semibold border rounded-full ${getStatusClass(
+                            b.status,
+                          )}`}
                         >
-                          {isImage ? (
-                            <img
-                              src={val}
-                              alt={field.label}
+                          {b.status}
+                        </span>
+                      </TD>
+                      <TD className="text-right">
+                        <div className="flex items-center justify-end gap-3.5">
+                          <div className="relative group">
+                            <button
                               onClick={() =>
-                                setFilePreview({
+                                setPrescriptionModal({
                                   isOpen: true,
-                                  url: val,
-                                  type: "image",
-                                  title: field.label,
+                                  booking: b,
                                 })
                               }
-                              className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
-                            />
-                          ) : isVideo ? (
-                            <div
-                              onClick={() =>
-                                setFilePreview({
-                                  isOpen: true,
-                                  url: val,
-                                  type: "video",
-                                  title: field.label,
-                                })
-                              }
-                              className="cursor-pointer inline-block"
+                              className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
                             >
-                              <video
-                                src={val}
-                                className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none"
-                              />
-                            </div>
-                          ) : val !== undefined && val !== null ? (
-                            String(val)
-                          ) : (
-                            "-"
-                          )}
-                        </TD>
-                      );
-                    })}
-
-                    <TD className="text-gray-600 text-sm">
-                      <span className="block font-semibold text-gray-900">
-                        {formatDateDDMMYYYY(b.slotDate)}
-                      </span>
-                      <span className="block text-xs text-gray-550">
-                        {b.slotStartTime} - {b.slotEndTime}
-                      </span>
-                    </TD>
-                    <TD className="text-sm font-medium text-gray-700">
-                      {formatBookedDate(b.createdAt) ||
-                        formatDateDDMMYYYY(b.slotDate)}
-                    </TD>
-                    <TD>
-                      <span
-                        className={`inline-flex px-2.5 py-1 text-xs font-semibold border rounded-full ${getStatusClass(
-                          b.status,
-                        )}`}
-                      >
-                        {b.status}
-                      </span>
-                    </TD>
-                    <TD className="text-right">
-                      <div className="flex items-center justify-end gap-3.5">
-                        <div className="relative group">
-                          <button
-                            onClick={() =>
-                              setPrescriptionModal({ isOpen: true, booking: b })
-                            }
-                            className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
-                          >
-                            <FileText size={18} />
-                          </button>
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
-                            Prescription
-                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
-                          </span>
+                              <FileText size={18} />
+                            </button>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                              Prescription
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                            </span>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => handleViewClick(b)}
+                              className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
+                            >
+                              <Eye size={18} />
+                            </button>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                              View
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                            </span>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => handleEditClick(b)}
+                              className="text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                              Edit
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                            </span>
+                          </div>
+                          <div className="relative group">
+                            <button
+                              onClick={() => handleDeleteClick(b)}
+                              className="text-gray-500 hover:text-red-650 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+                              Delete
+                              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                            </span>
+                          </div>
                         </div>
-                        <div className="relative group">
-                          <button
-                            onClick={() => handleViewClick(b)}
-                            className="text-gray-500 hover:text-indigo-600 transition-colors cursor-pointer"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
-                            View
-                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
-                          </span>
-                        </div>
-                        <div className="relative group">
-                          <button
-                            onClick={() => handleEditClick(b)}
-                            className="text-gray-500 hover:text-blue-600 transition-colors cursor-pointer"
-                          >
-                            <Pencil size={18} />
-                          </button>
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
-                            Edit
-                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
-                          </span>
-                        </div>
-                        <div className="relative group">
-                          <button
-                            onClick={() => handleDeleteClick(b)}
-                            className="text-gray-500 hover:text-red-650 transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[11px] font-medium text-white bg-gray-900 rounded-md whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
-                            Delete
-                            <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
-                          </span>
-                        </div>
-                      </div>
-                    </TD>
-                  </TR>
-                ))
-              )}
-            </TBody>
-          </Table>
+                      </TD>
+                    </TR>
+                  ))
+                )}
+              </TBody>
+            </Table>
+          </div>
         </div>
-      </div>
       )}
 
       {/* View Modal */}
@@ -754,8 +755,6 @@ export default function AppointmentsListPage() {
         title="Delete Appointment"
         message="Are you sure you want to permanently delete this appointment? This action cannot be undone."
       />
-
-
 
       {/* Full Screen File View Modal */}
       <FileViewModal

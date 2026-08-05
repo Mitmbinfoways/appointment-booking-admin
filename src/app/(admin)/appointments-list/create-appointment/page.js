@@ -25,7 +25,12 @@ export default function CreateAppointmentPage() {
   const adminState = useSelector((state) => state.admin) || {};
   const { admin } = adminState;
 
-  const [filePreview, setFilePreview] = useState({ isOpen: false, url: "", type: "image", title: "" });
+  const [filePreview, setFilePreview] = useState({
+    isOpen: false,
+    url: "",
+    type: "image",
+    title: "",
+  });
 
   const [formFields, setFormFields] = useState([]);
   const [fileNames, setFileNames] = useState({});
@@ -94,7 +99,6 @@ export default function CreateAppointmentPage() {
         if (formRes.status === 200 && formRes.data?.statusCode === 200) {
           const fields = formRes.data.data?.fields || [];
           setFormFields(fields);
-
 
           const initialResponses = {};
           fields.forEach((f) => {
@@ -195,9 +199,12 @@ export default function CreateAppointmentPage() {
           const slotsList = Array.isArray(rawData)
             ? rawData
             : rawData?.slots || [];
-          const notice = (rawData && !Array.isArray(rawData) && typeof rawData.minAdvanceNoticeMinutes === "number")
-            ? rawData.minAdvanceNoticeMinutes
-            : (slotSettings?.minAdvanceNoticeMinutes || 0);
+          const notice =
+            rawData &&
+            !Array.isArray(rawData) &&
+            typeof rawData.minAdvanceNoticeMinutes === "number"
+              ? rawData.minAdvanceNoticeMinutes
+              : slotSettings?.minAdvanceNoticeMinutes || 0;
           setMinAdvanceNoticeMinutes(notice);
           setAvailableSlots(slotsList);
         } else {
@@ -288,7 +295,8 @@ export default function CreateAppointmentPage() {
     formFields.forEach((field) => {
       const fieldKey = field.fieldKey || field.name || field.label;
       const rawVal = newBookingResponses[fieldKey];
-      const val = rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : "";
+      const val =
+        rawVal !== undefined && rawVal !== null ? String(rawVal).trim() : "";
 
       const isEmail = field.type === "email";
       const isNumeric = field.type === "tel" || field.type === "number";
@@ -301,7 +309,8 @@ export default function CreateAppointmentPage() {
         hasError = true;
       } else if (val) {
         if (isEmail) {
-          const emailRegex = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
+          const emailRegex =
+            /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
           if (!emailRegex.test(val)) {
             newErrors[fieldKey] = "Please enter a valid email address";
             hasError = true;
@@ -312,7 +321,8 @@ export default function CreateAppointmentPage() {
             hasError = true;
           }
         } else if (isDate) {
-          const isBirthDate = field.label?.toLowerCase().includes("birth") ||
+          const isBirthDate =
+            field.label?.toLowerCase().includes("birth") ||
             field.label?.toLowerCase().includes("dob") ||
             field.label?.toLowerCase().includes("bday");
           if (isBirthDate) {
@@ -320,13 +330,15 @@ export default function CreateAppointmentPage() {
               const selectedDate = parseISO(val);
               const today = startOfDay(new Date());
               if (isBefore(today, selectedDate)) {
-                newErrors[fieldKey] = "Future dates are not allowed for birth date";
+                newErrors[fieldKey] =
+                  "Future dates are not allowed for birth date";
                 hasError = true;
               }
             } catch (e) {
               const todayStr = format(new Date(), "yyyy-MM-dd");
               if (val > todayStr) {
-                newErrors[fieldKey] = "Future dates are not allowed for birth date";
+                newErrors[fieldKey] =
+                  "Future dates are not allowed for birth date";
                 hasError = true;
               }
             }
@@ -343,7 +355,9 @@ export default function CreateAppointmentPage() {
 
     if (firstErrorKey) {
       setTimeout(() => {
-        const el = document.getElementById(`field-${firstErrorKey}`) || document.querySelector(`[data-field-key="${firstErrorKey}"]`);
+        const el =
+          document.getElementById(`field-${firstErrorKey}`) ||
+          document.querySelector(`[data-field-key="${firstErrorKey}"]`);
         if (el) {
           el.focus();
           el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -518,15 +532,16 @@ export default function CreateAppointmentPage() {
                           setNewBookingSlot("");
                         }}
                         className={`aspect-square rounded-lg flex items-center justify-center text-xs transition-all duration-200 select-none border relative
-                          ${isClosed || isPast
-                            ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
-                            : isFullDayHoliday
-                              ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
-                              : isSelected
-                                ? "bg-blue-600 text-white border-blue-600 font-semibold cursor-pointer"
-                                : isToday
-                                  ? "bg-green-50 text-green-700 border-green-300 font-bold cursor-pointer"
-                                  : "bg-white text-gray-800 hover:border-blue-600 border-gray-200 cursor-pointer"
+                          ${
+                            isClosed || isPast
+                              ? "bg-gray-100/70 text-gray-400 border-gray-200 cursor-not-allowed"
+                              : isFullDayHoliday
+                                ? "bg-red-50 text-red-700 border-red-200 cursor-not-allowed"
+                                : isSelected
+                                  ? "bg-blue-600 text-white border-blue-600 font-semibold cursor-pointer"
+                                  : isToday
+                                    ? "bg-green-50 text-green-700 border-green-300 font-bold cursor-pointer"
+                                    : "bg-white text-gray-800 hover:border-blue-600 border-gray-200 cursor-pointer"
                           }
                         `}
                         title={
@@ -624,13 +639,17 @@ export default function CreateAppointmentPage() {
                           onChange={(e) => {
                             setNewBookingSlot(e.target.value);
                             if (fieldErrors.slot) {
-                              setFieldErrors((prev) => ({ ...prev, slot: null }));
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                slot: null,
+                              }));
                             }
                           }}
-                          className={`w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${fieldErrors.slot
-                            ? "border-red-500 focus:border-red-500"
-                            : "border-gray-300 focus:border-blue-500"
-                            }`}
+                          className={`w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${
+                            fieldErrors.slot
+                              ? "border-red-500 focus:border-red-500"
+                              : "border-gray-300 focus:border-blue-500"
+                          }`}
                         >
                           <option value="">-- Select a Slot --</option>
                           {(Array.isArray(availableSlots)
@@ -641,44 +660,65 @@ export default function CreateAppointmentPage() {
                             if (newBookingDate && s.startTime) {
                               try {
                                 const formattedTime = s.startTime.includes(":")
-                                  ? s.startTime.split(":").map(p => p.padStart(2, "0")).join(":")
+                                  ? s.startTime
+                                      .split(":")
+                                      .map((p) => p.padStart(2, "0"))
+                                      .join(":")
                                   : s.startTime;
-                                const slotStartDateTime = parseISO(`${newBookingDate}T${formattedTime}:00`);
+                                const slotStartDateTime = parseISO(
+                                  `${newBookingDate}T${formattedTime}:00`,
+                                );
                                 const now = new Date();
-                                const effectiveMinNotice = (typeof minAdvanceNoticeMinutes === "number" && minAdvanceNoticeMinutes > 0)
-                                  ? minAdvanceNoticeMinutes
-                                  : (slotSettings?.minAdvanceNoticeMinutes || 0);
-                                const cutoffTime = effectiveMinNotice > 0
-                                  ? new Date(now.getTime() + effectiveMinNotice * 60 * 1000)
-                                  : now;
-                                isPastOrCurrent = isBefore(slotStartDateTime, cutoffTime) || isEqual(slotStartDateTime, cutoffTime);
-                              } catch (e) { }
+                                const effectiveMinNotice =
+                                  typeof minAdvanceNoticeMinutes === "number" &&
+                                  minAdvanceNoticeMinutes > 0
+                                    ? minAdvanceNoticeMinutes
+                                    : slotSettings?.minAdvanceNoticeMinutes ||
+                                      0;
+                                const cutoffTime =
+                                  effectiveMinNotice > 0
+                                    ? new Date(
+                                        now.getTime() +
+                                          effectiveMinNotice * 60 * 1000,
+                                      )
+                                    : now;
+                                isPastOrCurrent =
+                                  isBefore(slotStartDateTime, cutoffTime) ||
+                                  isEqual(slotStartDateTime, cutoffTime);
+                              } catch (e) {}
                             }
 
                             const isBooked = s.status === "booked";
                             const isBreak = s.status === "break";
-                            const isAvailable = s.status === "available" && !isPastOrCurrent;
+                            const isAvailable =
+                              s.status === "available" && !isPastOrCurrent;
 
                             let label = `${s.startTime} - ${s.endTime}`;
                             let optionClass = "";
 
                             if (isBooked) {
                               label += " (Booked)";
-                              optionClass = "bg-gray-100 text-gray-400 font-normal";
+                              optionClass =
+                                "bg-gray-100 text-gray-400 font-normal";
                             } else if (isBreak) {
                               label += " (Break Slot)";
-                              optionClass = "bg-gray-100 text-gray-400 font-normal";
+                              optionClass =
+                                "bg-gray-100 text-gray-400 font-normal";
                             } else if (isPastOrCurrent) {
-                              optionClass = "bg-gray-100 text-gray-400 font-normal";
+                              optionClass =
+                                "bg-gray-100 text-gray-400 font-normal";
                             } else {
-                              optionClass = "bg-white text-gray-800 font-semibold";
+                              optionClass =
+                                "bg-white text-gray-800 font-semibold";
                             }
 
                             return (
                               <option
                                 key={`${s.startTime}-${s.endTime}`}
                                 value={
-                                  isAvailable ? `${s.startTime}-${s.endTime}` : ""
+                                  isAvailable
+                                    ? `${s.startTime}-${s.endTime}`
+                                    : ""
                                 }
                                 disabled={!isAvailable}
                                 className={optionClass}
@@ -702,15 +742,13 @@ export default function CreateAppointmentPage() {
                       Response Fields
                     </span>
                     {formFields.map((field) => {
-                      const fieldKey = field.fieldKey || field.name || field.label;
+                      const fieldKey =
+                        field.fieldKey || field.name || field.label;
                       const val = newBookingResponses[fieldKey] || "";
-                      const isEmail =
-                        field.type === "email"
+                      const isEmail = field.type === "email";
                       const isNumeric =
-                        field.type === "tel" ||
-                        field.type === "number"
-                      const isDate =
-                        field.type === "date"
+                        field.type === "tel" || field.type === "number";
+                      const isDate = field.type === "date";
                       const isBirthDate =
                         isDate &&
                         (field.label?.toLowerCase().includes("birth") ||
@@ -718,10 +756,11 @@ export default function CreateAppointmentPage() {
                           field.label?.toLowerCase().includes("bday"));
                       const hasError = fieldErrors[fieldKey];
 
-                      const inputBaseClass = `w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${hasError
-                        ? "border-red-500 focus:border-red-500"
-                        : "border-gray-300 focus:border-blue-500"
-                        }`;
+                      const inputBaseClass = `w-full p-2.5 border rounded-lg text-sm bg-white text-gray-800 focus:outline-none ${
+                        hasError
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-blue-500"
+                      }`;
 
                       return (
                         <div key={fieldKey}>
@@ -758,7 +797,9 @@ export default function CreateAppointmentPage() {
                               options={field.options || []}
                               value={val}
                               hasError={hasError}
-                              onChange={(selected) => handleNewResponseChange(fieldKey, selected)}
+                              onChange={(selected) =>
+                                handleNewResponseChange(fieldKey, selected)
+                              }
                               placeholder={`Select ${field.label.toLowerCase()}`}
                             />
                           ) : field.type === "checkbox" ? (
@@ -767,11 +808,23 @@ export default function CreateAppointmentPage() {
                                 id={`field-${fieldKey}`}
                                 data-field-key={fieldKey}
                                 type="checkbox"
-                                checked={val === true || val === "true" || val === "1" || val === 1}
-                                onChange={(e) => handleNewResponseChange(fieldKey, e.target.checked)}
+                                checked={
+                                  val === true ||
+                                  val === "true" ||
+                                  val === "1" ||
+                                  val === 1
+                                }
+                                onChange={(e) =>
+                                  handleNewResponseChange(
+                                    fieldKey,
+                                    e.target.checked,
+                                  )
+                                }
                                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                               />
-                              <span className="text-xs font-semibold text-gray-700">{field.label}</span>
+                              <span className="text-xs font-semibold text-gray-700">
+                                {field.label}
+                              </span>
                             </label>
                           ) : field.type === "multiselect_checkbox" ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-gray-50 border border-gray-300 rounded-lg">
@@ -786,7 +839,9 @@ export default function CreateAppointmentPage() {
                                   <label
                                     key={optIdx}
                                     className={`flex items-center gap-2 p-2 rounded border transition-all cursor-pointer select-none ${
-                                      isChecked ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-white border-gray-200 text-gray-700"
+                                      isChecked
+                                        ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold"
+                                        : "bg-white border-gray-200 text-gray-700"
                                     }`}
                                   >
                                     <input
@@ -795,15 +850,22 @@ export default function CreateAppointmentPage() {
                                       onChange={() => {
                                         let updated;
                                         if (isChecked) {
-                                          updated = selectedArr.filter((i) => i !== opt);
+                                          updated = selectedArr.filter(
+                                            (i) => i !== opt,
+                                          );
                                         } else {
                                           updated = [...selectedArr, opt];
                                         }
-                                        handleNewResponseChange(fieldKey, updated);
+                                        handleNewResponseChange(
+                                          fieldKey,
+                                          updated,
+                                        );
                                       }}
                                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                     />
-                                    <span className="text-xs font-medium">{opt}</span>
+                                    <span className="text-xs font-medium">
+                                      {opt}
+                                    </span>
                                   </label>
                                 );
                               })}
@@ -816,7 +878,9 @@ export default function CreateAppointmentPage() {
                                   <label
                                     key={optIdx}
                                     className={`flex items-center gap-2 p-2 rounded border transition-all cursor-pointer select-none ${
-                                      isSelected ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold" : "bg-white border-gray-200 text-gray-700"
+                                      isSelected
+                                        ? "bg-blue-50 border-blue-200 text-blue-800 font-semibold"
+                                        : "bg-white border-gray-200 text-gray-700"
                                     }`}
                                   >
                                     <input
@@ -824,10 +888,14 @@ export default function CreateAppointmentPage() {
                                       name={`radio-${fieldKey}`}
                                       value={opt}
                                       checked={isSelected}
-                                      onChange={() => handleNewResponseChange(fieldKey, opt)}
+                                      onChange={() =>
+                                        handleNewResponseChange(fieldKey, opt)
+                                      }
                                       className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
                                     />
-                                    <span className="text-xs font-medium">{opt}</span>
+                                    <span className="text-xs font-medium">
+                                      {opt}
+                                    </span>
                                   </label>
                                 );
                               })}
@@ -848,29 +916,56 @@ export default function CreateAppointmentPage() {
                             />
                           ) : field.type === "image" ? (
                             <div className="space-y-2">
-                              <div className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}>
+                              <div
+                                className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}
+                              >
                                 <input
                                   id={`file_input_${field.fieldKey}`}
                                   type="file"
                                   accept="image/*"
                                   onChange={(e) =>
-                                    handleFileChange(field.fieldKey, e.target.files[0], "image")
+                                    handleFileChange(
+                                      field.fieldKey,
+                                      e.target.files[0],
+                                      "image",
+                                    )
                                   }
-                                  className={val ? "hidden" : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer"}
+                                  className={
+                                    val
+                                      ? "hidden"
+                                      : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer"
+                                  }
                                 />
                                 {val && (
                                   <div className="space-y-3">
                                     <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-2xs">
                                       <div className="flex items-center gap-2 truncate">
-                                        <span className="text-xs font-bold text-blue-600 shrink-0">Selected File:</span>
-                                        <span className="text-xs font-semibold text-gray-700 truncate">{getFileNameDisplay(val, field.fieldKey, "Attached Image")}</span>
+                                        <span className="text-xs font-bold text-blue-600 shrink-0">
+                                          Selected File:
+                                        </span>
+                                        <span className="text-xs font-semibold text-gray-700 truncate">
+                                          {getFileNameDisplay(
+                                            val,
+                                            field.fieldKey,
+                                            "Attached Image",
+                                          )}
+                                        </span>
                                       </div>
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          handleNewResponseChange(field.fieldKey, "");
-                                          setFileNames((prev) => ({ ...prev, [field.fieldKey]: "" }));
-                                          const inputEl = document.getElementById(`file_input_${field.fieldKey}`);
+                                          handleNewResponseChange(
+                                            field.fieldKey,
+                                            "",
+                                          );
+                                          setFileNames((prev) => ({
+                                            ...prev,
+                                            [field.fieldKey]: "",
+                                          }));
+                                          const inputEl =
+                                            document.getElementById(
+                                              `file_input_${field.fieldKey}`,
+                                            );
                                           if (inputEl) inputEl.value = "";
                                         }}
                                         className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors shrink-0 cursor-pointer"
@@ -882,7 +977,14 @@ export default function CreateAppointmentPage() {
                                       <img
                                         src={val}
                                         alt={field.label}
-                                        onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                                        onClick={() =>
+                                          setFilePreview({
+                                            isOpen: true,
+                                            url: val,
+                                            type: "image",
+                                            title: field.label,
+                                          })
+                                        }
                                         className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-xs cursor-pointer hover:scale-105 transition-transform"
                                       />
                                       <label
@@ -895,33 +997,62 @@ export default function CreateAppointmentPage() {
                                   </div>
                                 )}
                               </div>
-                              <p className="text-[10px] text-gray-400">Accepts images only (max 5MB)</p>
+                              <p className="text-[10px] text-gray-400">
+                                Accepts images only (max 5MB)
+                              </p>
                             </div>
                           ) : field.type === "video" ? (
                             <div className="space-y-2">
-                              <div className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}>
+                              <div
+                                className={`relative w-full p-3.5 bg-gray-50 border border-gray-300 rounded-lg`}
+                              >
                                 <input
                                   id={`file_input_${field.fieldKey}`}
                                   type="file"
                                   accept="video/*"
                                   onChange={(e) =>
-                                    handleFileChange(field.fieldKey, e.target.files[0], "video")
+                                    handleFileChange(
+                                      field.fieldKey,
+                                      e.target.files[0],
+                                      "video",
+                                    )
                                   }
-                                  className={val ? "hidden" : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100 file:cursor-pointer cursor-pointer"}
+                                  className={
+                                    val
+                                      ? "hidden"
+                                      : "w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100 file:cursor-pointer cursor-pointer"
+                                  }
                                 />
                                 {val && (
                                   <div className="space-y-3">
                                     <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-2xs">
                                       <div className="flex items-center gap-2 truncate">
-                                        <span className="text-xs font-bold text-purple-600 shrink-0">Selected File:</span>
-                                        <span className="text-xs font-semibold text-gray-700 truncate">{getFileNameDisplay(val, field.fieldKey, "Attached Video")}</span>
+                                        <span className="text-xs font-bold text-purple-600 shrink-0">
+                                          Selected File:
+                                        </span>
+                                        <span className="text-xs font-semibold text-gray-700 truncate">
+                                          {getFileNameDisplay(
+                                            val,
+                                            field.fieldKey,
+                                            "Attached Video",
+                                          )}
+                                        </span>
                                       </div>
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          handleNewResponseChange(field.fieldKey, "");
-                                          setFileNames((prev) => ({ ...prev, [field.fieldKey]: "" }));
-                                          const inputEl = document.getElementById(`file_input_${field.fieldKey}`);
+                                          handleNewResponseChange(
+                                            field.fieldKey,
+                                            "",
+                                          );
+                                          setFileNames((prev) => ({
+                                            ...prev,
+                                            [field.fieldKey]: "",
+                                          }));
+                                          const inputEl =
+                                            document.getElementById(
+                                              `file_input_${field.fieldKey}`,
+                                            );
                                           if (inputEl) inputEl.value = "";
                                         }}
                                         className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors shrink-0 cursor-pointer"
@@ -931,7 +1062,14 @@ export default function CreateAppointmentPage() {
                                     </div>
                                     <div className="flex items-center gap-3">
                                       <div
-                                        onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                                        onClick={() =>
+                                          setFilePreview({
+                                            isOpen: true,
+                                            url: val,
+                                            type: "video",
+                                            title: field.label,
+                                          })
+                                        }
                                         className="cursor-pointer"
                                       >
                                         <video
@@ -949,7 +1087,9 @@ export default function CreateAppointmentPage() {
                                   </div>
                                 )}
                               </div>
-                              <p className="text-[10px] text-gray-400">Accepts videos only (max 20MB)</p>
+                              <p className="text-[10px] text-gray-400">
+                                Accepts videos only (max 20MB)
+                              </p>
                             </div>
                           ) : (
                             <input
@@ -968,12 +1108,18 @@ export default function CreateAppointmentPage() {
                               }
                               inputMode={isNumeric ? "numeric" : undefined}
                               maxLength={isNumeric ? 10 : undefined}
-                              max={isDate && isBirthDate ? format(new Date(), "yyyy-MM-dd") : undefined}
+                              max={
+                                isDate && isBirthDate
+                                  ? format(new Date(), "yyyy-MM-dd")
+                                  : undefined
+                              }
                               value={val}
                               onChange={(e) => {
                                 let inputVal = e.target.value;
                                 if (isNumeric) {
-                                  inputVal = inputVal.replace(/\D/g, "").slice(0, 10);
+                                  inputVal = inputVal
+                                    .replace(/\D/g, "")
+                                    .slice(0, 10);
                                 }
                                 handleNewResponseChange(
                                   field.fieldKey,
@@ -1001,18 +1147,28 @@ export default function CreateAppointmentPage() {
                                 }
                               }}
                               onClick={(e) => {
-                                if (isDate && e.target && typeof e.target.showPicker === "function") {
+                                if (
+                                  isDate &&
+                                  e.target &&
+                                  typeof e.target.showPicker === "function"
+                                ) {
                                   try {
                                     e.target.showPicker();
-                                  } catch (err) { }
+                                  } catch (err) {}
                                 }
                               }}
-                              placeholder={isDate ? undefined : `Enter ${field.label.toLowerCase()}`}
+                              placeholder={
+                                isDate
+                                  ? undefined
+                                  : `Enter ${field.label.toLowerCase()}`
+                              }
                               className={`${inputBaseClass} ${isDate ? "cursor-pointer" : ""}`}
                             />
                           )}
                           {hasError && (
-                            <p className="mt-1.5 text-xs text-red-500 font-bold">{hasError}</p>
+                            <p className="mt-1.5 text-xs text-red-500 font-bold">
+                              {hasError}
+                            </p>
                           )}
                         </div>
                       );
@@ -1027,10 +1183,7 @@ export default function CreateAppointmentPage() {
                     >
                       Cancel
                     </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSaving}
-                    >
+                    <Button type="submit" disabled={isSaving}>
                       {isSaving ? "Saving..." : "Create Appointment"}
                     </Button>
                   </div>
@@ -1079,7 +1232,9 @@ export default function CreateAppointmentPage() {
       {/* Full Screen File View Modal */}
       <FileViewModal
         isOpen={filePreview.isOpen}
-        onClose={() => setFilePreview({ isOpen: false, url: "", type: "image", title: "" })}
+        onClose={() =>
+          setFilePreview({ isOpen: false, url: "", type: "image", title: "" })
+        }
         fileUrl={filePreview.url}
         fileType={filePreview.type}
         title={filePreview.title}

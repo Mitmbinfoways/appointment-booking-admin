@@ -154,7 +154,10 @@ export default function Dashboard() {
   const [formFields, setFormFields] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [userModules, setUserModules] = useState({ medicineModule: false, medicalModule: false });
+  const [userModules, setUserModules] = useState({
+    medicineModule: false,
+    medicalModule: false,
+  });
 
   // Fetch Dashboard Data strictly based on logged-in role
   const fetchDashboardData = useCallback(async () => {
@@ -663,7 +666,9 @@ export default function Dashboard() {
                   icon={AlertCircle}
                   color="orange"
                   loading={isLoading}
-                  onClick={() => router.push("/appointments-list?status=pending")}
+                  onClick={() =>
+                    router.push("/appointments-list?status=pending")
+                  }
                 />
               </div>
             )}
@@ -808,222 +813,223 @@ export default function Dashboard() {
 
             {/* Main Content Grid: Recent Appointments & Status Breakdown */}
             {!userModules.medicalModule && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column: Recent Appointments Table */}
-              <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200/80 shadow-xs overflow-hidden flex flex-col">
-                <div className="p-5 border-b border-gray-200/80 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900">
-                      Recent Appointments
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Latest bookings received
-                    </p>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Recent Appointments Table */}
+                <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200/80 shadow-xs overflow-hidden flex flex-col">
+                  <div className="p-5 border-b border-gray-200/80 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">
+                        Recent Appointments
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Latest bookings received
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push("/appointments-list")}
+                      className="gap-1 text-xs"
+                    >
+                      <span>View All</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push("/appointments-list")}
-                    className="gap-1 text-xs"
-                  >
-                    <span>View All</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
 
-                <div className="overflow-x-auto flex-1">
-                  <Table>
-                    <THead>
-                      <TR>
-                        <TH>SR NO</TH>
-                        <TH>Booking ID</TH>
-                        {displayFields.map((field) => (
-                          <TH key={field.fieldKey || field.label}>
-                            {field.label}
-                          </TH>
-                        ))}
-                        <TH>Appointment Date & Time</TH>
-                        <TH>Status</TH>
-                      </TR>
-                    </THead>
-                    <TBody>
-                      {isLoading ? (
+                  <div className="overflow-x-auto flex-1">
+                    <Table>
+                      <THead>
                         <TR>
-                          <TD
-                            colSpan={4 + displayFields.length}
-                            className="py-8 text-center text-gray-400 text-xs"
-                          >
-                            Loading recent bookings...
-                          </TD>
+                          <TH>SR NO</TH>
+                          <TH>Booking ID</TH>
+                          {displayFields.map((field) => (
+                            <TH key={field.fieldKey || field.label}>
+                              {field.label}
+                            </TH>
+                          ))}
+                          <TH>Appointment Date & Time</TH>
+                          <TH>Status</TH>
                         </TR>
-                      ) : recentBookings.length === 0 ? (
-                        <TR>
-                          <TD
-                            colSpan={4 + displayFields.length}
-                            className="py-8 text-center text-gray-400 text-xs"
-                          >
-                            No appointments found.
-                          </TD>
-                        </TR>
-                      ) : (
-                        recentBookings.map((b, idx) => (
-                          <TR key={b._id || idx}>
-                            <TD className="text-xs text-gray-500 font-medium">
-                              {idx + 1}
-                            </TD>
-                            <TD className="text-xs font-bold text-indigo-600 font-mono">
-                              #{getNumericBookingId(b)}
-                            </TD>
-
-                            {/* Render main 3-4 detail fields */}
-                            {displayFields.map((field) => (
-                              <TD
-                                key={field.fieldKey || field.label}
-                                className="text-xs text-gray-700 font-medium"
-                              >
-                                {getFieldValue(b, field)}
-                              </TD>
-                            ))}
-
-                            <TD className="text-xs">
-                              <span className="block font-semibold text-gray-900">
-                                {formatDateDDMMYYYY(b.slotDate)}
-                              </span>
-                              <span className="block text-[11px] text-gray-500">
-                                {b.slotStartTime} - {b.slotEndTime}
-                              </span>
-                            </TD>
-                            <TD>
-                              <span
-                                className={`inline-flex px-2.5 py-0.5 text-[11px] font-semibold border rounded-full ${getStatusClass(
-                                  b.status,
-                                )}`}
-                              >
-                                {b.status || "Pending"}
-                              </span>
+                      </THead>
+                      <TBody>
+                        {isLoading ? (
+                          <TR>
+                            <TD
+                              colSpan={4 + displayFields.length}
+                              className="py-8 text-center text-gray-400 text-xs"
+                            >
+                              Loading recent bookings...
                             </TD>
                           </TR>
-                        ))
-                      )}
-                    </TBody>
-                  </Table>
+                        ) : recentBookings.length === 0 ? (
+                          <TR>
+                            <TD
+                              colSpan={4 + displayFields.length}
+                              className="py-8 text-center text-gray-400 text-xs"
+                            >
+                              No appointments found.
+                            </TD>
+                          </TR>
+                        ) : (
+                          recentBookings.map((b, idx) => (
+                            <TR key={b._id || idx}>
+                              <TD className="text-xs text-gray-500 font-medium">
+                                {idx + 1}
+                              </TD>
+                              <TD className="text-xs font-bold text-indigo-600 font-mono">
+                                #{getNumericBookingId(b)}
+                              </TD>
+
+                              {/* Render main 3-4 detail fields */}
+                              {displayFields.map((field) => (
+                                <TD
+                                  key={field.fieldKey || field.label}
+                                  className="text-xs text-gray-700 font-medium"
+                                >
+                                  {getFieldValue(b, field)}
+                                </TD>
+                              ))}
+
+                              <TD className="text-xs">
+                                <span className="block font-semibold text-gray-900">
+                                  {formatDateDDMMYYYY(b.slotDate)}
+                                </span>
+                                <span className="block text-[11px] text-gray-500">
+                                  {b.slotStartTime} - {b.slotEndTime}
+                                </span>
+                              </TD>
+                              <TD>
+                                <span
+                                  className={`inline-flex px-2.5 py-0.5 text-[11px] font-semibold border rounded-full ${getStatusClass(
+                                    b.status,
+                                  )}`}
+                                >
+                                  {b.status || "Pending"}
+                                </span>
+                              </TD>
+                            </TR>
+                          ))
+                        )}
+                      </TBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
 
-              {/* Right Column: Status Analytics */}
-              <div className="space-y-6">
-                {/* Booking Status Distribution */}
-                <div className="bg-white rounded-lg border border-gray-200/80 p-6 shadow-xs">
-                  <h3 className="text-base font-bold text-gray-900 mb-1">
-                    Status Breakdown
-                  </h3>
-                  <p className="text-xs text-gray-500 mb-4">
-                    Appointments status overview
-                  </p>
+                {/* Right Column: Status Analytics */}
+                <div className="space-y-6">
+                  {/* Booking Status Distribution */}
+                  <div className="bg-white rounded-lg border border-gray-200/80 p-6 shadow-xs">
+                    <h3 className="text-base font-bold text-gray-900 mb-1">
+                      Status Breakdown
+                    </h3>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Appointments status overview
+                    </p>
 
-                  <div className="space-y-4">
-                    {/* Confirmed Bar */}
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold mb-1.5">
-                        <span className="flex items-center gap-1.5 text-emerald-700">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                          Confirmed
-                        </span>
-                        <span className="text-gray-900 font-bold">
-                          {statusCounts.confirmed}{" "}
-                          <span className="text-gray-400 font-normal">
-                            (
-                            {statusCounts.total > 0
-                              ? Math.round(
-                                  (statusCounts.confirmed /
-                                    statusCounts.total) *
-                                    100,
-                                )
-                              : 0}
-                            %)
+                    <div className="space-y-4">
+                      {/* Confirmed Bar */}
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold mb-1.5">
+                          <span className="flex items-center gap-1.5 text-emerald-700">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            Confirmed
                           </span>
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${statusCounts.total > 0 ? (statusCounts.confirmed / statusCounts.total) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Pending Bar */}
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold mb-1.5">
-                        <span className="flex items-center gap-1.5 text-amber-700">
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                          Pending
-                        </span>
-                        <span className="text-gray-900 font-bold">
-                          {statusCounts.pending}{" "}
-                          <span className="text-gray-400 font-normal">
-                            (
-                            {statusCounts.total > 0
-                              ? Math.round(
-                                  (statusCounts.pending / statusCounts.total) *
-                                    100,
-                                )
-                              : 0}
-                            %)
+                          <span className="text-gray-900 font-bold">
+                            {statusCounts.confirmed}{" "}
+                            <span className="text-gray-400 font-normal">
+                              (
+                              {statusCounts.total > 0
+                                ? Math.round(
+                                    (statusCounts.confirmed /
+                                      statusCounts.total) *
+                                      100,
+                                  )
+                                : 0}
+                              %)
+                            </span>
                           </span>
-                        </span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${statusCounts.total > 0 ? (statusCounts.confirmed / statusCounts.total) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-amber-400 h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${statusCounts.total > 0 ? (statusCounts.pending / statusCounts.total) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
 
-                    {/* Cancelled Bar */}
-                    <div>
-                      <div className="flex justify-between text-xs font-semibold mb-1.5">
-                        <span className="flex items-center gap-1.5 text-rose-700">
-                          <XCircle className="w-3.5 h-3.5 text-rose-500" />
-                          Cancelled
-                        </span>
-                        <span className="text-gray-900 font-bold">
-                          {statusCounts.cancelled}{" "}
-                          <span className="text-gray-400 font-normal">
-                            (
-                            {statusCounts.total > 0
-                              ? Math.round(
-                                  (statusCounts.cancelled /
-                                    statusCounts.total) *
-                                    100,
-                                )
-                              : 0}
-                            %)
+                      {/* Pending Bar */}
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold mb-1.5">
+                          <span className="flex items-center gap-1.5 text-amber-700">
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                            Pending
                           </span>
-                        </span>
+                          <span className="text-gray-900 font-bold">
+                            {statusCounts.pending}{" "}
+                            <span className="text-gray-400 font-normal">
+                              (
+                              {statusCounts.total > 0
+                                ? Math.round(
+                                    (statusCounts.pending /
+                                      statusCounts.total) *
+                                      100,
+                                  )
+                                : 0}
+                              %)
+                            </span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-amber-400 h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${statusCounts.total > 0 ? (statusCounts.pending / statusCounts.total) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-rose-500 h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${statusCounts.total > 0 ? (statusCounts.cancelled / statusCounts.total) * 100 : 0}%`,
-                          }}
-                        />
+
+                      {/* Cancelled Bar */}
+                      <div>
+                        <div className="flex justify-between text-xs font-semibold mb-1.5">
+                          <span className="flex items-center gap-1.5 text-rose-700">
+                            <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                            Cancelled
+                          </span>
+                          <span className="text-gray-900 font-bold">
+                            {statusCounts.cancelled}{" "}
+                            <span className="text-gray-400 font-normal">
+                              (
+                              {statusCounts.total > 0
+                                ? Math.round(
+                                    (statusCounts.cancelled /
+                                      statusCounts.total) *
+                                      100,
+                                  )
+                                : 0}
+                              %)
+                            </span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-rose-500 h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${statusCounts.total > 0 ? (statusCounts.cancelled / statusCounts.total) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Quick View Details Modal */}
       <CustomModal

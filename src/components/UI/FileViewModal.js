@@ -3,7 +3,13 @@
 import React, { useEffect } from "react";
 import { X, ExternalLink, Download } from "lucide-react";
 
-export default function FileViewModal({ isOpen, onClose, fileUrl, fileType = "image", title = "Media Preview" }) {
+export default function FileViewModal({
+  isOpen,
+  onClose,
+  fileUrl,
+  fileType = "image",
+  title = "Media Preview",
+}) {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && isOpen) {
@@ -22,8 +28,16 @@ export default function FileViewModal({ isOpen, onClose, fileUrl, fileType = "im
 
   if (!isOpen || !fileUrl) return null;
 
-  const isImage = fileType === "image" || (typeof fileUrl === "string" && (fileUrl.startsWith("data:image/") || fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)));
-  const isVideo = fileType === "video" || (typeof fileUrl === "string" && (fileUrl.startsWith("data:video/") || fileUrl.match(/\.(mp4|webm|ogg|mov)$/i)));
+  const isImage =
+    fileType === "image" ||
+    (typeof fileUrl === "string" &&
+      (fileUrl.startsWith("data:image/") ||
+        fileUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)));
+  const isVideo =
+    fileType === "video" ||
+    (typeof fileUrl === "string" &&
+      (fileUrl.startsWith("data:video/") ||
+        fileUrl.match(/\.(mp4|webm|ogg|mov)$/i)));
 
   const handleDownload = () => {
     if (!fileUrl) return;
@@ -42,7 +56,9 @@ export default function FileViewModal({ isOpen, onClose, fileUrl, fileType = "im
         if (fileUrl.startsWith("data:video/webm")) extension = "webm";
       }
 
-      const sanitizedTitle = (title || "download-file").toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const sanitizedTitle = (title || "download-file")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "-");
       link.download = `${sanitizedTitle}.${extension}`;
       document.body.appendChild(link);
       link.click();
@@ -97,10 +113,11 @@ export default function FileViewModal({ isOpen, onClose, fileUrl, fileType = "im
                 </style>
               </head>
               <body>
-                ${isVideo
-              ? `<video src="${fileUrl}" controls autoplay></video>`
-              : `<img src="${fileUrl}" alt="${title || "Media View"}" />`
-            }
+                ${
+                  isVideo
+                    ? `<video src="${fileUrl}" controls autoplay></video>`
+                    : `<img src="${fileUrl}" alt="${title || "Media View"}" />`
+                }
               </body>
             </html>
           `);
@@ -176,7 +193,9 @@ export default function FileViewModal({ isOpen, onClose, fileUrl, fileType = "im
               controls
             />
           ) : (
-            <div className="text-gray-400 text-sm py-12">Preview not available for this file type.</div>
+            <div className="text-gray-400 text-sm py-12">
+              Preview not available for this file type.
+            </div>
           )}
         </div>
       </div>

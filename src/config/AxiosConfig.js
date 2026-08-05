@@ -31,7 +31,7 @@ export const isSessionExpired = (error) => {
   ];
 
   return sessionExpiredMessages.some((msg) =>
-    message.toLowerCase().includes(msg.toLowerCase())
+    message.toLowerCase().includes(msg.toLowerCase()),
   );
 };
 
@@ -70,7 +70,8 @@ export const handleSessionExpiration = async (error) => {
         confirmButtonColor: "#465fff",
         zIndex: 99999,
         customClass: {
-          confirmButton: "min-w-[100px] focus:outline-none focus:ring-0 font-medium py-2 px-4 rounded-lg",
+          confirmButton:
+            "min-w-[100px] focus:outline-none focus:ring-0 font-medium py-2 px-4 rounded-lg",
         },
       });
 
@@ -107,7 +108,7 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 axiosInstance.interceptors.response.use(
@@ -115,7 +116,7 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     await handleSessionExpiration(error);
     return Promise.reject(error);
-  }
+  },
 );
 
 // Axios FormData instance
@@ -144,7 +145,7 @@ axiosInstanceFormData.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 axiosInstanceFormData.interceptors.response.use(
@@ -152,7 +153,7 @@ axiosInstanceFormData.interceptors.response.use(
   async (error) => {
     await handleSessionExpiration(error);
     return Promise.reject(error);
-  }
+  },
 );
 
 export const updateProfile = async (data) => {
@@ -206,10 +207,38 @@ export const getStaffList = async () => {
     data: {
       status: true,
       data: [
-        { id: 1, name: "Ananya Sen", role: "Senior Stylist", email: "ananya@booking.com", phone: "9876543211", status: "Active" },
-        { id: 2, name: "Vikram Malhotra", role: "Therapist", email: "vikram@booking.com", phone: "9876543212", status: "Active" },
-        { id: 3, name: "Dr. Rohan Joshi", role: "Dentist", email: "rohan@booking.com", phone: "9876543213", status: "Active" },
-        { id: 4, name: "Meera Nair", role: "Receptionist", email: "meera@booking.com", phone: "9876543214", status: "Inactive" },
+        {
+          id: 1,
+          name: "Ananya Sen",
+          role: "Senior Stylist",
+          email: "ananya@booking.com",
+          phone: "9876543211",
+          status: "Active",
+        },
+        {
+          id: 2,
+          name: "Vikram Malhotra",
+          role: "Therapist",
+          email: "vikram@booking.com",
+          phone: "9876543212",
+          status: "Active",
+        },
+        {
+          id: 3,
+          name: "Dr. Rohan Joshi",
+          role: "Dentist",
+          email: "rohan@booking.com",
+          phone: "9876543213",
+          status: "Active",
+        },
+        {
+          id: 4,
+          name: "Meera Nair",
+          role: "Receptionist",
+          email: "meera@booking.com",
+          phone: "9876543214",
+          status: "Inactive",
+        },
       ],
     },
   };
@@ -221,10 +250,34 @@ export const getServicesList = async () => {
     data: {
       status: true,
       data: [
-        { id: 1, name: "Haircut & Styling", duration: "45 mins", price: 1500, category: "Hair" },
-        { id: 2, name: "Spa Treatment", duration: "90 mins", price: 3500, category: "Wellness" },
-        { id: 3, name: "Dental Checkup", duration: "30 mins", price: 2000, category: "Medical" },
-        { id: 4, name: "Facial Care", duration: "60 mins", price: 2500, category: "Beauty" },
+        {
+          id: 1,
+          name: "Haircut & Styling",
+          duration: "45 mins",
+          price: 1500,
+          category: "Hair",
+        },
+        {
+          id: 2,
+          name: "Spa Treatment",
+          duration: "90 mins",
+          price: 3500,
+          category: "Wellness",
+        },
+        {
+          id: 3,
+          name: "Dental Checkup",
+          duration: "30 mins",
+          price: 2000,
+          category: "Medical",
+        },
+        {
+          id: 4,
+          name: "Facial Care",
+          duration: "60 mins",
+          price: 2500,
+          category: "Beauty",
+        },
       ],
     },
   };
@@ -236,10 +289,34 @@ export const getCustomersList = async () => {
     data: {
       status: true,
       data: [
-        { id: 1, name: "Rahul Sharma", email: "rahul@gmail.com", phone: "9898989801", bookingsCount: 5 },
-        { id: 2, name: "Priya Patel", email: "priya@gmail.com", phone: "9898989802", bookingsCount: 12 },
-        { id: 3, name: "Amit Verma", email: "amit@gmail.com", phone: "9898989803", bookingsCount: 2 },
-        { id: 4, name: "Sneha Reddy", email: "sneha@gmail.com", phone: "9898989804", bookingsCount: 7 },
+        {
+          id: 1,
+          name: "Rahul Sharma",
+          email: "rahul@gmail.com",
+          phone: "9898989801",
+          bookingsCount: 5,
+        },
+        {
+          id: 2,
+          name: "Priya Patel",
+          email: "priya@gmail.com",
+          phone: "9898989802",
+          bookingsCount: 12,
+        },
+        {
+          id: 3,
+          name: "Amit Verma",
+          email: "amit@gmail.com",
+          phone: "9898989803",
+          bookingsCount: 2,
+        },
+        {
+          id: 4,
+          name: "Sneha Reddy",
+          email: "sneha@gmail.com",
+          phone: "9898989804",
+          bookingsCount: 7,
+        },
       ],
     },
   };
@@ -258,7 +335,9 @@ export const toggleAdminActive = async (id) => {
 };
 
 export const toggleAdminApiCredentials = async (id) => {
-  return await axiosInstance.put(`/api/superadmin/admins/${id}/toggle-credentials`);
+  return await axiosInstance.put(
+    `/api/superadmin/admins/${id}/toggle-credentials`,
+  );
 };
 
 export const updateAdmin = async (id, data) => {
@@ -274,7 +353,10 @@ export const getAdminFormConfigSuper = async (adminId) => {
 };
 
 export const updateAdminFormConfigSuper = async (adminId, data) => {
-  return await axiosInstance.put(`/api/superadmin/form-config/${adminId}`, data);
+  return await axiosInstance.put(
+    `/api/superadmin/form-config/${adminId}`,
+    data,
+  );
 };
 
 export const getAdminFormConfig = async () => {
@@ -298,7 +380,10 @@ export const getAdminSlotSettings = async () => {
 };
 
 export const updateAdminSlotSettingsSuper = async (adminId, data) => {
-  return await axiosInstance.put(`/api/superadmin/slot-settings/${adminId}`, data);
+  return await axiosInstance.put(
+    `/api/superadmin/slot-settings/${adminId}`,
+    data,
+  );
 };
 
 export const getHolidaysList = async () => {
@@ -346,7 +431,9 @@ export const deleteAdminBookingSuperRecord = async (id) => {
 };
 
 export const getAvailableSlotsList = async (adminId, date) => {
-  return await axiosInstance.get(`/api/bookings/available-slots/${adminId}?date=${date}`);
+  return await axiosInstance.get(
+    `/api/bookings/available-slots/${adminId}?date=${date}`,
+  );
 };
 
 export const createBookingRecord = async (adminId, data) => {
@@ -392,11 +479,15 @@ export const updateSubUserRecord = async (id, data) => {
 };
 
 export const toggleSubUserActiveApi = async (id, adminId) => {
-  return await axiosInstance.patch(`/api/user-management/${id}/toggle-active`, { adminId });
+  return await axiosInstance.patch(`/api/user-management/${id}/toggle-active`, {
+    adminId,
+  });
 };
 
 export const deleteSubUserRecord = async (id, adminId) => {
-  return await axiosInstance.delete(`/api/user-management/${id}?adminId=${adminId}`);
+  return await axiosInstance.delete(
+    `/api/user-management/${id}?adminId=${adminId}`,
+  );
 };
 
 // Prescription API Endpoints
@@ -409,21 +500,29 @@ export const savePrescriptionApi = async (data) => {
 };
 
 export const getMedicineSuggestionsApi = async (search) => {
-  return await axiosInstance.get(`/api/prescriptions/suggestions/medicines`, { params: { search } });
+  return await axiosInstance.get(`/api/prescriptions/suggestions/medicines`, {
+    params: { search },
+  });
 };
 
 // Medical Module API Endpoints
 export const getMedicalSubUsersApi = async (adminId) => {
-  return await axiosInstance.get(`/api/user-management/medical-users?adminId=${adminId}`);
+  return await axiosInstance.get(
+    `/api/user-management/medical-users?adminId=${adminId}`,
+  );
 };
 
 export const getMedicalPrescriptionsApi = async (params = {}) => {
   return await axiosInstance.get(`/api/prescriptions/medical/list`, { params });
 };
 
-export const updatePrescriptionFulfillmentStatusApi = async (id, fulfillmentStatus) => {
-  return await axiosInstance.patch(`/api/prescriptions/medical/${id}/status`, { fulfillmentStatus });
+export const updatePrescriptionFulfillmentStatusApi = async (
+  id,
+  fulfillmentStatus,
+) => {
+  return await axiosInstance.patch(`/api/prescriptions/medical/${id}/status`, {
+    fulfillmentStatus,
+  });
 };
 
 export default axiosInstance;
-

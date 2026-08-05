@@ -5,7 +5,10 @@ import React from "react";
 // Table Component (<table>)
 export const Table = ({ children, className = "", ...props }) => {
   return (
-    <table className={`min-w-full divide-y divide-gray-200 transition-colors ${className}`} {...props}>
+    <table
+      className={`min-w-full divide-y divide-gray-200 transition-colors ${className}`}
+      {...props}
+    >
       {children}
     </table>
   );
@@ -23,7 +26,10 @@ export const THead = ({ children, className = "", ...props }) => {
 // TBody Component (<tbody>)
 export const TBody = ({ children, className = "", ...props }) => {
   return (
-    <tbody className={`bg-white divide-y divide-gray-200 ${className}`} {...props}>
+    <tbody
+      className={`bg-white divide-y divide-gray-200 ${className}`}
+      {...props}
+    >
       {children}
     </tbody>
   );

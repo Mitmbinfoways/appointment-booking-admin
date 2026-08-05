@@ -22,7 +22,6 @@ export default function UserDropdown() {
   const adminState = useSelector((state) => state.admin) || {};
   const { admin, loading } = adminState;
 
-
   const dropdownZIndex = pathname === "/settings" ? 9999 : 40;
 
   function toggleDropdown() {
@@ -45,7 +44,10 @@ export default function UserDropdown() {
       try {
         await logoutAPI();
       } catch (apiErr) {
-        console.warn("Logout API failed, but continuing clearing state:", apiErr);
+        console.warn(
+          "Logout API failed, but continuing clearing state:",
+          apiErr,
+        );
       }
 
       // Clear local storage
@@ -90,8 +92,9 @@ export default function UserDropdown() {
           {admin?.username || admin?.name || "Admin"}
         </span>
         <ChevronDown
-          className={`w-4.5 h-4.5 text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`w-4.5 h-4.5 text-gray-500 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
         />
       </button>
 

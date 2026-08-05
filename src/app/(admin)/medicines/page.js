@@ -28,7 +28,9 @@ import {
 export default function MedicinesPage() {
   const adminState = useSelector((state) => state.admin) || {};
   const admin = adminState.admin;
-  const adminId = admin?._id || (typeof window !== "undefined" ? localStorage.getItem("adminId") : null);
+  const adminId =
+    admin?._id ||
+    (typeof window !== "undefined" ? localStorage.getItem("adminId") : null);
 
   const [medicinesList, setMedicinesList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,7 +74,10 @@ export default function MedicinesPage() {
       if (res.status === 200 && res.data?.statusCode === 200) {
         setMedicinesList(res.data.data);
       } else {
-        Toast({ message: res.data?.message || "Failed to fetch medicines", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to fetch medicines",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error fetching medicines:", err);
@@ -86,33 +91,46 @@ export default function MedicinesPage() {
     fetchMedicines();
   }, [fetchMedicines]);
 
-  const categories = ["All", ...Array.from(new Set(medicinesList.map((m) => m.category || "General")))];
+  const categories = [
+    "All",
+    ...Array.from(new Set(medicinesList.map((m) => m.category || "General"))),
+  ];
 
   const filteredMedicines = medicinesList.filter((med) => {
     const matchesSearch =
       med.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (med.dosage && med.dosage.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (med.manufacturer && med.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()));
+      (med.dosage &&
+        med.dosage.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (med.manufacturer &&
+        med.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesCategory = categoryFilter === "All" || (med.category || "General") === categoryFilter;
+    const matchesCategory =
+      categoryFilter === "All" ||
+      (med.category || "General") === categoryFilter;
 
     return matchesSearch && matchesCategory;
   });
 
   // Calculate metrics
   const totalItems = medicinesList.length;
-  const outOfStockCount = medicinesList.filter((m) => Number(m.stock) === 0).length;
-  const lowStockCount = medicinesList.filter((m) => Number(m.stock) > 0 && Number(m.stock) <= 10).length;
+  const outOfStockCount = medicinesList.filter(
+    (m) => Number(m.stock) === 0,
+  ).length;
+  const lowStockCount = medicinesList.filter(
+    (m) => Number(m.stock) > 0 && Number(m.stock) <= 10,
+  ).length;
   const totalStockValue = medicinesList.reduce(
     (sum, m) => sum + Number(m.stock) * Number(m.price),
-    0
+    0,
   );
 
   const validateForm = (data) => {
     const errors = {};
     if (!data.name.trim()) errors.name = "Medicine name is required";
-    if (data.stock === "" || Number(data.stock) < 0) errors.stock = "Valid stock is required";
-    if (data.price === "" || Number(data.price) < 0) errors.price = "Valid price is required";
+    if (data.stock === "" || Number(data.stock) < 0)
+      errors.stock = "Valid stock is required";
+    if (data.price === "" || Number(data.price) < 0)
+      errors.price = "Valid price is required";
     return errors;
   };
 
@@ -127,11 +145,17 @@ export default function MedicinesPage() {
     try {
       const res = await createMedicineRecord({ ...formData, adminId });
       if (res.status === 201 && res.data?.statusCode === 201) {
-        Toast({ message: "Medicine item added successfully!", type: "success" });
+        Toast({
+          message: "Medicine item added successfully!",
+          type: "success",
+        });
         setIsAddModalOpen(false);
         fetchMedicines();
       } else {
-        Toast({ message: res.data?.message || "Failed to add medicine", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to add medicine",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error creating medicine:", err);
@@ -165,13 +189,22 @@ export default function MedicinesPage() {
     }
 
     try {
-      const res = await updateMedicineRecord(selectedMedicine._id, { ...editFormData, adminId });
+      const res = await updateMedicineRecord(selectedMedicine._id, {
+        ...editFormData,
+        adminId,
+      });
       if (res.status === 200) {
-        Toast({ message: "Medicine record updated successfully!", type: "success" });
+        Toast({
+          message: "Medicine record updated successfully!",
+          type: "success",
+        });
         setIsEditModalOpen(false);
         fetchMedicines();
       } else {
-        Toast({ message: res.data?.message || "Failed to update medicine", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to update medicine",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error updating medicine:", err);
@@ -189,11 +222,17 @@ export default function MedicinesPage() {
     try {
       const res = await deleteMedicineRecord(selectedMedicine._id, adminId);
       if (res.status === 200) {
-        Toast({ message: "Medicine record deleted successfully!", type: "success" });
+        Toast({
+          message: "Medicine record deleted successfully!",
+          type: "success",
+        });
         setIsDeleteModalOpen(false);
         fetchMedicines();
       } else {
-        Toast({ message: res.data?.message || "Failed to delete medicine", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to delete medicine",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error deleting medicine:", err);
@@ -203,8 +242,13 @@ export default function MedicinesPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageMeta title="Medicine Inventory" description="Manage stock levels, dosage details, pricing, and categories." />
-      <PageBreadcrumb items={[{ label: "Home", to: "/" }, { label: "Medicine Inventory" }]} />
+      <PageMeta
+        title="Medicine Inventory"
+        description="Manage stock levels, dosage details, pricing, and categories."
+      />
+      <PageBreadcrumb
+        items={[{ label: "Home", to: "/" }, { label: "Medicine Inventory" }]}
+      />
 
       {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -213,7 +257,9 @@ export default function MedicinesPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Total Items
             </span>
-            <span className="text-2xl font-bold text-gray-900 mt-1 block">{totalItems}</span>
+            <span className="text-2xl font-bold text-gray-900 mt-1 block">
+              {totalItems}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <Package className="w-5 h-5" />
@@ -225,7 +271,9 @@ export default function MedicinesPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Out of Stock
             </span>
-            <span className="text-2xl font-bold text-red-600 mt-1 block">{outOfStockCount}</span>
+            <span className="text-2xl font-bold text-red-600 mt-1 block">
+              {outOfStockCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
             <AlertTriangle className="w-5 h-5" />
@@ -237,7 +285,9 @@ export default function MedicinesPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Low Stock (≤10)
             </span>
-            <span className="text-2xl font-bold text-amber-600 mt-1 block">{lowStockCount}</span>
+            <span className="text-2xl font-bold text-amber-600 mt-1 block">
+              {lowStockCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
             <Boxes className="w-5 h-5" />
@@ -319,13 +369,19 @@ export default function MedicinesPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={9} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={9}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     Loading medicine inventory...
                   </TD>
                 </TR>
               ) : filteredMedicines.length === 0 ? (
                 <TR>
-                  <TD colSpan={9} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={9}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     No medicine items found.
                   </TD>
                 </TR>
@@ -335,8 +391,12 @@ export default function MedicinesPage() {
                   return (
                     <TR key={med._id}>
                       <TD className="text-sm text-gray-500">{idx + 1}</TD>
-                      <TD className="text-sm font-semibold text-gray-900">{med.name}</TD>
-                      <TD className="text-sm text-gray-600">{med.dosage || "--"}</TD>
+                      <TD className="text-sm font-semibold text-gray-900">
+                        {med.name}
+                      </TD>
+                      <TD className="text-sm text-gray-600">
+                        {med.dosage || "--"}
+                      </TD>
                       <TD className="text-sm">
                         <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
                           {med.category || "General"}
@@ -360,9 +420,15 @@ export default function MedicinesPage() {
                           </span>
                         )}
                       </TD>
-                      <TD className="text-sm font-bold text-gray-900">{Number(med.price).toFixed(2)}</TD>
-                      <TD className="text-sm text-gray-600">{med.expiryDate || "--"}</TD>
-                      <TD className="text-sm text-gray-600">{med.manufacturer || "--"}</TD>
+                      <TD className="text-sm font-bold text-gray-900">
+                        {Number(med.price).toFixed(2)}
+                      </TD>
+                      <TD className="text-sm text-gray-600">
+                        {med.expiryDate || "--"}
+                      </TD>
+                      <TD className="text-sm text-gray-600">
+                        {med.manufacturer || "--"}
+                      </TD>
                       <TD className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -406,31 +472,45 @@ export default function MedicinesPage() {
               type="text"
               placeholder="e.g. Paracetamol"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
             />
-            {formErrors.name && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.name}</p>}
+            {formErrors.name && (
+              <p className="text-xs text-red-500 mt-1 font-bold">
+                {formErrors.name}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Dosage</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Dosage
+              </label>
               <input
                 type="text"
                 placeholder="e.g. 500mg"
                 value={formData.dosage}
-                onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, dosage: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Category
+              </label>
               <input
                 type="text"
                 placeholder="e.g. General"
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, category: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -446,10 +526,16 @@ export default function MedicinesPage() {
                 min="0"
                 placeholder="100"
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, stock: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
-              {formErrors.stock && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.stock}</p>}
+              {formErrors.stock && (
+                <p className="text-xs text-red-500 mt-1 font-bold">
+                  {formErrors.stock}
+                </p>
+              )}
             </div>
 
             <div>
@@ -462,38 +548,56 @@ export default function MedicinesPage() {
                 step="0.01"
                 placeholder="15.00"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, price: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
-              {formErrors.price && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.price}</p>}
+              {formErrors.price && (
+                <p className="text-xs text-red-500 mt-1 font-bold">
+                  {formErrors.price}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Expiry Date</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Expiry Date
+              </label>
               <input
                 type="date"
                 value={formData.expiryDate}
-                onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, expiryDate: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Manufacturer</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Manufacturer
+              </label>
               <input
                 type="text"
                 placeholder="e.g. Pharma Inc."
                 value={formData.manufacturer}
-                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, manufacturer: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <Button type="button" onClick={() => setIsAddModalOpen(false)} variant="outline">
+            <Button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              variant="outline"
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary">
@@ -518,29 +622,43 @@ export default function MedicinesPage() {
             <input
               type="text"
               value={editFormData.name}
-              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, name: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
             />
-            {formErrors.name && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.name}</p>}
+            {formErrors.name && (
+              <p className="text-xs text-red-500 mt-1 font-bold">
+                {formErrors.name}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Dosage</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Dosage
+              </label>
               <input
                 type="text"
                 value={editFormData.dosage}
-                onChange={(e) => setEditFormData({ ...editFormData, dosage: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, dosage: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Category
+              </label>
               <input
                 type="text"
                 value={editFormData.category}
-                onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, category: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -555,10 +673,16 @@ export default function MedicinesPage() {
                 type="number"
                 min="0"
                 value={editFormData.stock}
-                onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, stock: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
-              {formErrors.stock && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.stock}</p>}
+              {formErrors.stock && (
+                <p className="text-xs text-red-500 mt-1 font-bold">
+                  {formErrors.stock}
+                </p>
+              )}
             </div>
 
             <div>
@@ -570,37 +694,61 @@ export default function MedicinesPage() {
                 min="0"
                 step="0.01"
                 value={editFormData.price}
-                onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, price: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
-              {formErrors.price && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.price}</p>}
+              {formErrors.price && (
+                <p className="text-xs text-red-500 mt-1 font-bold">
+                  {formErrors.price}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Expiry Date</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Expiry Date
+              </label>
               <input
                 type="date"
                 value={editFormData.expiryDate}
-                onChange={(e) => setEditFormData({ ...editFormData, expiryDate: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    expiryDate: e.target.value,
+                  })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Manufacturer</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Manufacturer
+              </label>
               <input
                 type="text"
                 value={editFormData.manufacturer}
-                onChange={(e) => setEditFormData({ ...editFormData, manufacturer: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    manufacturer: e.target.value,
+                  })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <Button type="button" onClick={() => setIsEditModalOpen(false)} variant="outline">
+            <Button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              variant="outline"
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary">

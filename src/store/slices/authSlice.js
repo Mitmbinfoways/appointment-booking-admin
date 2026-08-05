@@ -35,7 +35,10 @@ const adminSlice = createSlice({
       state.loading = false;
       state.isRehydrated = true;
       if (typeof window !== "undefined") {
-        localStorage.setItem("AppointmentBooking_admin", JSON.stringify(action.payload.admin));
+        localStorage.setItem(
+          "AppointmentBooking_admin",
+          JSON.stringify(action.payload.admin),
+        );
         localStorage.setItem("AppointmentBooking_token", action.payload.token);
       }
     },
@@ -57,7 +60,10 @@ const adminSlice = createSlice({
     setAdmin(state, action) {
       state.admin = action.payload;
       if (typeof window !== "undefined") {
-        localStorage.setItem("AppointmentBooking_admin", JSON.stringify(action.payload));
+        localStorage.setItem(
+          "AppointmentBooking_admin",
+          JSON.stringify(action.payload),
+        );
       }
     },
     setLoading(state, action) {

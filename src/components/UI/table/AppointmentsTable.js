@@ -14,7 +14,11 @@ const getStatusClass = (status) => {
   }
 };
 
-export default function AppointmentsTable({ bookings = [], onStatusClick, onDeleteClick }) {
+export default function AppointmentsTable({
+  bookings = [],
+  onStatusClick,
+  onDeleteClick,
+}) {
   return (
     <div className="overflow-x-auto custom-scrollbar">
       <Table>
@@ -32,34 +36,31 @@ export default function AppointmentsTable({ bookings = [], onStatusClick, onDele
         <TBody>
           {bookings.length === 0 ? (
             <TR>
-              <TD colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">
+              <TD
+                colSpan={7}
+                className="px-6 py-10 text-center text-gray-400 text-sm"
+              >
                 No bookings found.
               </TD>
             </TR>
           ) : (
             bookings.map((b) => (
               <TR key={b.id}>
-                <TD className="text-sm font-semibold text-gray-900">
-                  {b.id}
-                </TD>
+                <TD className="text-sm font-semibold text-gray-900">{b.id}</TD>
                 <TD className="text-sm font-medium text-gray-700">
                   {b.customerName}
                 </TD>
-                <TD>
-                  {b.serviceName}
-                </TD>
+                <TD>{b.serviceName}</TD>
                 <TD className="text-gray-600">
                   <span className="block font-medium">{b.date}</span>
                   <span className="text-xs text-gray-400">{b.time}</span>
                 </TD>
-                <TD className="font-semibold text-gray-700">
-                  ₹{b.amount}
-                </TD>
+                <TD className="font-semibold text-gray-700">₹{b.amount}</TD>
                 <TD>
                   <span
                     onClick={() => onStatusClick && onStatusClick(b)}
                     className={`inline-flex px-2.5 py-1 text-xs font-semibold border rounded-full cursor-pointer hover:opacity-85 transition-opacity ${getStatusClass(
-                      b.status
+                      b.status,
                     )}`}
                   >
                     {b.status}

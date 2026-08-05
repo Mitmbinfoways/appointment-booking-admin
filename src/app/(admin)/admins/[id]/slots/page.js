@@ -4,7 +4,10 @@ import React, { useState, useEffect, use } from "react";
 import PageMeta from "@/components/PageMeta";
 import PageBreadcrumb from "@/components/PageBreadcrumb";
 import Button from "@/components/UI/Button";
-import { getAdminSlotSettingsSuper, updateAdminSlotSettingsSuper } from "@/config/AxiosConfig";
+import {
+  getAdminSlotSettingsSuper,
+  updateAdminSlotSettingsSuper,
+} from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
 import {
@@ -12,10 +15,18 @@ import {
   isTimeInsideInterval,
   checkOverlap,
   getBreakError,
-  hasAnyBreakErrors
+  hasAnyBreakErrors,
 } from "@/utils/SlotValidation";
 
-const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const WEEKDAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 const formatTime12h = (timeStr) => {
   if (!timeStr) return "";
@@ -109,9 +120,16 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
     setSlotSettings((prev) => ({ ...prev, [field]: value }));
   };
 
-  const saveSlotSettings = async (updatedSettings, shouldRedirect = false, customSuccessMessage = null) => {
+  const saveSlotSettings = async (
+    updatedSettings,
+    shouldRedirect = false,
+    customSuccessMessage = null,
+  ) => {
     if (hasAnyBreakErrors(updatedSettings)) {
-      Toast({ message: "Please resolve all overlapping break times before saving.", type: "error" });
+      Toast({
+        message: "Please resolve all overlapping break times before saving.",
+        type: "error",
+      });
       return;
     }
     setIsSaving(true);
@@ -122,7 +140,12 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
         startTime: day.startTime,
         endTime: day.endTime,
         breakTimes: (day.breakTimes || [])
-          .filter(brk => brk.startTime && brk.endTime && !(brk.startTime === "00:00" && brk.endTime === "00:00"))
+          .filter(
+            (brk) =>
+              brk.startTime &&
+              brk.endTime &&
+              !(brk.startTime === "00:00" && brk.endTime === "00:00"),
+          )
           .map(({ name, startTime, endTime }) => ({
             name,
             startTime,
@@ -136,12 +159,16 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
       });
 
       if (res.status === 200 && res.data?.statusCode === 200) {
-        Toast({ message: customSuccessMessage || "Slot settings synced successfully.", type: "success" });
+        Toast({
+          message: customSuccessMessage || "Slot settings synced successfully.",
+          type: "success",
+        });
 
         const dbDays = res.data.data.workingDays || [];
         const mappedDays = WEEKDAYS.map((dayName) => {
           const found = dbDays.find((d) => d.day === dayName);
-          const localDay = updatedSettings.workingDays.find((d) => d.day === dayName) || {};
+          const localDay =
+            updatedSettings.workingDays.find((d) => d.day === dayName) || {};
           if (found) {
             return {
               ...found,
@@ -239,12 +266,12 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
             breakTimes: [
               ...(d.breakTimes || []),
               {
-                name: `Break ${((d.breakTimes || []).length + 1)}`,
+                name: `Break ${(d.breakTimes || []).length + 1}`,
                 startTime: "",
                 endTime: "",
                 isEditing: true,
-              }
-            ]
+              },
+            ],
           };
         }
         return d;
@@ -258,7 +285,9 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
       if (d.day === dayName) {
         return {
           ...d,
-          breakTimes: (d.breakTimes || []).filter((_, idx) => idx !== breakIndex)
+          breakTimes: (d.breakTimes || []).filter(
+            (_, idx) => idx !== breakIndex,
+          ),
         };
       }
       return d;
@@ -283,9 +312,12 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
       const e1 = hasEndTime ? parseTimeToMinutes(currentBreak.endTime) : null;
 
       if (hasEndTime && s1 >= e1) {
-        Toast({ 
-          message: s1 === e1 ? "Start time and End time cannot be the same." : "Start time cannot be after End time.", 
-          type: "error" 
+        Toast({
+          message:
+            s1 === e1
+              ? "Start time and End time cannot be the same."
+              : "Start time cannot be after End time.",
+          type: "error",
         });
         newValue = "";
       } else {
@@ -293,13 +325,15 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
           if (idx === breakIndex || !b.startTime || !b.endTime) return false;
           const s2 = parseTimeToMinutes(b.startTime);
           const e2 = parseTimeToMinutes(b.endTime);
-          return hasEndTime ? checkOverlap(s1, e1, s2, e2) : isTimeInsideInterval(s1, s2, e2);
+          return hasEndTime
+            ? checkOverlap(s1, e1, s2, e2)
+            : isTimeInsideInterval(s1, s2, e2);
         });
 
         if (other) {
-          Toast({ 
-            message: `This break overlaps with ${other.name || `Break`}.`, 
-            type: "error" 
+          Toast({
+            message: `This break overlaps with ${other.name || `Break`}.`,
+            type: "error",
           });
           newValue = "";
         }
@@ -311,7 +345,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
       workingDays: prev.workingDays.map((d) => {
         if (d.day === dayName) {
           const updatedBreaks = (d.breakTimes || []).map((b, idx) =>
-            idx === breakIndex ? { ...b, [field]: newValue } : b
+            idx === breakIndex ? { ...b, [field]: newValue } : b,
           );
           return { ...d, breakTimes: updatedBreaks };
         }
@@ -324,7 +358,7 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
     const updatedDays = slotSettings.workingDays.map((d) => {
       if (d.day === dayName) {
         const updatedBreaks = (d.breakTimes || []).map((b, idx) =>
-          idx === breakIndex ? { ...b, isEditing: isEditingVal } : b
+          idx === breakIndex ? { ...b, isEditing: isEditingVal } : b,
         );
         return { ...d, breakTimes: updatedBreaks };
       }
@@ -337,7 +371,11 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
     }
   };
 
-  const isCapacityInvalid = slotSettings.capacityPerSlot === "" || slotSettings.capacityPerSlot === null || isNaN(Number(slotSettings.capacityPerSlot)) || Number(slotSettings.capacityPerSlot) < 1;
+  const isCapacityInvalid =
+    slotSettings.capacityPerSlot === "" ||
+    slotSettings.capacityPerSlot === null ||
+    isNaN(Number(slotSettings.capacityPerSlot)) ||
+    Number(slotSettings.capacityPerSlot) < 1;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -346,19 +384,27 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
 
   return (
     <>
-      <PageMeta title="Configure Slot Settings" description="SuperAdmin Admin Slot Config Panel" />
+      <PageMeta
+        title="Configure Slot Settings"
+        description="SuperAdmin Admin Slot Config Panel"
+      />
       <PageBreadcrumb
         items={[
           { label: "Home", to: "/" },
           { label: "Admins Management", to: "/admins" },
-          { label: "Slot Settings", to: `/admins/${adminId}/slots` }
+          { label: "Slot Settings", to: `/admins/${adminId}/slots` },
         ]}
       />
 
       <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs p-6">
         <div className="border-b border-gray-200 pb-4 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">Configure Booking Slots & Working Days</h3>
-          <p className="text-sm text-gray-500">Edit default slot sizing, hourly limits, and daily availability with custom breaks.</p>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Configure Booking Slots & Working Days
+          </h3>
+          <p className="text-sm text-gray-500">
+            Edit default slot sizing, hourly limits, and daily availability with
+            custom breaks.
+          </p>
         </div>
 
         {isLoading ? (
@@ -380,8 +426,18 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                       className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
                       title="Edit Slot Duration"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                       Edit
                     </button>
@@ -402,17 +458,30 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
 
                 {!isEditingDuration ? (
                   <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 font-medium flex items-center justify-between">
-                    <span>{formatDurationLabel(slotSettings.slotDurationMinutes)}</span>
-                    <span className="text-xs text-gray-400">({slotSettings.slotDurationMinutes} mins)</span>
+                    <span>
+                      {formatDurationLabel(slotSettings.slotDurationMinutes)}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      ({slotSettings.slotDurationMinutes} mins)
+                    </span>
                   </div>
                 ) : (
                   <div className="space-y-2.5">
                     <select
-                      value={[15, 30, 45, 60, 90, 120].includes(slotSettings.slotDurationMinutes) ? slotSettings.slotDurationMinutes : "custom"}
+                      value={
+                        [15, 30, 45, 60, 90, 120].includes(
+                          slotSettings.slotDurationMinutes,
+                        )
+                          ? slotSettings.slotDurationMinutes
+                          : "custom"
+                      }
                       onChange={(e) => {
                         const val = e.target.value;
                         if (val !== "custom") {
-                          handleSlotSettingsChange("slotDurationMinutes", Number(val));
+                          handleSlotSettingsChange(
+                            "slotDurationMinutes",
+                            Number(val),
+                          );
                         }
                       }}
                       className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
@@ -427,12 +496,19 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                     </select>
 
                     <div className="flex items-center gap-2 pt-1">
-                      <span className="text-xs font-semibold text-gray-600">Custom Minutes:</span>
+                      <span className="text-xs font-semibold text-gray-600">
+                        Custom Minutes:
+                      </span>
                       <input
                         type="number"
                         min={1}
                         value={slotSettings.slotDurationMinutes}
-                        onChange={(e) => handleSlotSettingsChange("slotDurationMinutes", Math.max(1, Number(e.target.value)))}
+                        onChange={(e) =>
+                          handleSlotSettingsChange(
+                            "slotDurationMinutes",
+                            Math.max(1, Number(e.target.value)),
+                          )
+                        }
                         className="w-28 p-1.5 border border-gray-300 rounded-md text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 font-semibold"
                         placeholder="e.g. 5, 7, 75, 80"
                       />
@@ -457,8 +533,18 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                       className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
                       title="Edit Minimum Advance Notice"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                       Edit
                     </button>
@@ -481,19 +567,32 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                   <div className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 font-medium flex items-center justify-between">
                     <span>
                       {slotSettings.minAdvanceNoticeMinutes > 0
-                        ? formatDurationLabel(slotSettings.minAdvanceNoticeMinutes)
+                        ? formatDurationLabel(
+                            slotSettings.minAdvanceNoticeMinutes,
+                          )
                         : "0 Minutes (Immediate)"}
                     </span>
-                    <span className="text-xs text-gray-400">({slotSettings.minAdvanceNoticeMinutes || 0} mins)</span>
+                    <span className="text-xs text-gray-400">
+                      ({slotSettings.minAdvanceNoticeMinutes || 0} mins)
+                    </span>
                   </div>
                 ) : (
                   <div className="space-y-2.5">
                     <select
-                      value={[0, 15, 30, 45, 60, 90, 120].includes(slotSettings.minAdvanceNoticeMinutes) ? slotSettings.minAdvanceNoticeMinutes : "custom"}
+                      value={
+                        [0, 15, 30, 45, 60, 90, 120].includes(
+                          slotSettings.minAdvanceNoticeMinutes,
+                        )
+                          ? slotSettings.minAdvanceNoticeMinutes
+                          : "custom"
+                      }
                       onChange={(e) => {
                         const val = e.target.value;
                         if (val !== "custom") {
-                          handleSlotSettingsChange("minAdvanceNoticeMinutes", Number(val));
+                          handleSlotSettingsChange(
+                            "minAdvanceNoticeMinutes",
+                            Number(val),
+                          );
                         }
                       }}
                       className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
@@ -509,17 +608,26 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                     </select>
 
                     <div className="flex items-center gap-2 pt-1">
-                      <span className="text-xs font-semibold text-gray-600">Custom Minutes:</span>
+                      <span className="text-xs font-semibold text-gray-600">
+                        Custom Minutes:
+                      </span>
                       <input
                         type="number"
                         min={0}
                         value={slotSettings.minAdvanceNoticeMinutes || 0}
-                        onChange={(e) => handleSlotSettingsChange("minAdvanceNoticeMinutes", Math.max(0, Number(e.target.value)))}
+                        onChange={(e) =>
+                          handleSlotSettingsChange(
+                            "minAdvanceNoticeMinutes",
+                            Math.max(0, Number(e.target.value)),
+                          )
+                        }
                         className="w-28 p-1.5 border border-gray-300 rounded-md text-sm bg-white text-gray-800 focus:outline-none focus:border-blue-500 font-semibold"
                         placeholder="e.g. 15, 30"
                       />
                       <span className="text-xs text-blue-600 font-medium">
-                        {formatDurationLabel(slotSettings.minAdvanceNoticeMinutes)}
+                        {formatDurationLabel(
+                          slotSettings.minAdvanceNoticeMinutes,
+                        )}
                       </span>
                     </div>
                   </div>
@@ -538,8 +646,18 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                       className="h-6 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 focus:outline-none"
                       title="Edit Capacity"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                       Edit
                     </button>
@@ -551,10 +669,11 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                         setIsEditingCapacity(false);
                         saveSlotSettings(slotSettings, false);
                       }}
-                      className={`h-6 px-2.5 text-xs font-semibold rounded transition-all duration-150 flex items-center gap-1 focus:outline-none shadow-sm ${isCapacityInvalid
+                      className={`h-6 px-2.5 text-xs font-semibold rounded transition-all duration-150 flex items-center gap-1 focus:outline-none shadow-sm ${
+                        isCapacityInvalid
                           ? "bg-gray-200 text-gray-400 cursor-not-allowed opacity-50"
                           : "text-white bg-green-600 hover:bg-green-700 cursor-pointer"
-                        }`}
+                      }`}
                       title="Save Capacity"
                     >
                       Save
@@ -575,7 +694,10 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                       value={slotSettings.capacityPerSlot}
                       onChange={(e) => {
                         const val = e.target.value;
-                        handleSlotSettingsChange("capacityPerSlot", val === "" ? "" : Number(val));
+                        handleSlotSettingsChange(
+                          "capacityPerSlot",
+                          val === "" ? "" : Number(val),
+                        );
                       }}
                       className="w-full px-4 py-2 border border-blue-500 rounded-lg text-sm bg-white text-gray-800 focus:outline-none"
                     />
@@ -590,10 +712,14 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
             </div>
 
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-4">Working Days & Schedules</h4>
+              <h4 className="text-sm font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-4">
+                Working Days & Schedules
+              </h4>
               <div className="flex flex-col gap-4">
                 {WEEKDAYS.map((dayName) => {
-                  const dayObj = slotSettings.workingDays.find((d) => d.day === dayName) || {
+                  const dayObj = slotSettings.workingDays.find(
+                    (d) => d.day === dayName,
+                  ) || {
                     day: dayName,
                     isOpen: false,
                     startTime: "09:00",
@@ -603,19 +729,30 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                   };
 
                   return (
-                    <div key={dayName} className="flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div
+                      key={dayName}
+                      className="flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                    >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3 w-32">
                           <button
                             type="button"
                             onClick={() => handleToggleWorkingDayOpen(dayName)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${dayObj.isOpen ? "bg-blue-600" : "bg-gray-200"
-                              }`}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              dayObj.isOpen ? "bg-blue-600" : "bg-gray-200"
+                            }`}
                           >
-                            <span className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${dayObj.isOpen ? "translate-x-4" : "translate-x-0"
-                              }`} />
+                            <span
+                              className={`pointer-events-none inline-block size-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                dayObj.isOpen
+                                  ? "translate-x-4"
+                                  : "translate-x-0"
+                              }`}
+                            />
                           </button>
-                          <span className="text-sm font-semibold text-gray-800">{dayName}</span>
+                          <span className="text-sm font-semibold text-gray-800">
+                            {dayName}
+                          </span>
                         </div>
 
                         {dayObj.isOpen ? (
@@ -625,8 +762,18 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                                 <input
                                   type="time"
                                   value={dayObj.startTime}
-                                  onChange={(e) => handleWorkingDayChange(dayName, "startTime", e.target.value)}
-                                  onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                                  onChange={(e) =>
+                                    handleWorkingDayChange(
+                                      dayName,
+                                      "startTime",
+                                      e.target.value,
+                                    )
+                                  }
+                                  onClick={(e) => {
+                                    try {
+                                      e.target.showPicker();
+                                    } catch (err) {}
+                                  }}
                                   required
                                   className="px-3 py-1 border border-gray-300 rounded text-sm bg-white focus:outline-none"
                                 />
@@ -634,8 +781,18 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                                 <input
                                   type="time"
                                   value={dayObj.endTime}
-                                  onChange={(e) => handleWorkingDayChange(dayName, "endTime", e.target.value)}
-                                  onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                                  onChange={(e) =>
+                                    handleWorkingDayChange(
+                                      dayName,
+                                      "endTime",
+                                      e.target.value,
+                                    )
+                                  }
+                                  onClick={(e) => {
+                                    try {
+                                      e.target.showPicker();
+                                    } catch (err) {}
+                                  }}
                                   required
                                   className="px-3 py-1 border border-gray-300 rounded text-sm bg-white focus:outline-none"
                                 />
@@ -643,16 +800,34 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                                   type="button"
                                   onClick={() => {
                                     if (!dayObj.startTime || !dayObj.endTime) {
-                                      Toast({ message: "Please specify both start and end times.", type: "warning" });
+                                      Toast({
+                                        message:
+                                          "Please specify both start and end times.",
+                                        type: "warning",
+                                      });
                                       return;
                                     }
-                                    handleToggleWorkingDayHoursEdit(dayName, false);
+                                    handleToggleWorkingDayHoursEdit(
+                                      dayName,
+                                      false,
+                                    );
                                   }}
                                   className="text-emerald-600 hover:text-emerald-800 transition-colors p-1"
                                   title="Save Working Hours"
                                 >
-                                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  <svg
+                                    width="18"
+                                    height="18"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M5 13l4 4L19 7"
+                                    />
                                   </svg>
                                 </button>
                               </div>
@@ -667,19 +842,37 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => handleToggleWorkingDayHoursEdit(dayName, true)}
+                                  onClick={() =>
+                                    handleToggleWorkingDayHoursEdit(
+                                      dayName,
+                                      true,
+                                    )
+                                  }
                                   className="text-blue-600 hover:text-blue-800 transition-colors ml-2 p-1"
                                   title="Edit Working Hours"
                                 >
-                                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                  <svg
+                                    width="15"
+                                    height="15"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                    />
                                   </svg>
                                 </button>
                               </div>
                             )}
                           </>
                         ) : (
-                          <span className="text-sm text-gray-400 italic pr-8">Closed</span>
+                          <span className="text-sm text-gray-400 italic pr-8">
+                            Closed
+                          </span>
                         )}
                       </div>
 
@@ -687,7 +880,9 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                       {dayObj.isOpen && (
                         <div className="mt-3 pl-12 border-t border-gray-200 pt-3">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-semibold text-gray-700">Breaks for {dayName}</span>
+                            <span className="text-xs font-semibold text-gray-700">
+                              Breaks for {dayName}
+                            </span>
                             <button
                               type="button"
                               onClick={() => handleAddDayBreak(dayName)}
@@ -698,8 +893,11 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                           </div>
 
                           <div className="flex flex-col gap-2">
-                            {(!dayObj.breakTimes || dayObj.breakTimes.length === 0) ? (
-                              <span className="text-xs text-gray-400 italic">No breaks configured for this day.</span>
+                            {!dayObj.breakTimes ||
+                            dayObj.breakTimes.length === 0 ? (
+                              <span className="text-xs text-gray-400 italic">
+                                No breaks configured for this day.
+                              </span>
                             ) : (
                               dayObj.breakTimes.map((brk, bIdx) => (
                                 <div key={bIdx}>
@@ -709,7 +907,14 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                                         <input
                                           type="text"
                                           value={brk.name}
-                                          onChange={(e) => handleDayBreakChange(dayName, bIdx, "name", e.target.value)}
+                                          onChange={(e) =>
+                                            handleDayBreakChange(
+                                              dayName,
+                                              bIdx,
+                                              "name",
+                                              e.target.value,
+                                            )
+                                          }
                                           placeholder="Break Name (e.g. Lunch)"
                                           required
                                           className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none w-24 text-gray-800 font-semibold"
@@ -717,50 +922,122 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                                         <input
                                           type="time"
                                           value={brk.startTime}
-                                          onChange={(e) => handleDayBreakChange(dayName, bIdx, "startTime", e.target.value)}
-                                          onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                                          onChange={(e) =>
+                                            handleDayBreakChange(
+                                              dayName,
+                                              bIdx,
+                                              "startTime",
+                                              e.target.value,
+                                            )
+                                          }
+                                          onClick={(e) => {
+                                            try {
+                                              e.target.showPicker();
+                                            } catch (err) {}
+                                          }}
                                           required
                                           className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
                                         />
-                                        <span className="text-gray-400 text-xs">to</span>
+                                        <span className="text-gray-400 text-xs">
+                                          to
+                                        </span>
                                         <input
                                           type="time"
                                           value={brk.endTime}
-                                          onChange={(e) => handleDayBreakChange(dayName, bIdx, "endTime", e.target.value)}
-                                          onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+                                          onChange={(e) =>
+                                            handleDayBreakChange(
+                                              dayName,
+                                              bIdx,
+                                              "endTime",
+                                              e.target.value,
+                                            )
+                                          }
+                                          onClick={(e) => {
+                                            try {
+                                              e.target.showPicker();
+                                            } catch (err) {}
+                                          }}
                                           required
                                           className="px-2 py-0.5 border border-gray-300 rounded text-xs bg-white focus:outline-none"
                                         />
                                         <button
                                           type="button"
-                                          disabled={!!getBreakError(brk, bIdx, dayObj.breakTimes)}
+                                          disabled={
+                                            !!getBreakError(
+                                              brk,
+                                              bIdx,
+                                              dayObj.breakTimes,
+                                            )
+                                          }
                                           onClick={() => {
-                                            if (brk.name.trim() === "" || !brk.startTime || !brk.endTime || (brk.startTime === "00:00" && brk.endTime === "00:00")) {
-                                              Toast({ message: "Please set a valid break duration.", type: "warning" });
+                                            if (
+                                              brk.name.trim() === "" ||
+                                              !brk.startTime ||
+                                              !brk.endTime ||
+                                              (brk.startTime === "00:00" &&
+                                                brk.endTime === "00:00")
+                                            ) {
+                                              Toast({
+                                                message:
+                                                  "Please set a valid break duration.",
+                                                type: "warning",
+                                              });
                                               return;
                                             }
-                                            handleToggleBreakEdit(dayName, bIdx, false);
+                                            handleToggleBreakEdit(
+                                              dayName,
+                                              bIdx,
+                                              false,
+                                            );
                                           }}
                                           className="text-emerald-600 hover:text-emerald-800 transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
                                           title="Save Break"
                                         >
-                                          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                          <svg
+                                            width="15"
+                                            height="15"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth="2.5"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              d="M5 13l4 4L19 7"
+                                            />
                                           </svg>
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => handleRemoveDayBreak(dayName, bIdx)}
+                                          onClick={() =>
+                                            handleRemoveDayBreak(dayName, bIdx)
+                                          }
                                           className="text-red-500 hover:text-red-700 transition-colors p-1"
                                           title="Delete Break"
                                         >
-                                          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                          <svg
+                                            width="15"
+                                            height="15"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth="2.5"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                            />
                                           </svg>
                                         </button>
                                       </div>
                                       {(() => {
-                                        const error = getBreakError(brk, bIdx, dayObj.breakTimes);
+                                        const error = getBreakError(
+                                          brk,
+                                          bIdx,
+                                          dayObj.breakTimes,
+                                        );
                                         return error ? (
                                           <span className="text-[10px] text-red-500 font-semibold pl-1">
                                             {error}
@@ -770,27 +1047,62 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                                     </div>
                                   ) : (
                                     <div className="flex items-center gap-3 py-1 bg-white px-3 border border-gray-200 rounded text-xs text-gray-700 w-fit">
-                                      <span className="font-semibold">{brk.name}</span>
+                                      <span className="font-semibold">
+                                        {brk.name}
+                                      </span>
                                       <span className="text-gray-400">|</span>
-                                      <span>{formatTime12h(brk.startTime)} - {formatTime12h(brk.endTime)}</span>
+                                      <span>
+                                        {formatTime12h(brk.startTime)} -{" "}
+                                        {formatTime12h(brk.endTime)}
+                                      </span>
                                       <button
                                         type="button"
-                                        onClick={() => handleToggleBreakEdit(dayName, bIdx, true)}
+                                        onClick={() =>
+                                          handleToggleBreakEdit(
+                                            dayName,
+                                            bIdx,
+                                            true,
+                                          )
+                                        }
                                         className="text-blue-600 hover:text-blue-800 transition-colors ml-2"
                                         title="Edit Break"
                                       >
-                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        <svg
+                                          width="14"
+                                          height="14"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                          />
                                         </svg>
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleRemoveDayBreak(dayName, bIdx)}
+                                        onClick={() =>
+                                          handleRemoveDayBreak(dayName, bIdx)
+                                        }
                                         className="text-red-500 hover:text-red-700 transition-colors"
                                         title="Delete Break"
                                       >
-                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        <svg
+                                          width="14"
+                                          height="14"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                          strokeWidth="2.5"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                          />
                                         </svg>
                                       </button>
                                     </div>
@@ -806,7 +1118,6 @@ export default function AdminSlotSettingsPage({ params: paramsPromise }) {
                 })}
               </div>
             </div>
-
           </form>
         )}
       </div>

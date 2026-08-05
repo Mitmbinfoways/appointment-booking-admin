@@ -45,11 +45,14 @@ export default function ModuleAccessPage() {
             } catch (e) {
               // ignore single fetch error
             }
-          })
+          }),
         );
         setAdminModules(moduleMap);
       } else {
-        Toast({ message: res.data?.message || "Failed to fetch admins", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to fetch admins",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error fetching admin modules:", err);
@@ -87,7 +90,10 @@ export default function ModuleAccessPage() {
           },
         }));
       } else {
-        Toast({ message: res.data?.message || "Failed to toggle module", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to toggle module",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error toggling module:", err);
@@ -99,17 +105,30 @@ export default function ModuleAccessPage() {
     (adm) =>
       adm.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       adm.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (adm.businessName && adm.businessName.toLowerCase().includes(searchQuery.toLowerCase()))
+      (adm.businessName &&
+        adm.businessName.toLowerCase().includes(searchQuery.toLowerCase())),
   );
 
   const totalAdmins = adminsList.length;
-  const medicineModuleCount = Object.values(adminModules).filter((m) => m?.medicineModule).length;
-  const medicalModuleCount = Object.values(adminModules).filter((m) => m?.medicalModule).length;
+  const medicineModuleCount = Object.values(adminModules).filter(
+    (m) => m?.medicineModule,
+  ).length;
+  const medicalModuleCount = Object.values(adminModules).filter(
+    (m) => m?.medicalModule,
+  ).length;
 
   return (
     <div className="p-6 space-y-6">
-      <PageMeta title="Module Access Management" description="Manage tenant admin module permissions" />
-      <PageBreadcrumb items={[{ label: "Home", to: "/" }, { label: "Module Access Management" }]} />
+      <PageMeta
+        title="Module Access Management"
+        description="Manage tenant admin module permissions"
+      />
+      <PageBreadcrumb
+        items={[
+          { label: "Home", to: "/" },
+          { label: "Module Access Management" },
+        ]}
+      />
 
       {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -118,7 +137,9 @@ export default function ModuleAccessPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Total Tenant Admins
             </span>
-            <span className="text-2xl font-bold text-gray-900 mt-1 block">{totalAdmins}</span>
+            <span className="text-2xl font-bold text-gray-900 mt-1 block">
+              {totalAdmins}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <ShieldCheck className="w-5 h-5" />
@@ -130,7 +151,9 @@ export default function ModuleAccessPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Medicine Module Active
             </span>
-            <span className="text-2xl font-bold text-green-600 mt-1 block">{medicineModuleCount}</span>
+            <span className="text-2xl font-bold text-green-600 mt-1 block">
+              {medicineModuleCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
             <Package className="w-5 h-5" />
@@ -142,7 +165,9 @@ export default function ModuleAccessPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Medical Module Active
             </span>
-            <span className="text-2xl font-bold text-purple-600 mt-1 block">{medicalModuleCount}</span>
+            <span className="text-2xl font-bold text-purple-600 mt-1 block">
+              {medicalModuleCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
             <ShieldCheck className="w-5 h-5" />
@@ -181,20 +206,28 @@ export default function ModuleAccessPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={5} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={5}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     Loading admin module permissions...
                   </TD>
                 </TR>
               ) : filteredAdmins.length === 0 ? (
                 <TR>
-                  <TD colSpan={5} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={5}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     No Admin accounts found matching search.
                   </TD>
                 </TR>
               ) : (
                 filteredAdmins.map((adm, idx) => {
                   const hasMed = Boolean(adminModules[adm._id]?.medicineModule);
-                  const hasMedical = Boolean(adminModules[adm._id]?.medicalModule);
+                  const hasMedical = Boolean(
+                    adminModules[adm._id]?.medicalModule,
+                  );
 
                   return (
                     <TR key={adm._id}>
@@ -203,7 +236,9 @@ export default function ModuleAccessPage() {
                       {/* Admin Profile Cell */}
                       <TD>
                         <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-gray-900">{adm.username}</span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {adm.username}
+                          </span>
                           <span className="text-xs text-gray-500 inline-flex items-center gap-1 mt-0.5">
                             <Mail className="w-3.5 h-3.5 text-gray-400" />
                             {adm.email}
@@ -224,7 +259,13 @@ export default function ModuleAccessPage() {
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
-                            onClick={() => handleToggleModule(adm._id, "medicineModule", hasMed)}
+                            onClick={() =>
+                              handleToggleModule(
+                                adm._id,
+                                "medicineModule",
+                                hasMed,
+                              )
+                            }
                             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                               hasMed ? "bg-blue-600" : "bg-gray-200"
                             }`}
@@ -260,7 +301,13 @@ export default function ModuleAccessPage() {
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
-                            onClick={() => handleToggleModule(adm._id, "medicalModule", hasMedical)}
+                            onClick={() =>
+                              handleToggleModule(
+                                adm._id,
+                                "medicalModule",
+                                hasMedical,
+                              )
+                            }
                             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                               hasMedical ? "bg-purple-600" : "bg-gray-200"
                             }`}

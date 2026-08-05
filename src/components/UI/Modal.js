@@ -89,7 +89,9 @@ export const CustomModal = ({
             )}
           </div>
         )}
-        <div className="p-4 lg:p-6 max-h-[80vh] overflow-y-auto custom-scrollbar">{children}</div>
+        <div className="p-4 lg:p-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+          {children}
+        </div>
       </div>
     </div>
   );

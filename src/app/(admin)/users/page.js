@@ -85,7 +85,10 @@ export default function UserManagementPage() {
         setSubUsers(res.data.data);
         setHasAccess(true);
       } else {
-        Toast({ message: res.data?.message || "Failed to load sub-users", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to load sub-users",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error fetching sub-users:", err);
@@ -103,7 +106,10 @@ export default function UserManagementPage() {
     fetchSubUsers();
   }, [adminId]);
 
-  const roles = ["All", ...Array.from(new Set(subUsers.map((u) => u.role || "Staff")))];
+  const roles = [
+    "All",
+    ...Array.from(new Set(subUsers.map((u) => u.role || "Staff"))),
+  ];
 
   const filteredUsers = subUsers.filter((usr) => {
     const matchesSearch =
@@ -111,7 +117,8 @@ export default function UserManagementPage() {
       usr.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (usr.phoneNumber && usr.phoneNumber.includes(searchQuery));
 
-    const matchesRole = roleFilter === "All" || (usr.role || "Staff") === roleFilter;
+    const matchesRole =
+      roleFilter === "All" || (usr.role || "Staff") === roleFilter;
 
     return matchesSearch && matchesRole;
   });
@@ -142,7 +149,10 @@ export default function UserManagementPage() {
         setIsAddModalOpen(false);
         fetchSubUsers();
       } else {
-        Toast({ message: res.data?.message || "Failed to create sub-user", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to create sub-user",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error creating sub-user:", err);
@@ -176,11 +186,17 @@ export default function UserManagementPage() {
     try {
       const res = await updateSubUserRecord(selectedUser._id, editFormData);
       if (res.status === 200) {
-        Toast({ message: "User record updated successfully!", type: "success" });
+        Toast({
+          message: "User record updated successfully!",
+          type: "success",
+        });
         setIsEditModalOpen(false);
         fetchSubUsers();
       } else {
-        Toast({ message: res.data?.message || "Failed to update user", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to update user",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error updating sub-user:", err);
@@ -194,10 +210,15 @@ export default function UserManagementPage() {
       if (res.status === 200) {
         Toast({ message: "User active status updated!", type: "success" });
         setSubUsers((prev) =>
-          prev.map((u) => (u._id === subUserId ? { ...u, isActive: !u.isActive } : u))
+          prev.map((u) =>
+            u._id === subUserId ? { ...u, isActive: !u.isActive } : u,
+          ),
         );
       } else {
-        Toast({ message: res.data?.message || "Failed to toggle status", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to toggle status",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error toggling user active:", err);
@@ -215,11 +236,17 @@ export default function UserManagementPage() {
     try {
       const res = await deleteSubUserRecord(selectedUser._id);
       if (res.status === 200) {
-        Toast({ message: "User record deleted successfully!", type: "success" });
+        Toast({
+          message: "User record deleted successfully!",
+          type: "success",
+        });
         setIsDeleteModalOpen(false);
         fetchSubUsers();
       } else {
-        Toast({ message: res.data?.message || "Failed to delete user", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to delete user",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error deleting sub-user:", err);
@@ -231,13 +258,21 @@ export default function UserManagementPage() {
   const totalCount = subUsers.length;
   const activeCount = subUsers.filter((u) => u.isActive).length;
   const inactiveCount = subUsers.filter((u) => !u.isActive).length;
-  const staffCount = subUsers.filter((u) => u.role === "Staff" || u.role === "Receptionist" || u.role === "Assistant").length;
+  const staffCount = subUsers.filter(
+    (u) =>
+      u.role === "Staff" || u.role === "Receptionist" || u.role === "Assistant",
+  ).length;
 
   if (!hasAccess) {
     return (
       <div className="p-6 space-y-6">
-        <PageMeta title="User Management" description="Manage clinic sub-users and staff" />
-        <PageBreadcrumb items={[{ label: "Home", to: "/" }, { label: "User Management" }]} />
+        <PageMeta
+          title="User Management"
+          description="Manage clinic sub-users and staff"
+        />
+        <PageBreadcrumb
+          items={[{ label: "Home", to: "/" }, { label: "User Management" }]}
+        />
 
         <div className="mt-8 bg-white rounded-lg p-12 border border-gray-200 text-center max-w-xl mx-auto shadow-theme-xs">
           <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
@@ -247,7 +282,8 @@ export default function UserManagementPage() {
             User Management Module Disabled
           </h2>
           <p className="text-sm text-gray-500">
-            The User Management module is currently not enabled for your account. Please contact your SuperAdmin to enable access.
+            The User Management module is currently not enabled for your
+            account. Please contact your SuperAdmin to enable access.
           </p>
         </div>
       </div>
@@ -256,8 +292,13 @@ export default function UserManagementPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageMeta title="User Management" description="Manage clinic sub-users and staff" />
-      <PageBreadcrumb items={[{ label: "Home", to: "/" }, { label: "User Management" }]} />
+      <PageMeta
+        title="User Management"
+        description="Manage clinic sub-users and staff"
+      />
+      <PageBreadcrumb
+        items={[{ label: "Home", to: "/" }, { label: "User Management" }]}
+      />
 
       {/* Overview Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -266,7 +307,9 @@ export default function UserManagementPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Total Sub-Users
             </span>
-            <span className="text-2xl font-bold text-gray-900 mt-1 block">{totalCount}</span>
+            <span className="text-2xl font-bold text-gray-900 mt-1 block">
+              {totalCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <Users className="w-5 h-5" />
@@ -278,7 +321,9 @@ export default function UserManagementPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Active Users
             </span>
-            <span className="text-2xl font-bold text-green-600 mt-1 block">{activeCount}</span>
+            <span className="text-2xl font-bold text-green-600 mt-1 block">
+              {activeCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
             <UserCheck className="w-5 h-5" />
@@ -290,7 +335,9 @@ export default function UserManagementPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Inactive Users
             </span>
-            <span className="text-2xl font-bold text-red-600 mt-1 block">{inactiveCount}</span>
+            <span className="text-2xl font-bold text-red-600 mt-1 block">
+              {inactiveCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
             <UserX className="w-5 h-5" />
@@ -302,7 +349,9 @@ export default function UserManagementPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Staff Members
             </span>
-            <span className="text-2xl font-bold text-gray-900 mt-1 block">{staffCount}</span>
+            <span className="text-2xl font-bold text-gray-900 mt-1 block">
+              {staffCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
             <ShieldCheck className="w-5 h-5" />
@@ -345,7 +394,12 @@ export default function UserManagementPage() {
           {/* Action Button */}
           <Button
             onClick={() => {
-              setFormData({ name: "", email: "", phoneNumber: "", role: "Staff" });
+              setFormData({
+                name: "",
+                email: "",
+                phoneNumber: "",
+                role: "Staff",
+              });
               setFormErrors({});
               setIsAddModalOpen(true);
             }}
@@ -375,13 +429,19 @@ export default function UserManagementPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={8} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={8}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     Loading sub-users list...
                   </TD>
                 </TR>
               ) : filteredUsers.length === 0 ? (
                 <TR>
-                  <TD colSpan={8} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={8}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     No user records found.
                   </TD>
                 </TR>
@@ -389,7 +449,9 @@ export default function UserManagementPage() {
                 filteredUsers.map((usr, idx) => (
                   <TR key={usr._id}>
                     <TD className="text-sm text-gray-500">{idx + 1}</TD>
-                    <TD className="text-sm font-semibold text-gray-900">{usr.name}</TD>
+                    <TD className="text-sm font-semibold text-gray-900">
+                      {usr.name}
+                    </TD>
                     <TD className="text-sm text-gray-700">
                       <span className="inline-flex items-center gap-1">
                         <Mail className="w-3.5 h-3.5 text-gray-400" />
@@ -412,7 +474,9 @@ export default function UserManagementPage() {
                       </span>
                     </TD>
                     <TD className="text-sm text-gray-500">
-                      {usr.createdAt ? format(new Date(usr.createdAt), "dd-MM-yyyy") : "--"}
+                      {usr.createdAt
+                        ? format(new Date(usr.createdAt), "dd-MM-yyyy")
+                        : "--"}
                     </TD>
                     <TD>
                       <button
@@ -421,7 +485,11 @@ export default function UserManagementPage() {
                         className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
                           usr.isActive ? "bg-blue-600" : "bg-gray-200"
                         }`}
-                        title={usr.isActive ? "Active (Click to Deactivate)" : "Inactive (Click to Activate)"}
+                        title={
+                          usr.isActive
+                            ? "Active (Click to Deactivate)"
+                            : "Inactive (Click to Activate)"
+                        }
                       >
                         <span
                           className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
@@ -472,10 +540,16 @@ export default function UserManagementPage() {
               type="text"
               placeholder="e.g. John Doe"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
             />
-            {formErrors.name && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.name}</p>}
+            {formErrors.name && (
+              <p className="text-xs text-red-500 mt-1 font-bold">
+                {formErrors.name}
+              </p>
+            )}
           </div>
 
           <div>
@@ -486,29 +560,43 @@ export default function UserManagementPage() {
               type="email"
               placeholder="e.g. staff@clinic.com"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
             />
-            {formErrors.email && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.email}</p>}
+            {formErrors.email && (
+              <p className="text-xs text-red-500 mt-1 font-bold">
+                {formErrors.email}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Phone Number
+              </label>
               <input
                 type="text"
                 placeholder="e.g. +1234567890"
                 value={formData.phoneNumber}
-                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phoneNumber: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Role / Designation</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Role / Designation
+              </label>
               <select
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
               >
                 <option value="Staff">Staff</option>
@@ -525,16 +613,25 @@ export default function UserManagementPage() {
               type="checkbox"
               id="addHasMedicalAccess"
               checked={formData.hasMedicalAccess}
-              onChange={(e) => setFormData({ ...formData, hasMedicalAccess: e.target.checked })}
+              onChange={(e) =>
+                setFormData({ ...formData, hasMedicalAccess: e.target.checked })
+              }
               className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 cursor-pointer"
             />
-            <label htmlFor="addHasMedicalAccess" className="text-sm font-semibold text-gray-700 cursor-pointer">
+            <label
+              htmlFor="addHasMedicalAccess"
+              className="text-sm font-semibold text-gray-700 cursor-pointer"
+            >
               Grant Medical Module Access (Can receive & fulfill prescriptions)
             </label>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <Button type="button" onClick={() => setIsAddModalOpen(false)} variant="outline">
+            <Button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              variant="outline"
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary">
@@ -559,10 +656,16 @@ export default function UserManagementPage() {
             <input
               type="text"
               value={editFormData.name}
-              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, name: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
             />
-            {formErrors.name && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.name}</p>}
+            {formErrors.name && (
+              <p className="text-xs text-red-500 mt-1 font-bold">
+                {formErrors.name}
+              </p>
+            )}
           </div>
 
           <div>
@@ -572,28 +675,45 @@ export default function UserManagementPage() {
             <input
               type="email"
               value={editFormData.email}
-              onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+              onChange={(e) =>
+                setEditFormData({ ...editFormData, email: e.target.value })
+              }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
             />
-            {formErrors.email && <p className="text-xs text-red-500 mt-1 font-bold">{formErrors.email}</p>}
+            {formErrors.email && (
+              <p className="text-xs text-red-500 mt-1 font-bold">
+                {formErrors.email}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Phone Number
+              </label>
               <input
                 type="text"
                 value={editFormData.phoneNumber}
-                onChange={(e) => setEditFormData({ ...editFormData, phoneNumber: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    phoneNumber: e.target.value,
+                  })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Role / Designation</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Role / Designation
+              </label>
               <select
                 value={editFormData.role}
-                onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, role: e.target.value })
+                }
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
               >
                 <option value="Staff">Staff</option>
@@ -610,16 +730,28 @@ export default function UserManagementPage() {
               type="checkbox"
               id="editHasMedicalAccess"
               checked={editFormData.hasMedicalAccess}
-              onChange={(e) => setEditFormData({ ...editFormData, hasMedicalAccess: e.target.checked })}
+              onChange={(e) =>
+                setEditFormData({
+                  ...editFormData,
+                  hasMedicalAccess: e.target.checked,
+                })
+              }
               className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 cursor-pointer"
             />
-            <label htmlFor="editHasMedicalAccess" className="text-sm font-semibold text-gray-700 cursor-pointer">
+            <label
+              htmlFor="editHasMedicalAccess"
+              className="text-sm font-semibold text-gray-700 cursor-pointer"
+            >
               Grant Medical Module Access (Can receive & fulfill prescriptions)
             </label>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <Button type="button" onClick={() => setIsEditModalOpen(false)} variant="outline">
+            <Button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              variant="outline"
+            >
               Cancel
             </Button>
             <Button type="submit" variant="primary">

@@ -8,7 +8,7 @@ import {
   getAdminFormConfigSuper,
   getAdminBookingsSuperList,
   getAdminsList,
-  deleteAdminBookingSuperRecord
+  deleteAdminBookingSuperRecord,
 } from "@/config/AxiosConfig";
 import { Toast } from "@/components/Toast";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
@@ -54,8 +54,16 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [filePreview, setFilePreview] = useState({ isOpen: false, url: "", type: "image", title: "" });
-  const [prescriptionModal, setPrescriptionModal] = useState({ isOpen: false, booking: null });
+  const [filePreview, setFilePreview] = useState({
+    isOpen: false,
+    url: "",
+    type: "image",
+    title: "",
+  });
+  const [prescriptionModal, setPrescriptionModal] = useState({
+    isOpen: false,
+    booking: null,
+  });
 
   const getNumericBookingId = (b) => {
     if (!b) return "";
@@ -108,7 +116,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
       const adminsRes = await getAdminsList();
       if (adminsRes.status === 200 && adminsRes.data?.statusCode === 200) {
         const list = adminsRes.data.data || [];
-        const found = list.find(a => a._id === adminId);
+        const found = list.find((a) => a._id === adminId);
         if (found) setAdminUser(found);
       }
 
@@ -139,14 +147,14 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
 
   // Columns classification
   const mediaFields = useMemo(() => {
-    return formFields.filter(f => {
+    return formFields.filter((f) => {
       const type = f.type || f.inputType;
       return type === "image" || type === "video";
     });
   }, [formFields]);
 
   const regularFields = useMemo(() => {
-    return formFields.filter(f => {
+    return formFields.filter((f) => {
       const type = f.type || f.inputType;
       return type !== "image" && type !== "video";
     });
@@ -156,11 +164,18 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
     return bookingsList.filter((b) => {
       // Search filter across dynamic response values
       const responsesString = formFields
-        .map(f => String(b.dynamicResponses?.[f.fieldKey] || b.dynamicResponses?.get?.(f.fieldKey) || ""))
+        .map((f) =>
+          String(
+            b.dynamicResponses?.[f.fieldKey] ||
+              b.dynamicResponses?.get?.(f.fieldKey) ||
+              "",
+          ),
+        )
         .join(" ")
         .toLowerCase();
 
-      const matchesSearch = !searchFilter ||
+      const matchesSearch =
+        !searchFilter ||
         responsesString.includes(searchFilter.toLowerCase()) ||
         b._id.toLowerCase().includes(searchFilter.toLowerCase());
 
@@ -179,7 +194,14 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
 
       return matchesSearch && matchesDate && matchesStatus;
     });
-  }, [bookingsList, formFields, searchFilter, startDate, endDate, statusFilter]);
+  }, [
+    bookingsList,
+    formFields,
+    searchFilter,
+    startDate,
+    endDate,
+    statusFilter,
+  ]);
 
   // Action Triggers
   const handleViewClick = (booking) => {
@@ -188,7 +210,9 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   };
 
   const handleEditClick = (booking) => {
-    router.push(`/admins/appointments-list/${adminId}/edit-appointment/${booking._id}`);
+    router.push(
+      `/admins/appointments-list/${adminId}/edit-appointment/${booking._id}`,
+    );
   };
 
   const handleDeleteClick = (booking) => {
@@ -223,7 +247,10 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
         items={[
           { label: "Home", to: "/" },
           { label: "Admins Management", to: "/admins" },
-          { label: `Appointments List (${adminUser?.username || "Admin"})`, to: `/admins/appointments-list/${adminId}` }
+          {
+            label: `Appointments List (${adminUser?.username || "Admin"})`,
+            to: `/admins/appointments-list/${adminId}`,
+          },
         ]}
       />
 
@@ -244,7 +271,11 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+              onClick={(e) => {
+                try {
+                  e.target.showPicker();
+                } catch (err) {}
+              }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
             />
             <span className="text-gray-500 text-sm hidden sm:inline">to</span>
@@ -252,7 +283,11 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              onClick={(e) => { try { e.target.showPicker(); } catch (err) {} }}
+              onClick={(e) => {
+                try {
+                  e.target.showPicker();
+                } catch (err) {}
+              }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
             />
             {/* Status Filter */}
@@ -293,13 +328,19 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={5 + formFields.length}
+                    className="px-6 py-10 text-center text-gray-400 text-sm"
+                  >
                     Loading bookings...
                   </TD>
                 </TR>
               ) : filteredBookings.length === 0 ? (
                 <TR>
-                  <TD colSpan={5 + formFields.length} className="px-6 py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={5 + formFields.length}
+                    className="px-6 py-10 text-center text-gray-400 text-sm"
+                  >
                     No bookings found.
                   </TD>
                 </TR>
@@ -307,30 +348,49 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                 filteredBookings.map((b, idx) => (
                   <TR key={b._id}>
                     <TD className="text-sm text-gray-500">{idx + 1}</TD>
-                    
+
                     {/* Render matching dynamic responses for Media Columns */}
                     {mediaFields.map((field) => {
-                      const val = b.dynamicResponses?.[field.fieldKey] || b.dynamicResponses?.get?.(field.fieldKey);
+                      const val =
+                        b.dynamicResponses?.[field.fieldKey] ||
+                        b.dynamicResponses?.get?.(field.fieldKey);
                       const fieldType = field.type || field.inputType;
-                      const isImage = fieldType === "image" || (typeof val === "string" && val.startsWith("data:image/"));
+                      const isImage =
+                        fieldType === "image" ||
+                        (typeof val === "string" &&
+                          val.startsWith("data:image/"));
                       return (
                         <TD key={field.fieldKey} className="text-sm">
                           {val ? (
                             isImage ? (
-                              <img 
-                                src={val} 
-                                alt={field.label} 
-                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
-                                className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform" 
+                              <img
+                                src={val}
+                                alt={field.label}
+                                onClick={() =>
+                                  setFilePreview({
+                                    isOpen: true,
+                                    url: val,
+                                    type: "image",
+                                    title: field.label,
+                                  })
+                                }
+                                className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                               />
                             ) : (
-                              <div 
-                                onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                              <div
+                                onClick={() =>
+                                  setFilePreview({
+                                    isOpen: true,
+                                    url: val,
+                                    type: "video",
+                                    title: field.label,
+                                  })
+                                }
                                 className="cursor-pointer inline-block"
                               >
-                                <video 
-                                  src={val} 
-                                  className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none" 
+                                <video
+                                  src={val}
+                                  className="w-14 h-10 object-cover rounded-lg border border-gray-200 pointer-events-none"
                                 />
                               </div>
                             )
@@ -347,21 +407,44 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
 
                     {/* Render matching dynamic responses for Regular Form Columns */}
                     {regularFields.map((field) => {
-                      const val = b.dynamicResponses?.[field.fieldKey] || b.dynamicResponses?.get?.(field.fieldKey);
-                      const isImage = typeof val === "string" && val.startsWith("data:image/");
-                      const isVideo = typeof val === "string" && val.startsWith("data:video/");
+                      const val =
+                        b.dynamicResponses?.[field.fieldKey] ||
+                        b.dynamicResponses?.get?.(field.fieldKey);
+                      const isImage =
+                        typeof val === "string" &&
+                        val.startsWith("data:image/");
+                      const isVideo =
+                        typeof val === "string" &&
+                        val.startsWith("data:video/");
                       return (
-                        <TD key={field.fieldKey} className="text-sm text-gray-700">
+                        <TD
+                          key={field.fieldKey}
+                          className="text-sm text-gray-700"
+                        >
                           {isImage ? (
                             <img
                               src={val}
                               alt={field.label}
-                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                              onClick={() =>
+                                setFilePreview({
+                                  isOpen: true,
+                                  url: val,
+                                  type: "image",
+                                  title: field.label,
+                                })
+                              }
                               className="w-10 h-10 object-cover rounded-full border border-gray-200 shadow-2xs cursor-pointer hover:scale-105 transition-transform"
                             />
                           ) : isVideo ? (
-                            <div 
-                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                            <div
+                              onClick={() =>
+                                setFilePreview({
+                                  isOpen: true,
+                                  url: val,
+                                  type: "video",
+                                  title: field.label,
+                                })
+                              }
                               className="cursor-pointer inline-block"
                             >
                               <video
@@ -379,16 +462,21 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                     })}
 
                     <TD className="text-gray-600 text-sm">
-                      <span className="block font-semibold text-gray-900">{formatDateDDMMYYYY(b.slotDate)}</span>
-                      <span className="block text-xs text-gray-550">{b.slotStartTime} - {b.slotEndTime}</span>
+                      <span className="block font-semibold text-gray-900">
+                        {formatDateDDMMYYYY(b.slotDate)}
+                      </span>
+                      <span className="block text-xs text-gray-550">
+                        {b.slotStartTime} - {b.slotEndTime}
+                      </span>
                     </TD>
                     <TD className="text-sm font-medium text-gray-700">
-                      {formatBookedDate(b.createdAt) || formatDateDDMMYYYY(b.slotDate)}
+                      {formatBookedDate(b.createdAt) ||
+                        formatDateDDMMYYYY(b.slotDate)}
                     </TD>
                     <TD>
                       <span
                         className={`inline-flex px-2.5 py-1 text-xs font-semibold border rounded-full ${getStatusClass(
-                          b.status
+                          b.status,
                         )}`}
                       >
                         {b.status}
@@ -397,7 +485,9 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                     <TD className="text-right">
                       <div className="flex items-center justify-end gap-3.5">
                         <button
-                          onClick={() => setPrescriptionModal({ isOpen: true, booking: b })}
+                          onClick={() =>
+                            setPrescriptionModal({ isOpen: true, booking: b })
+                          }
                           title="Write / Print Prescription"
                           className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
                         >
@@ -447,17 +537,26 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
             <div className="bg-gradient-to-r from-slate-50 via-blue-50/20 to-slate-50 p-4 rounded-2xl border border-slate-200/80 shadow-xs">
               <div className="flex items-center justify-between border-b border-slate-200/60 pb-3 mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Booking ID</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Booking ID
+                  </span>
                   <span className="px-2.5 py-0.5 text-xs font-mono font-bold text-blue-700 bg-blue-100/80 border border-blue-200 rounded-md">
                     #{getNumericBookingId(selectedBooking)}
                   </span>
                 </div>
                 <div>
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold border rounded-full shadow-xs ${getStatusClass(selectedBooking.status)}`}>
-                    <span className={`w-2 h-2 rounded-full ${
-                      selectedBooking.status?.toLowerCase() === "confirmed" ? "bg-green-500" :
-                      selectedBooking.status?.toLowerCase() === "pending" ? "bg-yellow-500" : "bg-red-500"
-                    }`}></span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold border rounded-full shadow-xs ${getStatusClass(selectedBooking.status)}`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        selectedBooking.status?.toLowerCase() === "confirmed"
+                          ? "bg-green-500"
+                          : selectedBooking.status?.toLowerCase() === "pending"
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                      }`}
+                    ></span>
                     <span className="capitalize">{selectedBooking.status}</span>
                   </span>
                 </div>
@@ -466,17 +565,29 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               {/* Appointment Meta Highlights */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Appointment Date</span>
-                  <span className="text-sm font-bold text-slate-900">{formatDateDDMMYYYY(selectedBooking.slotDate)}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Appointment Date
+                  </span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {formatDateDDMMYYYY(selectedBooking.slotDate)}
+                  </span>
                 </div>
                 <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Time Slot</span>
-                  <span className="text-sm font-bold text-slate-900">{selectedBooking.slotStartTime} - {selectedBooking.slotEndTime}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Time Slot
+                  </span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {selectedBooking.slotStartTime} -{" "}
+                    {selectedBooking.slotEndTime}
+                  </span>
                 </div>
                 <div className="bg-white/80 backdrop-blur-xs p-3 rounded-xl border border-slate-200/60 flex flex-col gap-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Booked On</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Booked On
+                  </span>
                   <span className="text-sm font-bold text-blue-600">
-                    {formatBookedDate(selectedBooking.createdAt) || formatDateDDMMYYYY(selectedBooking.slotDate)}
+                    {formatBookedDate(selectedBooking.createdAt) ||
+                      formatDateDDMMYYYY(selectedBooking.slotDate)}
                   </span>
                 </div>
               </div>
@@ -485,18 +596,30 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
             {/* Customer Responses Section */}
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Customer Submitted Responses</h4>
-                <span className="text-xs font-medium text-slate-400">{formFields.length} Fields Configured</span>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Customer Submitted Responses
+                </h4>
+                <span className="text-xs font-medium text-slate-400">
+                  {formFields.length} Fields Configured
+                </span>
               </div>
 
               {/* Dynamic Responses Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {formFields.map((field) => {
                   const fieldType = field.type || field.inputType;
-                  const val = selectedBooking.dynamicResponses?.[field.fieldKey] || selectedBooking.dynamicResponses?.get?.(field.fieldKey);
-                  const isImageVal = typeof val === "string" && val.startsWith("data:image/");
-                  const isVideoVal = typeof val === "string" && val.startsWith("data:video/");
-                  const isMedia = fieldType === "image" || fieldType === "video" || isImageVal || isVideoVal;
+                  const val =
+                    selectedBooking.dynamicResponses?.[field.fieldKey] ||
+                    selectedBooking.dynamicResponses?.get?.(field.fieldKey);
+                  const isImageVal =
+                    typeof val === "string" && val.startsWith("data:image/");
+                  const isVideoVal =
+                    typeof val === "string" && val.startsWith("data:video/");
+                  const isMedia =
+                    fieldType === "image" ||
+                    fieldType === "video" ||
+                    isImageVal ||
+                    isVideoVal;
 
                   return (
                     <div
@@ -512,8 +635,15 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                       {val ? (
                         fieldType === "image" || isImageVal ? (
                           <div className="mt-1">
-                            <div 
-                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "image", title: field.label })}
+                            <div
+                              onClick={() =>
+                                setFilePreview({
+                                  isOpen: true,
+                                  url: val,
+                                  type: "image",
+                                  title: field.label,
+                                })
+                              }
                               className="relative group max-w-xs rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-slate-100 cursor-pointer"
                             >
                               <img
@@ -528,11 +658,21 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                           </div>
                         ) : fieldType === "video" || isVideoVal ? (
                           <div className="mt-1">
-                            <div 
-                              onClick={() => setFilePreview({ isOpen: true, url: val, type: "video", title: field.label })}
+                            <div
+                              onClick={() =>
+                                setFilePreview({
+                                  isOpen: true,
+                                  url: val,
+                                  type: "video",
+                                  title: field.label,
+                                })
+                              }
                               className="max-w-md rounded-xl overflow-hidden border border-slate-200 shadow-xs bg-black cursor-pointer"
                             >
-                              <video src={val} className="w-full max-h-56 object-contain pointer-events-none" />
+                              <video
+                                src={val}
+                                className="w-full max-h-56 object-contain pointer-events-none"
+                              />
                             </div>
                           </div>
                         ) : (
@@ -541,7 +681,9 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                           </span>
                         )
                       ) : (
-                        <span className="text-xs text-slate-400 italic font-normal">No response provided</span>
+                        <span className="text-xs text-slate-400 italic font-normal">
+                          No response provided
+                        </span>
                       )}
                     </div>
                   );
@@ -551,7 +693,11 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
 
             {/* Modal Footer */}
             <div className="flex justify-end pt-4 border-t border-slate-200">
-              <Button onClick={() => setIsViewModalOpen(false)} variant="secondary" size="md">
+              <Button
+                onClick={() => setIsViewModalOpen(false)}
+                variant="secondary"
+                size="md"
+              >
                 Close
               </Button>
             </div>
@@ -579,7 +725,9 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
       {/* Full Screen File View Modal */}
       <FileViewModal
         isOpen={filePreview.isOpen}
-        onClose={() => setFilePreview({ isOpen: false, url: "", type: "image", title: "" })}
+        onClose={() =>
+          setFilePreview({ isOpen: false, url: "", type: "image", title: "" })
+        }
         fileUrl={filePreview.url}
         fileType={filePreview.type}
         title={filePreview.title}

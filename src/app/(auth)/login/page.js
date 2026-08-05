@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Eye, EyeOff, Mail, Lock, CheckCircle2, Phone, Info, X } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  CheckCircle2,
+  Phone,
+  Info,
+  X,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import {
@@ -39,11 +48,12 @@ export default function LoginPage() {
   const [focusedField, setFocusedField] = useState(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  const identifierRef = useRef(null); 
+  const identifierRef = useRef(null);
   const passwordRef = useRef(null);
 
   const validateEmail = (email) => {
-    const re = /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
+    const re =
+      /^[a-zA-Z0-9]+([._%+-]?[a-zA-Z0-9]+)*@[a-zA-Z0-9]+([.-]?[a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
     return re.test(email);
   };
 
@@ -96,7 +106,8 @@ export default function LoginPage() {
           });
           router.push("/");
         } else {
-          const errMsg = response.data?.message || "Login failed. Invalid credentials.";
+          const errMsg =
+            response.data?.message || "Login failed. Invalid credentials.";
           dispatch(loginFailure());
           Toast({
             message: errMsg,
@@ -106,7 +117,8 @@ export default function LoginPage() {
       }
     } catch (error) {
       dispatch(loginFailure());
-      const errMsg = error?.response?.data?.message || "Login failed. Connection error.";
+      const errMsg =
+        error?.response?.data?.message || "Login failed. Connection error.";
       Toast({
         message: errMsg,
         type: "error",
@@ -154,13 +166,17 @@ export default function LoginPage() {
               <Lock className="w-8 h-8 text-gray-800" />
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Welcome Back</h1>
-            <p className="text-gray-600 mt-2">Login to your Booking Admin account</p>
+            <p className="text-gray-600 mt-2">
+              Login to your Booking Admin account
+            </p>
           </div>
 
           {submitSuccess && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 animate-bounce">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <span className="text-green-700 font-medium">Login successful!</span>
+              <span className="text-green-700 font-medium">
+                Login successful!
+              </span>
             </div>
           )}
 
@@ -178,8 +194,11 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <Mail
-                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${focusedField === "identifier" ? "text-gray-800" : "text-gray-400"
-                    }`}
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${
+                    focusedField === "identifier"
+                      ? "text-gray-800"
+                      : "text-gray-400"
+                  }`}
                 />
                 <input
                   ref={identifierRef}
@@ -189,17 +208,20 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField("identifier")}
                   onBlur={() => setFocusedField(null)}
-                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:border transition-all ${errors.identifier
+                  className={`w-full pl-11 pr-4 py-3 border rounded-lg focus:outline-none focus:border transition-all ${
+                    errors.identifier
                       ? "border-red-500 focus:border-red-600"
                       : focusedField === "identifier"
                         ? "border-blue-500 bg-gray-50 focus:border-blue-500"
                         : "border-blue-200 hover:border-blue-300 focus:border-blue-500"
-                    }`}
+                  }`}
                   placeholder="Enter your email address"
                 />
               </div>
               {errors.identifier && (
-                <p className="mt-2 text-sm text-red-600 animate-pulse">{errors.identifier}</p>
+                <p className="mt-2 text-sm text-red-600 animate-pulse">
+                  {errors.identifier}
+                </p>
               )}
             </div>
 
@@ -209,8 +231,11 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <Lock
-                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${focusedField === "password" ? "text-gray-800" : "text-gray-400"
-                    }`}
+                  className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors ${
+                    focusedField === "password"
+                      ? "text-gray-800"
+                      : "text-gray-400"
+                  }`}
                 />
                 <input
                   ref={passwordRef}
@@ -220,12 +245,13 @@ export default function LoginPage() {
                   onChange={handleInputChange}
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
-                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:outline-none focus:border transition-all ${errors.password
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:outline-none focus:border transition-all ${
+                    errors.password
                       ? "border-red-500 focus:border-red-600"
                       : focusedField === "password"
                         ? "border-blue-500 bg-gray-50 focus:border-blue-500"
                         : "border-blue-200 hover:border-blue-300 focus:border-blue-500"
-                    }`}
+                  }`}
                   placeholder="Enter your password"
                 />
                 <button
@@ -233,11 +259,17 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-800 transition-colors focus:outline-none"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-2 text-sm text-red-600 animate-pulse">{errors.password}</p>
+                <p className="mt-2 text-sm text-red-600 animate-pulse">
+                  {errors.password}
+                </p>
               )}
             </div>
 
@@ -284,7 +316,9 @@ export default function LoginPage() {
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <Info className="w-6 h-6 text-blue-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-800">Forgot Password?</h2>
+                <h2 className="text-xl font-bold text-gray-800">
+                  Forgot Password?
+                </h2>
               </div>
               <button
                 onClick={() => setShowForgotPassword(false)}
@@ -296,7 +330,8 @@ export default function LoginPage() {
 
             <div className="mb-6">
               <p className="text-gray-600 leading-relaxed">
-                If you have forgotten your password, please contact your administrator to reset it.
+                If you have forgotten your password, please contact your
+                administrator to reset it.
               </p>
             </div>
 

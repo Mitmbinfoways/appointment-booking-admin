@@ -32,9 +32,11 @@ const Button = ({
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg transition ${sizeClasses[size] || ""
-        } ${variantClasses[variant] || ""} ${disabled ? "cursor-not-allowed opacity-50" : ""
-        } ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg transition ${
+        sizeClasses[size] || ""
+      } ${variantClasses[variant] || ""} ${
+        disabled ? "cursor-not-allowed opacity-50" : ""
+      } ${className}`}
       onClick={onClick}
       disabled={disabled}
     >

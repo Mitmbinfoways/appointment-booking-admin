@@ -62,7 +62,10 @@ export default function MedicalPrescriptionsPage() {
         setPrescriptions(res.data.data);
         setHasAccess(true);
       } else {
-        Toast({ message: res.data?.message || "Failed to load prescriptions", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to load prescriptions",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error fetching medical prescriptions:", err);
@@ -99,7 +102,10 @@ export default function MedicalPrescriptionsPage() {
     }
 
     // Dynamic scan by key substring
-    const entries = typeof dyn.entries === "function" ? Array.from(dyn.entries()) : Object.entries(dyn);
+    const entries =
+      typeof dyn.entries === "function"
+        ? Array.from(dyn.entries())
+        : Object.entries(dyn);
     for (const [k, v] of entries) {
       if (!v) continue;
       const lowerK = String(k).toLowerCase();
@@ -114,23 +120,49 @@ export default function MedicalPrescriptionsPage() {
   };
 
   const getPatientFullDetails = (pres) => {
-    const fName = getValFromPrescription(pres, ["firstName", "first_name", "fname", "first"]);
-    const lName = getValFromPrescription(pres, ["lastName", "last_name", "lname", "last"]);
-    const fullName = `${fName} ${lName}`.trim() || getValFromPrescription(pres, ["patientName", "name", "full_name", "patient_name"], pres?.patientName || "Patient");
-    const email = getValFromPrescription(pres, ["patientEmail", "email", "email_address", "userEmail"], pres?.patientEmail || "");
-    const phone = getValFromPrescription(pres, ["patientPhone", "phoneNumber", "phone", "mobile", "contact"], pres?.patientPhone || "");
+    const fName = getValFromPrescription(pres, [
+      "firstName",
+      "first_name",
+      "fname",
+      "first",
+    ]);
+    const lName = getValFromPrescription(pres, [
+      "lastName",
+      "last_name",
+      "lname",
+      "last",
+    ]);
+    const fullName =
+      `${fName} ${lName}`.trim() ||
+      getValFromPrescription(
+        pres,
+        ["patientName", "name", "full_name", "patient_name"],
+        pres?.patientName || "Patient",
+      );
+    const email = getValFromPrescription(
+      pres,
+      ["patientEmail", "email", "email_address", "userEmail"],
+      pres?.patientEmail || "",
+    );
+    const phone = getValFromPrescription(
+      pres,
+      ["patientPhone", "phoneNumber", "phone", "mobile", "contact"],
+      pres?.patientPhone || "",
+    );
 
     return { patientName: fullName, patientEmail: email, patientPhone: phone };
   };
 
   const filteredPrescriptions = prescriptions.filter((pres) => {
-    const { patientName, patientEmail, patientPhone } = getPatientFullDetails(pres);
+    const { patientName, patientEmail, patientPhone } =
+      getPatientFullDetails(pres);
     const searchLower = searchQuery.toLowerCase();
     const matchesSearch =
       (patientName && patientName.toLowerCase().includes(searchLower)) ||
       (patientEmail && patientEmail.toLowerCase().includes(searchLower)) ||
       (patientPhone && patientPhone.includes(searchQuery)) ||
-      (pres.doctorName && pres.doctorName.toLowerCase().includes(searchLower)) ||
+      (pres.doctorName &&
+        pres.doctorName.toLowerCase().includes(searchLower)) ||
       (pres.diagnosis && pres.diagnosis.toLowerCase().includes(searchLower));
 
     const matchesStatus =
@@ -142,17 +174,36 @@ export default function MedicalPrescriptionsPage() {
   const handleUpdateStatus = async (prescriptionId, newStatus) => {
     setIsUpdatingStatus(true);
     try {
-      const res = await updatePrescriptionFulfillmentStatusApi(prescriptionId, newStatus);
+      const res = await updatePrescriptionFulfillmentStatusApi(
+        prescriptionId,
+        newStatus,
+      );
       if (res.status === 200) {
-        Toast({ message: `Fulfillment status updated to '${newStatus}'!`, type: "success" });
+        Toast({
+          message: `Fulfillment status updated to '${newStatus}'!`,
+          type: "success",
+        });
         setPrescriptions((prev) =>
-          prev.map((p) => (p._id === prescriptionId ? { ...p, fulfillmentStatus: newStatus } : p))
+          prev.map((p) =>
+            p._id === prescriptionId
+              ? { ...p, fulfillmentStatus: newStatus }
+              : p,
+          ),
         );
-        if (selectedPrescription && selectedPrescription._id === prescriptionId) {
-          setSelectedPrescription((prev) => ({ ...prev, fulfillmentStatus: newStatus }));
+        if (
+          selectedPrescription &&
+          selectedPrescription._id === prescriptionId
+        ) {
+          setSelectedPrescription((prev) => ({
+            ...prev,
+            fulfillmentStatus: newStatus,
+          }));
         }
       } else {
-        Toast({ message: res.data?.message || "Failed to update status", type: "error" });
+        Toast({
+          message: res.data?.message || "Failed to update status",
+          type: "error",
+        });
       }
     } catch (err) {
       console.error("Error updating prescription status:", err);
@@ -169,14 +220,24 @@ export default function MedicalPrescriptionsPage() {
 
   // Metric counts
   const totalCount = prescriptions.length;
-  const sentCount = prescriptions.filter((p) => p.fulfillmentStatus === "sent").length;
-  const dispensedCount = prescriptions.filter((p) => p.fulfillmentStatus === "dispensed").length;
-  const completedCount = prescriptions.filter((p) => p.fulfillmentStatus === "completed").length;
+  const sentCount = prescriptions.filter(
+    (p) => p.fulfillmentStatus === "sent",
+  ).length;
+  const dispensedCount = prescriptions.filter(
+    (p) => p.fulfillmentStatus === "dispensed",
+  ).length;
+  const completedCount = prescriptions.filter(
+    (p) => p.fulfillmentStatus === "completed",
+  ).length;
 
   const renderViewModal = () => {
     if (!selectedPrescription) return null;
 
-    const { patientName: modalPatientName, patientEmail: modalPatientEmail, patientPhone: modalPatientPhone } = getPatientFullDetails(selectedPrescription);
+    const {
+      patientName: modalPatientName,
+      patientEmail: modalPatientEmail,
+      patientPhone: modalPatientPhone,
+    } = getPatientFullDetails(selectedPrescription);
 
     return (
       <CustomModal
@@ -189,20 +250,34 @@ export default function MedicalPrescriptionsPage() {
           {/* Header info */}
           <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <span className="text-xs font-bold text-gray-500 uppercase block">Patient Information</span>
-              <span className="text-sm font-bold text-gray-900 block mt-1">{modalPatientName}</span>
+              <span className="text-xs font-bold text-gray-500 uppercase block">
+                Patient Information
+              </span>
+              <span className="text-sm font-bold text-gray-900 block mt-1">
+                {modalPatientName}
+              </span>
               {modalPatientEmail && (
-                <span className="text-xs text-gray-600 block">{modalPatientEmail}</span>
+                <span className="text-xs text-gray-600 block">
+                  {modalPatientEmail}
+                </span>
               )}
               {modalPatientPhone && (
-                <span className="text-xs text-gray-600 block">{modalPatientPhone}</span>
+                <span className="text-xs text-gray-600 block">
+                  {modalPatientPhone}
+                </span>
               )}
             </div>
 
             <div>
-              <span className="text-xs font-bold text-gray-500 uppercase block">Prescribing Doctor</span>
-              <span className="text-sm font-bold text-gray-900 block mt-1">Dr. {selectedPrescription.doctorName}</span>
-              <span className="text-xs text-gray-600 block">{selectedPrescription.businessName}</span>
+              <span className="text-xs font-bold text-gray-500 uppercase block">
+                Prescribing Doctor
+              </span>
+              <span className="text-sm font-bold text-gray-900 block mt-1">
+                Dr. {selectedPrescription.doctorName}
+              </span>
+              <span className="text-xs text-gray-600 block">
+                {selectedPrescription.businessName}
+              </span>
             </div>
           </div>
 
@@ -211,14 +286,22 @@ export default function MedicalPrescriptionsPage() {
             <div className="space-y-2">
               {selectedPrescription.diagnosis && (
                 <div>
-                  <span className="text-xs font-bold text-gray-500 uppercase block">Diagnosis</span>
-                  <span className="text-sm font-medium text-gray-900">{selectedPrescription.diagnosis}</span>
+                  <span className="text-xs font-bold text-gray-500 uppercase block">
+                    Diagnosis
+                  </span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {selectedPrescription.diagnosis}
+                  </span>
                 </div>
               )}
               {selectedPrescription.notes && (
                 <div>
-                  <span className="text-xs font-bold text-gray-500 uppercase block">Doctor Advice / Notes</span>
-                  <span className="text-sm italic text-gray-700">{selectedPrescription.notes}</span>
+                  <span className="text-xs font-bold text-gray-500 uppercase block">
+                    Doctor Advice / Notes
+                  </span>
+                  <span className="text-sm italic text-gray-700">
+                    {selectedPrescription.notes}
+                  </span>
                 </div>
               )}
             </div>
@@ -227,7 +310,8 @@ export default function MedicalPrescriptionsPage() {
           {/* Prescribed Medicines Table */}
           <div>
             <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Pill className="w-4 h-4 text-purple-600" /> Prescribed Medicines List
+              <Pill className="w-4 h-4 text-purple-600" /> Prescribed Medicines
+              List
             </h4>
             <div className="overflow-x-auto border border-gray-200 rounded-lg">
               <table className="w-full text-left text-xs border-collapse">
@@ -245,15 +329,25 @@ export default function MedicalPrescriptionsPage() {
                 <tbody className="divide-y divide-gray-200">
                   {selectedPrescription.medicines?.map((m, idx) => (
                     <tr key={idx} className="hover:bg-gray-50">
-                      <td className="p-3 font-semibold text-gray-500">{idx + 1}</td>
+                      <td className="p-3 font-semibold text-gray-500">
+                        {idx + 1}
+                      </td>
                       <td className="p-3 font-bold text-gray-900">
                         {m.name} {m.dosage ? `(${m.dosage})` : ""}
                       </td>
-                      <td className="p-3 font-semibold text-gray-700">{m.frequency}</td>
+                      <td className="p-3 font-semibold text-gray-700">
+                        {m.frequency}
+                      </td>
                       <td className="p-3 text-gray-700">{m.duration}</td>
-                      <td className="p-3 text-gray-700">{m.timing || "After Food"}</td>
-                      <td className="p-3 text-gray-600">{m.instructions || "--"}</td>
-                      <td className="p-3 text-center font-bold text-gray-900">{m.quantity}</td>
+                      <td className="p-3 text-gray-700">
+                        {m.timing || "After Food"}
+                      </td>
+                      <td className="p-3 text-gray-600">
+                        {m.instructions || "--"}
+                      </td>
+                      <td className="p-3 text-center font-bold text-gray-900">
+                        {m.quantity}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -264,25 +358,39 @@ export default function MedicalPrescriptionsPage() {
           {/* Status Update Actions */}
           <div className="p-4 bg-purple-50/50 border border-purple-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-bold text-purple-900 uppercase block">Fulfillment Status</span>
-              <span className="text-xs text-purple-700">Update status as medicines are prepared and handed over</span>
+              <span className="text-xs font-bold text-purple-900 uppercase block">
+                Fulfillment Status
+              </span>
+              <span className="text-xs text-purple-700">
+                Update status as medicines are prepared and handed over
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => handleUpdateStatus(selectedPrescription._id, "dispensed")}
+                onClick={() =>
+                  handleUpdateStatus(selectedPrescription._id, "dispensed")
+                }
                 variant="outline"
                 size="sm"
-                disabled={isUpdatingStatus || selectedPrescription.fulfillmentStatus === "dispensed"}
+                disabled={
+                  isUpdatingStatus ||
+                  selectedPrescription.fulfillmentStatus === "dispensed"
+                }
                 className="border-blue-300 text-blue-700 hover:bg-blue-50"
               >
                 Mark as Dispensed
               </Button>
               <Button
-                onClick={() => handleUpdateStatus(selectedPrescription._id, "completed")}
+                onClick={() =>
+                  handleUpdateStatus(selectedPrescription._id, "completed")
+                }
                 variant="primary"
                 size="sm"
-                disabled={isUpdatingStatus || selectedPrescription.fulfillmentStatus === "completed"}
+                disabled={
+                  isUpdatingStatus ||
+                  selectedPrescription.fulfillmentStatus === "completed"
+                }
                 className="bg-green-600 hover:bg-green-700 border-green-600 text-white"
               >
                 Mark as Completed
@@ -304,8 +412,16 @@ export default function MedicalPrescriptionsPage() {
   if (!hasAccess) {
     return (
       <div className="p-6 space-y-6">
-        <PageMeta title="Medical Prescriptions" description="View and fulfill patient prescriptions" />
-        <PageBreadcrumb items={[{ label: "Home", to: "/" }, { label: "Medical Prescriptions" }]} />
+        <PageMeta
+          title="Medical Prescriptions"
+          description="View and fulfill patient prescriptions"
+        />
+        <PageBreadcrumb
+          items={[
+            { label: "Home", to: "/" },
+            { label: "Medical Prescriptions" },
+          ]}
+        />
 
         <div className="mt-8 bg-white rounded-lg p-12 border border-gray-200 text-center max-w-xl mx-auto shadow-theme-xs">
           <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4">
@@ -315,7 +431,8 @@ export default function MedicalPrescriptionsPage() {
             Medical Module Disabled
           </h2>
           <p className="text-sm text-gray-500">
-            The Medical Module is currently not enabled for your account. Please contact your SuperAdmin to enable access.
+            The Medical Module is currently not enabled for your account. Please
+            contact your SuperAdmin to enable access.
           </p>
         </div>
       </div>
@@ -324,8 +441,13 @@ export default function MedicalPrescriptionsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageMeta title="Medical Prescriptions" description="View and fulfill patient prescriptions" />
-      <PageBreadcrumb items={[{ label: "Home", to: "/" }, { label: "Medical Prescriptions" }]} />
+      <PageMeta
+        title="Medical Prescriptions"
+        description="View and fulfill patient prescriptions"
+      />
+      <PageBreadcrumb
+        items={[{ label: "Home", to: "/" }, { label: "Medical Prescriptions" }]}
+      />
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -334,7 +456,9 @@ export default function MedicalPrescriptionsPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Total Prescriptions
             </span>
-            <span className="text-2xl font-bold text-gray-900 mt-1 block">{totalCount}</span>
+            <span className="text-2xl font-bold text-gray-900 mt-1 block">
+              {totalCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
             <Stethoscope className="w-5 h-5" />
@@ -346,7 +470,9 @@ export default function MedicalPrescriptionsPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Pending Fulfillment
             </span>
-            <span className="text-2xl font-bold text-amber-600 mt-1 block">{sentCount}</span>
+            <span className="text-2xl font-bold text-amber-600 mt-1 block">
+              {sentCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
             <Clock className="w-5 h-5" />
@@ -358,7 +484,9 @@ export default function MedicalPrescriptionsPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Dispensed
             </span>
-            <span className="text-2xl font-bold text-blue-600 mt-1 block">{dispensedCount}</span>
+            <span className="text-2xl font-bold text-blue-600 mt-1 block">
+              {dispensedCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
             <Pill className="w-5 h-5" />
@@ -370,7 +498,9 @@ export default function MedicalPrescriptionsPage() {
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
               Completed
             </span>
-            <span className="text-2xl font-bold text-green-600 mt-1 block">{completedCount}</span>
+            <span className="text-2xl font-bold text-green-600 mt-1 block">
+              {completedCount}
+            </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />
@@ -429,19 +559,26 @@ export default function MedicalPrescriptionsPage() {
             <TBody>
               {isLoading ? (
                 <TR>
-                  <TD colSpan={8} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={8}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     Loading medical prescriptions...
                   </TD>
                 </TR>
               ) : filteredPrescriptions.length === 0 ? (
                 <TR>
-                  <TD colSpan={8} className="py-10 text-center text-gray-400 text-sm">
+                  <TD
+                    colSpan={8}
+                    className="py-10 text-center text-gray-400 text-sm"
+                  >
                     No medical prescriptions found.
                   </TD>
                 </TR>
               ) : (
                 filteredPrescriptions.map((pres, idx) => {
-                  const { patientName, patientEmail, patientPhone } = getPatientFullDetails(pres);
+                  const { patientName, patientEmail, patientPhone } =
+                    getPatientFullDetails(pres);
                   const sentUser = pres.sentToMedicalUser;
 
                   return (
@@ -451,7 +588,9 @@ export default function MedicalPrescriptionsPage() {
                       {/* Patient Details */}
                       <TD>
                         <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-gray-900">{patientName}</span>
+                          <span className="text-sm font-semibold text-gray-900">
+                            {patientName}
+                          </span>
                           {patientEmail && (
                             <span className="text-xs text-gray-500 inline-flex items-center gap-1 mt-0.5">
                               <Mail className="w-3 h-3 text-gray-400" />
@@ -473,7 +612,9 @@ export default function MedicalPrescriptionsPage() {
                           <span className="text-sm font-semibold text-gray-800">
                             Dr. {pres.doctorName || "Doctor"}
                           </span>
-                          <span className="text-xs text-gray-500">{pres.businessName || "--"}</span>
+                          <span className="text-xs text-gray-500">
+                            {pres.businessName || "--"}
+                          </span>
                         </div>
                       </TD>
 
@@ -481,11 +622,17 @@ export default function MedicalPrescriptionsPage() {
                       <TD>
                         {sentUser ? (
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-purple-900">{sentUser.name}</span>
-                            <span className="text-[11px] text-purple-600 font-semibold">{sentUser.role || "Medical Staff"}</span>
+                            <span className="text-sm font-medium text-purple-900">
+                              {sentUser.name}
+                            </span>
+                            <span className="text-[11px] text-purple-600 font-semibold">
+                              {sentUser.role || "Medical Staff"}
+                            </span>
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400 font-italic">Unassigned</span>
+                          <span className="text-xs text-gray-400 font-italic">
+                            Unassigned
+                          </span>
                         )}
                       </TD>
 
@@ -507,7 +654,10 @@ export default function MedicalPrescriptionsPage() {
                       {/* Date Sent */}
                       <TD className="text-sm text-gray-500">
                         {pres.sentAt || pres.updatedAt
-                          ? format(new Date(pres.sentAt || pres.updatedAt), "dd-MM-yyyy")
+                          ? format(
+                              new Date(pres.sentAt || pres.updatedAt),
+                              "dd-MM-yyyy",
+                            )
                           : "--"}
                       </TD>
 
@@ -518,8 +668,8 @@ export default function MedicalPrescriptionsPage() {
                             pres.fulfillmentStatus === "completed"
                               ? "bg-green-100 text-green-700"
                               : pres.fulfillmentStatus === "dispensed"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-amber-100 text-amber-700"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-amber-100 text-amber-700"
                           }`}
                         >
                           {pres.fulfillmentStatus === "completed" ? (
@@ -544,7 +694,9 @@ export default function MedicalPrescriptionsPage() {
                           onClick={() => openViewModal(pres)}
                           variant="outline"
                           size="sm"
-                          startIcon={<Eye className="w-3.5 h-3.5 text-purple-600" />}
+                          startIcon={
+                            <Eye className="w-3.5 h-3.5 text-purple-600" />
+                          }
                           className="border-purple-200 text-purple-700 hover:bg-purple-50"
                         >
                           View & Fulfill

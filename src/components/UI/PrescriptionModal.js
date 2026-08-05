@@ -115,14 +115,16 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         const pres = presRes.data.data;
         setExistingPrescription(pres);
         // If saved but not sent, show read-only view; otherwise show form
-        if (pres.fulfillmentStatus === 'not_sent') {
+        if (pres.fulfillmentStatus === "not_sent") {
           setIsEditMode(false);
         } else {
           setIsEditMode(true);
         }
         setDiagnosis(pres.diagnosis || "");
         setNotes(pres.notes || "");
-        setSelectedMedicalUser(pres.sentToMedicalUser?._id || pres.sentToMedicalUser || "");
+        setSelectedMedicalUser(
+          pres.sentToMedicalUser?._id || pres.sentToMedicalUser || "",
+        );
         if (Array.isArray(pres.medicines) && pres.medicines.length > 0) {
           setMedicines(
             pres.medicines.map((m) => {
@@ -272,8 +274,13 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       instructions: m.instructions || "",
       quantity: Number(m.quantity) || 1,
       timing: m.timing || "After Food",
-      medicineId: m.isCustom || !m.medicineId || m.medicineId === "custom" ? null : m.medicineId,
-      isCustom: Boolean(m.isCustom || !m.medicineId || m.medicineId === "custom"),
+      medicineId:
+        m.isCustom || !m.medicineId || m.medicineId === "custom"
+          ? null
+          : m.medicineId,
+      isCustom: Boolean(
+        m.isCustom || !m.medicineId || m.medicineId === "custom",
+      ),
     }));
 
     // Extract patient details helper - scans booking props and dynamicResponses by key/label
@@ -288,15 +295,21 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
 
       // 2. Direct key match in dynamicResponses
       for (const k of keywords) {
-        if (typeof dyn.get === "function" && dyn.get(k)) return String(dyn.get(k));
+        if (typeof dyn.get === "function" && dyn.get(k))
+          return String(dyn.get(k));
         if (dyn[k]) return String(dyn[k]);
       }
 
       // 3. Scan dynamicResponses by key substring (handles generated fieldKeys)
-      const entries = typeof dyn.entries === "function" ? Array.from(dyn.entries()) : Object.entries(dyn);
+      const entries =
+        typeof dyn.entries === "function"
+          ? Array.from(dyn.entries())
+          : Object.entries(dyn);
       for (const [key, val] of entries) {
         if (!val) continue;
-        const lowerKey = String(key).toLowerCase().replace(/[_\-\s]+/g, "");
+        const lowerKey = String(key)
+          .toLowerCase()
+          .replace(/[_\-\s]+/g, "");
         for (const kw of keywords) {
           const lowerKw = kw.toLowerCase().replace(/[_\-\s]+/g, "");
           if (lowerKey.includes(lowerKw)) return String(val);
@@ -306,11 +319,50 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       return defaultVal;
     };
 
-    const pFirstName = getPatientDetail(booking, ["firstName", "first_name", "fname", "first name"]);
-    const pLastName = getPatientDetail(booking, ["lastName", "last_name", "lname", "last name"]);
-    const computedName = `${pFirstName} ${pLastName}`.trim() || getPatientDetail(booking, ["name", "patientName", "patient_name", "full_name", "patient name", "full name"], "Patient");
-    const computedEmail = getPatientDetail(booking, ["email", "patientEmail", "patient_email", "email_address", "userEmail", "e-mail"]);
-    const computedPhone = getPatientDetail(booking, ["phoneNumber", "phone_number", "phone", "mobile", "patientPhone", "patient_phone", "contact", "tel"]);
+    const pFirstName = getPatientDetail(booking, [
+      "firstName",
+      "first_name",
+      "fname",
+      "first name",
+    ]);
+    const pLastName = getPatientDetail(booking, [
+      "lastName",
+      "last_name",
+      "lname",
+      "last name",
+    ]);
+    const computedName =
+      `${pFirstName} ${pLastName}`.trim() ||
+      getPatientDetail(
+        booking,
+        [
+          "name",
+          "patientName",
+          "patient_name",
+          "full_name",
+          "patient name",
+          "full name",
+        ],
+        "Patient",
+      );
+    const computedEmail = getPatientDetail(booking, [
+      "email",
+      "patientEmail",
+      "patient_email",
+      "email_address",
+      "userEmail",
+      "e-mail",
+    ]);
+    const computedPhone = getPatientDetail(booking, [
+      "phoneNumber",
+      "phone_number",
+      "phone",
+      "mobile",
+      "patientPhone",
+      "patient_phone",
+      "contact",
+      "tel",
+    ]);
 
     setIsSaving(true);
     try {
@@ -346,7 +398,10 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
     } catch (err) {
       console.error("Error saving prescription:", err);
       Toast({
-        message: err?.response?.data?.message || err?.message || "Failed to save prescription.",
+        message:
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to save prescription.",
         type: "error",
       });
     } finally {
@@ -522,12 +577,20 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         {/* Diagnosis & Notes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Diagnosis / Medical Condition</span>
-            <span className="text-sm font-semibold text-gray-900">{pres.diagnosis || "--"}</span>
+            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+              Diagnosis / Medical Condition
+            </span>
+            <span className="text-sm font-semibold text-gray-900">
+              {pres.diagnosis || "--"}
+            </span>
           </div>
           <div>
-            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Doctor Notes / Advice</span>
-            <span className="text-sm text-gray-700 italic">{pres.notes || "--"}</span>
+            <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+              Doctor Notes / Advice
+            </span>
+            <span className="text-sm text-gray-700 italic">
+              {pres.notes || "--"}
+            </span>
           </div>
         </div>
 
@@ -552,13 +615,25 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
               <tbody className="divide-y divide-gray-200">
                 {(pres.medicines || []).map((m, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
-                    <td className="p-3 font-semibold text-gray-500">{idx + 1}</td>
-                    <td className="p-3 font-bold text-gray-900">{m.name} {m.dosage ? `(${m.dosage})` : ""}</td>
-                    <td className="p-3 font-semibold text-gray-700">{m.frequency}</td>
+                    <td className="p-3 font-semibold text-gray-500">
+                      {idx + 1}
+                    </td>
+                    <td className="p-3 font-bold text-gray-900">
+                      {m.name} {m.dosage ? `(${m.dosage})` : ""}
+                    </td>
+                    <td className="p-3 font-semibold text-gray-700">
+                      {m.frequency}
+                    </td>
                     <td className="p-3 text-gray-700">{m.duration}</td>
-                    <td className="p-3 text-gray-700">{m.timing || "After Food"}</td>
-                    <td className="p-3 text-gray-600">{m.instructions || "--"}</td>
-                    <td className="p-3 text-center font-bold text-gray-900">{m.quantity}</td>
+                    <td className="p-3 text-gray-700">
+                      {m.timing || "After Food"}
+                    </td>
+                    <td className="p-3 text-gray-600">
+                      {m.instructions || "--"}
+                    </td>
+                    <td className="p-3 text-center font-bold text-gray-900">
+                      {m.quantity}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -570,10 +645,15 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         {pres.sentToMedicalUser && (
           <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
             <span className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-              <Send className="w-4 h-4 text-purple-600" /> Assigned Medical User / Pharmacy
+              <Send className="w-4 h-4 text-purple-600" /> Assigned Medical User
+              / Pharmacy
             </span>
             <span className="text-sm font-medium text-purple-800">
-              {typeof pres.sentToMedicalUser === 'object' ? (pres.sentToMedicalUser.name || pres.sentToMedicalUser.username || 'Medical User') : 'Assigned'}
+              {typeof pres.sentToMedicalUser === "object"
+                ? pres.sentToMedicalUser.name ||
+                  pres.sentToMedicalUser.username ||
+                  "Medical User"
+                : "Assigned"}
             </span>
           </div>
         )}
@@ -638,372 +718,441 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => { if (!isEditMode && existingPrescription) { onClose(); } else if (isEditMode && existingPrescription && existingPrescription.fulfillmentStatus === 'not_sent') { setIsEditMode(false); } else { onClose(); } }}
+              onClick={() => {
+                if (!isEditMode && existingPrescription) {
+                  onClose();
+                } else if (
+                  isEditMode &&
+                  existingPrescription &&
+                  existingPrescription.fulfillmentStatus === "not_sent"
+                ) {
+                  setIsEditMode(false);
+                } else {
+                  onClose();
+                }
+              }}
               className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <h2 className="text-lg font-bold text-gray-900">
-              {isEditMode ? 'Write Prescription' : 'Prescription'} - {patientFullName}
+              {isEditMode ? "Write Prescription" : "Prescription"} -{" "}
+              {patientFullName}
             </h2>
           </div>
         </div>
 
         <div className="p-6">
-        {isLoading ? (
-          <div className="py-12 text-center text-gray-400 text-sm">
-            Loading prescription data...
-          </div>
-        ) : !isEditMode && existingPrescription && existingPrescription.fulfillmentStatus === 'not_sent' ? (
-          renderReadOnlyView()
-        ) : (
-          <div className="space-y-6">
-            {/* Diagnosis & Clinical Notes */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Diagnosis / Medical Condition
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Acute Viral Fever & Mild Dehydration"
-                  value={diagnosis}
-                  onChange={(e) => setDiagnosis(e.target.value)}
-                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Doctor Notes / Advice
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Drink plenty of water, rest for 3 days"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
-                />
-              </div>
+          {isLoading ? (
+            <div className="py-12 text-center text-gray-400 text-sm">
+              Loading prescription data...
             </div>
+          ) : !isEditMode &&
+            existingPrescription &&
+            existingPrescription.fulfillmentStatus === "not_sent" ? (
+            renderReadOnlyView()
+          ) : (
+            <div className="space-y-6">
+              {/* Diagnosis & Clinical Notes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Diagnosis / Medical Condition
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Acute Viral Fever & Mild Dehydration"
+                    value={diagnosis}
+                    onChange={(e) => setDiagnosis(e.target.value)}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
 
-            {/* Prescribed Medicines Section */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Pill className="w-4 h-4 text-blue-600" /> Prescribed
-                  Medicines (Rx)
-                </h4>
-                <Button
-                  onClick={handleAddMedicineRow}
-                  variant="outline"
-                  size="sm"
-                  startIcon={<Plus className="w-3.5 h-3.5" />}
-                >
-                  Add Medicine Line
-                </Button>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                    Doctor Notes / Advice
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Drink plenty of water, rest for 3 days"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-3">
-                {medicines.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 flex flex-col md:flex-row items-start md:items-center gap-3"
+              {/* Prescribed Medicines Section */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Pill className="w-4 h-4 text-blue-600" /> Prescribed
+                    Medicines (Rx)
+                  </h4>
+                  <Button
+                    onClick={handleAddMedicineRow}
+                    variant="outline"
+                    size="sm"
+                    startIcon={<Plus className="w-3.5 h-3.5" />}
                   >
-                    {/* 1. Medicine Name / Select */}
-                    <div className="w-full md:w-56">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                        Medicine Name
-                      </label>
-                      {hasMedicineModule ? (
-                        <div className="space-y-1">
-                          <select
-                            value={item.isCustom || !item.medicineId ? "custom" : item.medicineId}
-                            onChange={(e) =>
-                              handleMedicineSelectChange(idx, e.target.value)
-                            }
-                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-500 font-medium"
-                          >
-                            <option value="custom">
-                              -- Custom Medicine --
-                            </option>
-                            {catalogMedicines.map((catMed) => (
-                              <option key={catMed._id} value={catMed._id}>
-                                {catMed.name}{" "}
-                                {catMed.dosage ? `(${catMed.dosage})` : ""} -
-                                Stock: {catMed.stock}
-                              </option>
-                            ))}
-                          </select>
+                    Add Medicine Line
+                  </Button>
+                </div>
 
-                          {(item.isCustom || !item.medicineId || item.medicineId === "custom") && (
-                            <div className="relative">
-                              <input
-                                type="text"
-                                placeholder="Enter custom medicine name..."
-                                value={item.name || ""}
-                                onChange={(e) => {
-                                  handleFieldChange(idx, "name", e.target.value);
-                                  fetchSuggestions(idx, e.target.value);
-                                }}
-                                onBlur={() => setTimeout(() => { if (activeSuggestionIdx === idx) { setSuggestions([]); setActiveSuggestionIdx(null); } }, 200)}
-                                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                                autoComplete="off"
-                              />
-                              {activeSuggestionIdx === idx && suggestions.length > 0 && (
+                <div className="space-y-3">
+                  {medicines.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 flex flex-col md:flex-row items-start md:items-center gap-3"
+                    >
+                      {/* 1. Medicine Name / Select */}
+                      <div className="w-full md:w-56">
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                          Medicine Name
+                        </label>
+                        {hasMedicineModule ? (
+                          <div className="space-y-1">
+                            <select
+                              value={
+                                item.isCustom || !item.medicineId
+                                  ? "custom"
+                                  : item.medicineId
+                              }
+                              onChange={(e) =>
+                                handleMedicineSelectChange(idx, e.target.value)
+                              }
+                              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-500 font-medium"
+                            >
+                              <option value="custom">
+                                -- Custom Medicine --
+                              </option>
+                              {catalogMedicines.map((catMed) => (
+                                <option key={catMed._id} value={catMed._id}>
+                                  {catMed.name}{" "}
+                                  {catMed.dosage ? `(${catMed.dosage})` : ""} -
+                                  Stock: {catMed.stock}
+                                </option>
+                              ))}
+                            </select>
+
+                            {(item.isCustom ||
+                              !item.medicineId ||
+                              item.medicineId === "custom") && (
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  placeholder="Enter custom medicine name..."
+                                  value={item.name || ""}
+                                  onChange={(e) => {
+                                    handleFieldChange(
+                                      idx,
+                                      "name",
+                                      e.target.value,
+                                    );
+                                    fetchSuggestions(idx, e.target.value);
+                                  }}
+                                  onBlur={() =>
+                                    setTimeout(() => {
+                                      if (activeSuggestionIdx === idx) {
+                                        setSuggestions([]);
+                                        setActiveSuggestionIdx(null);
+                                      }
+                                    }, 200)
+                                  }
+                                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                                  autoComplete="off"
+                                />
+                                {activeSuggestionIdx === idx &&
+                                  suggestions.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                                      {suggestions.map((s, sIdx) => (
+                                        <button
+                                          key={sIdx}
+                                          type="button"
+                                          onMouseDown={(e) =>
+                                            e.preventDefault()
+                                          }
+                                          onClick={() =>
+                                            handleSelectSuggestion(idx, s)
+                                          }
+                                          className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
+                                        >
+                                          <span className="font-semibold text-gray-900">
+                                            {s.name}
+                                          </span>
+                                          {s.dosage && (
+                                            <span className="text-gray-500 ml-1">
+                                              ({s.dosage})
+                                            </span>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="Enter medicine name..."
+                              value={item.name}
+                              onChange={(e) => {
+                                handleFieldChange(idx, "name", e.target.value);
+                                fetchSuggestions(idx, e.target.value);
+                              }}
+                              onBlur={() =>
+                                setTimeout(() => {
+                                  if (activeSuggestionIdx === idx) {
+                                    setSuggestions([]);
+                                    setActiveSuggestionIdx(null);
+                                  }
+                                }, 200)
+                              }
+                              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                              autoComplete="off"
+                            />
+                            {activeSuggestionIdx === idx &&
+                              suggestions.length > 0 && (
                                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
                                   {suggestions.map((s, sIdx) => (
                                     <button
                                       key={sIdx}
                                       type="button"
                                       onMouseDown={(e) => e.preventDefault()}
-                                      onClick={() => handleSelectSuggestion(idx, s)}
+                                      onClick={() =>
+                                        handleSelectSuggestion(idx, s)
+                                      }
                                       className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
                                     >
-                                      <span className="font-semibold text-gray-900">{s.name}</span>
-                                      {s.dosage && <span className="text-gray-500 ml-1">({s.dosage})</span>}
+                                      <span className="font-semibold text-gray-900">
+                                        {s.name}
+                                      </span>
+                                      {s.dosage && (
+                                        <span className="text-gray-500 ml-1">
+                                          ({s.dosage})
+                                        </span>
+                                      )}
                                     </button>
                                   ))}
                                 </div>
                               )}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Enter medicine name..."
-                            value={item.name}
-                            onChange={(e) => {
-                              handleFieldChange(idx, "name", e.target.value);
-                              fetchSuggestions(idx, e.target.value);
-                            }}
-                            onBlur={() => setTimeout(() => { if (activeSuggestionIdx === idx) { setSuggestions([]); setActiveSuggestionIdx(null); } }, 200)}
-                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                            autoComplete="off"
-                          />
-                          {activeSuggestionIdx === idx && suggestions.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
-                              {suggestions.map((s, sIdx) => (
-                                <button
-                                  key={sIdx}
-                                  type="button"
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  onClick={() => handleSelectSuggestion(idx, s)}
-                                  className="w-full text-left px-3 py-2 text-xs hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0"
-                                >
-                                  <span className="font-semibold text-gray-900">{s.name}</span>
-                                  {s.dosage && <span className="text-gray-500 ml-1">({s.dosage})</span>}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* 2. Dosage */}
-                    <div className="w-full md:w-28">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                        Dosage
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="500mg"
-                        value={item.dosage}
-                        onChange={(e) =>
-                          handleFieldChange(idx, "dosage", e.target.value)
-                        }
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
+                      {/* 2. Dosage */}
+                      <div className="w-full md:w-28">
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                          Dosage
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="500mg"
+                          value={item.dosage}
+                          onChange={(e) =>
+                            handleFieldChange(idx, "dosage", e.target.value)
+                          }
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
 
-                    {/* 3. Frequency */}
-                    <div className="w-full md:w-28">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                        Frequency
-                      </label>
-                      <select
-                        value={item.frequency}
-                        onChange={(e) =>
-                          handleFieldChange(idx, "frequency", e.target.value)
-                        }
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-500"
-                      >
-                        <option value="1-0-1">1-0-1 (Morning & Night)</option>
-                        <option value="1-1-1">1-1-1 (Thrice daily)</option>
-                        <option value="1-0-0">1-0-0 (Morning only)</option>
-                        <option value="0-0-1">0-0-1 (Night only)</option>
-                        <option value="0-1-0">0-1-0 (Afternoon only)</option>
-                        <option value="As Needed">As Needed (SOS)</option>
-                      </select>
-                    </div>
-
-                    {/* 4. Duration */}
-                    <div className="w-full md:w-24">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                        Duration
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="5 Days"
-                        value={item.duration}
-                        onChange={(e) =>
-                          handleFieldChange(idx, "duration", e.target.value)
-                        }
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-
-                    {/* 5. Instructions */}
-
-                    {/* 6. Meal Timing */}
-                    <div className="w-full md:w-32">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                        Meal Timing
-                      </label>
-                      <select
-                        value={item.timing}
-                        onChange={(e) =>
-                          handleFieldChange(idx, "timing", e.target.value)
-                        }
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-500"
-                      >
-                        <option value="After Food">After Food</option>
-                        <option value="Before Food">Before Food</option>
-                        <option value="With Food">With Food</option>
-                        <option value="Empty Stomach">Empty Stomach</option>
-                        <option value="Anytime">Anytime</option>
-                      </select>
-                    </div>
-
-                    <div className="w-full md:flex-1">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                        Instructions
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="After meals with water"
-                        value={item.instructions}
-                        onChange={(e) =>
-                          handleFieldChange(idx, "instructions", e.target.value)
-                        }
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-
-                    {/* 7. Quantity */}
-                    <div className="w-full md:w-20">
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
-                        Qty
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          handleFieldChange(idx, "quantity", e.target.value)
-                        }
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-
-                    {/* Remove button */}
-                    <div className="md:pt-4">
-                      {medicines.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMedicineRow(idx)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
-                          title="Remove Line"
+                      {/* 3. Frequency */}
+                      <div className="w-full md:w-28">
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                          Frequency
+                        </label>
+                        <select
+                          value={item.frequency}
+                          onChange={(e) =>
+                            handleFieldChange(idx, "frequency", e.target.value)
+                          }
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-500"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                          <option value="1-0-1">1-0-1 (Morning & Night)</option>
+                          <option value="1-1-1">1-1-1 (Thrice daily)</option>
+                          <option value="1-0-0">1-0-0 (Morning only)</option>
+                          <option value="0-0-1">0-0-1 (Night only)</option>
+                          <option value="0-1-0">0-1-0 (Afternoon only)</option>
+                          <option value="As Needed">As Needed (SOS)</option>
+                        </select>
+                      </div>
+
+                      {/* 4. Duration */}
+                      <div className="w-full md:w-24">
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                          Duration
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="5 Days"
+                          value={item.duration}
+                          onChange={(e) =>
+                            handleFieldChange(idx, "duration", e.target.value)
+                          }
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* 5. Instructions */}
+
+                      {/* 6. Meal Timing */}
+                      <div className="w-full md:w-32">
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                          Meal Timing
+                        </label>
+                        <select
+                          value={item.timing}
+                          onChange={(e) =>
+                            handleFieldChange(idx, "timing", e.target.value)
+                          }
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="After Food">After Food</option>
+                          <option value="Before Food">Before Food</option>
+                          <option value="With Food">With Food</option>
+                          <option value="Empty Stomach">Empty Stomach</option>
+                          <option value="Anytime">Anytime</option>
+                        </select>
+                      </div>
+
+                      <div className="w-full md:flex-1">
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                          Instructions
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="After meals with water"
+                          value={item.instructions}
+                          onChange={(e) =>
+                            handleFieldChange(
+                              idx,
+                              "instructions",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* 7. Quantity */}
+                      <div className="w-full md:w-20">
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                          Qty
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleFieldChange(idx, "quantity", e.target.value)
+                          }
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* Remove button */}
+                      <div className="md:pt-4">
+                        {medicines.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMedicineRow(idx)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
+                            title="Remove Line"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Send to Medical Module User Section */}
-            <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
-              <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Send className="w-4 h-4 text-purple-600" /> Send Prescription to Medical User / Pharmacy
-              </label>
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <select
-                  value={selectedMedicalUser}
-                  onChange={(e) => setSelectedMedicalUser(e.target.value)}
-                  className="w-full sm:flex-1 px-3.5 py-2 border border-purple-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:border-purple-500 font-medium"
-                >
-                  <option value="">-- Select Medical Module User / Pharmacy Store --</option>
-                  {medicalUsers.map((u) => (
-                    <option key={u._id} value={u._id}>
-                      {u.name} ({u.role || "Medical Staff"}) - {u.email}
-                    </option>
                   ))}
-                </select>
-                {medicalUsers.length === 0 && (
-                  <span className="text-xs text-amber-700 font-medium italic">
-                    (No Medical Users or Pharmacy Accounts with Medical Access found)
-                  </span>
-                )}
+                </div>
+              </div>
+
+              {/* Send to Medical Module User Section */}
+              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
+                <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <Send className="w-4 h-4 text-purple-600" /> Send Prescription
+                  to Medical User / Pharmacy
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <select
+                    value={selectedMedicalUser}
+                    onChange={(e) => setSelectedMedicalUser(e.target.value)}
+                    className="w-full sm:flex-1 px-3.5 py-2 border border-purple-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:border-purple-500 font-medium"
+                  >
+                    <option value="">
+                      -- Select Medical Module User / Pharmacy Store --
+                    </option>
+                    {medicalUsers.map((u) => (
+                      <option key={u._id} value={u._id}>
+                        {u.name} ({u.role || "Medical Staff"}) - {u.email}
+                      </option>
+                    ))}
+                  </select>
+                  {medicalUsers.length === 0 && (
+                    <span className="text-xs text-amber-700 font-medium italic">
+                      (No Medical Users or Pharmacy Accounts with Medical Access
+                      found)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Actions Footer */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    onClick={handleDownloadPDF}
+                    variant="outline"
+                    disabled={isDownloadingPDF}
+                    startIcon={
+                      <Download className="w-4 h-4 text-emerald-600" />
+                    }
+                    className="w-full sm:w-auto border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    {isDownloadingPDF ? "Generating PDF..." : "Download PDF"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={handlePrint}
+                    variant="outline"
+                    startIcon={<Printer className="w-4 h-4 text-gray-600" />}
+                    className="w-full sm:w-auto"
+                  >
+                    Print
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+                  <Button type="button" onClick={onClose} variant="outline">
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleSavePrescription()}
+                    variant="outline"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save Only"}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleSavePrescription(selectedMedicalUser)}
+                    variant="primary"
+                    disabled={isSaving}
+                    startIcon={<Send className="w-4 h-4" />}
+                    className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                  >
+                    {isSaving ? "Sending..." : "Send to Medical"}
+                  </Button>
+                </div>
               </div>
             </div>
-
-            {/* Modal Actions Footer */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Button
-                  type="button"
-                  onClick={handleDownloadPDF}
-                  variant="outline"
-                  disabled={isDownloadingPDF}
-                  startIcon={<Download className="w-4 h-4 text-emerald-600" />}
-                  className="w-full sm:w-auto border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                >
-                  {isDownloadingPDF ? "Generating PDF..." : "Download PDF"}
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={handlePrint}
-                  variant="outline"
-                  startIcon={<Printer className="w-4 h-4 text-gray-600" />}
-                  className="w-full sm:w-auto"
-                >
-                  Print
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
-                <Button type="button" onClick={onClose} variant="outline">
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => handleSavePrescription()}
-                  variant="outline"
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Saving..." : "Save Only"}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => handleSavePrescription(selectedMedicalUser)}
-                  variant="primary"
-                  disabled={isSaving}
-                  startIcon={<Send className="w-4 h-4" />}
-                  className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
-                >
-                  {isSaving ? "Sending..." : "Send to Medical"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 

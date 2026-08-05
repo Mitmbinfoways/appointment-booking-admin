@@ -6,7 +6,13 @@ import PageBreadcrumb from "@/components/PageBreadcrumb";
 import Button from "@/components/UI/Button";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
 import { Toast } from "@/components/Toast";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Trash2, Pencil } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 import { format, parse } from "date-fns";
 import Tooltip from "@/components/UI/Tooltip";
 import {
@@ -76,7 +82,10 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
       }
     } catch (err) {
       console.error(err);
-      Toast({ message: "Error loading admin holidays from server.", type: "error" });
+      Toast({
+        message: "Error loading admin holidays from server.",
+        type: "error",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -99,8 +108,18 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
   }, [adminId]);
 
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const years = [2025, 2026, 2027, 2028, 2029, 2030];
@@ -145,7 +164,9 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
       const weekdayName = format(currentDateObj, "EEEE");
       let isClosedDay = false;
       if (slotSettings && slotSettings.workingDays) {
-        const dayConfig = slotSettings.workingDays.find((wd) => wd.day === weekdayName);
+        const dayConfig = slotSettings.workingDays.find(
+          (wd) => wd.day === weekdayName,
+        );
         if (dayConfig && !dayConfig.isOpen) {
           isClosedDay = true;
         }
@@ -198,7 +219,10 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
   const handleSaveHoliday = async (e) => {
     e.preventDefault();
     if (!holidayTitle.trim()) {
-      Toast({ message: "Please enter a holiday title / reason", type: "error" });
+      Toast({
+        message: "Please enter a holiday title / reason",
+        type: "error",
+      });
       return;
     }
 
@@ -215,9 +239,16 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
     setIsSaving(true);
     try {
       if (existing) {
-        const res = await updateAdminHolidaySuperRecord(adminId, existing._id, payload);
+        const res = await updateAdminHolidaySuperRecord(
+          adminId,
+          existing._id,
+          payload,
+        );
         if (res.status === 200 && res.data?.statusCode === 200) {
-          Toast({ message: `Holiday updated successfully for ${activeDate}`, type: "success" });
+          Toast({
+            message: `Holiday updated successfully for ${activeDate}`,
+            type: "success",
+          });
           await fetchHolidays();
         } else {
           Toast({ message: "Failed to update holiday.", type: "error" });
@@ -225,7 +256,10 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
       } else {
         const res = await createAdminHolidaySuperRecord(adminId, payload);
         if (res.status === 201 && res.data?.statusCode === 201) {
-          Toast({ message: `Holiday added successfully for ${activeDate}`, type: "success" });
+          Toast({
+            message: `Holiday added successfully for ${activeDate}`,
+            type: "success",
+          });
           await fetchHolidays();
         } else {
           Toast({ message: "Failed to create holiday.", type: "error" });
@@ -292,17 +326,19 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
 
   return (
     <>
-      <PageMeta title="Holiday Management - Booking Admin" description="Configure company holidays on calendar" />
+      <PageMeta
+        title="Holiday Management - Booking Admin"
+        description="Configure company holidays on calendar"
+      />
       <PageBreadcrumb
         items={[
           { label: "Home", to: "/" },
           { label: "Admins Management", to: "/admins" },
-          { label: "Holiday Management", to: "#" }
+          { label: "Holiday Management", to: "#" },
         ]}
       />
 
       <div className="pb-4 flex flex-col lg:flex-row gap-5 items-stretch w-full">
-
         {/* Calendar Panel */}
         <div className="w-full lg:w-[580px] bg-white rounded-lg border border-gray-200 shadow-theme-xs p-4 shrink-0 flex flex-col justify-between">
           <div>
@@ -315,7 +351,9 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
                   className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 focus:outline-none focus:border-blue-500"
                 >
                   {years.map((y) => (
-                    <option key={y} value={y}>{y}</option>
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
                   ))}
                 </select>
 
@@ -369,14 +407,19 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
             <div className="grid grid-cols-7 gap-2">
               {calendarDays.map((dayObj, idx) => {
                 if (!dayObj.day) {
-                  return <div key={`empty-${idx}`} className="aspect-square bg-gray-50/50 rounded-lg border border-transparent"></div>;
+                  return (
+                    <div
+                      key={`empty-${idx}`}
+                      className="aspect-square bg-gray-50/50 rounded-lg border border-transparent"
+                    ></div>
+                  );
                 }
 
                 const isToday = dayObj.dateStr === todayStr;
                 const isActive = dayObj.dateStr === activeDate;
                 const isClosed = dayObj.isClosedDay;
                 const isPast = dayObj.isPastDay;
-                
+
                 const cellTooltipContent = isPast
                   ? "Past Date (Cannot set holiday)"
                   : isClosed
@@ -393,11 +436,12 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
                       handleDateClick(dayObj);
                     }}
                     className={`aspect-square rounded-lg transition-all duration-200 select-none overflow-visible
-                      ${isClosed || isPast
-                        ? "bg-gray-100/70 text-gray-400 border border-gray-200 cursor-not-allowed"
-                        : dayObj.isHoliday
-                          ? "bg-red-50/70 text-red-700 hover:bg-red-50 hover:shadow-sm cursor-pointer border border-red-200"
-                          : "bg-white text-gray-800 hover:bg-blue-50/20 cursor-pointer border border-gray-200 hover:border-blue-600"
+                      ${
+                        isClosed || isPast
+                          ? "bg-gray-100/70 text-gray-400 border border-gray-200 cursor-not-allowed"
+                          : dayObj.isHoliday
+                            ? "bg-red-50/70 text-red-700 hover:bg-red-50 hover:shadow-sm cursor-pointer border border-red-200"
+                            : "bg-white text-gray-800 hover:bg-blue-50/20 cursor-pointer border border-gray-200 hover:border-blue-600"
                       }
                       ${!isClosed && !isPast && isActive ? "border border-blue-600 shadow-sm" : ""}
                       ${!isClosed && !isPast && isToday ? "border-2 border-green-600" : ""}
@@ -405,16 +449,19 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
                   >
                     <Tooltip content={cellTooltipContent}>
                       <div className="w-full h-full flex flex-col justify-between p-1.5">
-                        <span className={`text-xs font-semibold rounded flex items-center justify-center w-5 h-5 
-                          ${isClosed || isPast
-                            ? "bg-gray-200 text-gray-450 font-medium"
-                            : dayObj.isHoliday
-                              ? "bg-red-100 text-red-800"
-                              : isToday
-                                ? "bg-green-100 text-green-800 font-bold border border-green-200"
-                                : "group-hover:bg-blue-50 group-hover:text-blue-600"
+                        <span
+                          className={`text-xs font-semibold rounded flex items-center justify-center w-5 h-5 
+                          ${
+                            isClosed || isPast
+                              ? "bg-gray-200 text-gray-450 font-medium"
+                              : dayObj.isHoliday
+                                ? "bg-red-100 text-red-800"
+                                : isToday
+                                  ? "bg-green-100 text-green-800 font-bold border border-green-200"
+                                  : "group-hover:bg-blue-50 group-hover:text-blue-600"
                           }
-                        `}>
+                        `}
+                        >
                           {dayObj.day}
                         </span>
 
@@ -449,7 +496,9 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 border-b border-gray-150 pb-3 mb-3 shrink-0">
               <CalendarIcon className="text-gray-500" size={18} />
-              <h3 className="text-md font-bold text-gray-800">Holidays in {selectedYear}</h3>
+              <h3 className="text-md font-bold text-gray-800">
+                Holidays in {selectedYear}
+              </h3>
             </div>
 
             {isLoading ? (
@@ -482,39 +531,53 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
                         setCustomEndTime(h.customEndTime || "17:00");
                       }}
                       className={`flex items-center justify-between p-2.5 hover:bg-red-50/50 hover:border-red-200 border rounded-lg transition-all duration-200 cursor-pointer group
-                        ${h.date === activeDate
-                          ? "bg-red-50/70 border-red-200"
-                          : "bg-gray-50 border-gray-100"
+                        ${
+                          h.date === activeDate
+                            ? "bg-red-50/70 border-red-200"
+                            : "bg-gray-50 border-gray-100"
                         }
                       `}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className={`flex flex-col items-center justify-center w-9 h-9 bg-white border rounded-lg text-center font-bold shadow-sm transition-all shrink-0
-                          ${h.date === activeDate
-                            ? "border-red-200 text-red-700"
-                            : "border-gray-200 text-gray-700 group-hover:border-red-200 group-hover:text-red-700"
+                        <div
+                          className={`flex flex-col items-center justify-center w-9 h-9 bg-white border rounded-lg text-center font-bold shadow-sm transition-all shrink-0
+                          ${
+                            h.date === activeDate
+                              ? "border-red-200 text-red-700"
+                              : "border-gray-200 text-gray-700 group-hover:border-red-200 group-hover:text-red-700"
                           }
-                        `}>
-                          <span className={`text-[9px] uppercase leading-none mb-0.5 transition-all
-                            ${h.date === activeDate
-                              ? "text-red-400"
-                              : "text-gray-400 group-hover:text-red-400"
+                        `}
+                        >
+                          <span
+                            className={`text-[9px] uppercase leading-none mb-0.5 transition-all
+                            ${
+                              h.date === activeDate
+                                ? "text-red-400"
+                                : "text-gray-400 group-hover:text-red-400"
                             }
-                          `}>{monthName}</span>
+                          `}
+                          >
+                            {monthName}
+                          </span>
                           <span className="text-xs leading-none">{day}</span>
                         </div>
                         <div className="min-w-0">
-                          <h4 className={`font-semibold text-xs truncate max-w-[120px] sm:max-w-none transition-all
+                          <h4
+                            className={`font-semibold text-xs truncate max-w-[120px] sm:max-w-none transition-all
                             ${h.date === activeDate ? "text-red-950" : "text-gray-800 group-hover:text-red-950"}
-                          `}>
+                          `}
+                          >
                             {h.title}
                           </h4>
                           <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                            <span className="text-[10px] text-gray-450">{h.date}</span>
+                            <span className="text-[10px] text-gray-450">
+                              {h.date}
+                            </span>
                             <span className="text-[8px] text-gray-300">•</span>
                             <span className="text-[9px] font-semibold text-blue-700 bg-blue-50/50 px-1 py-0.2 rounded">
                               {h.holidayType === "full" && "Full Day"}
-                              {h.holidayType === "half" && `Half Day (${h.halfDayType === "first_half" ? "Morning Off" : "Afternoon Off"})`}
+                              {h.holidayType === "half" &&
+                                `Half Day (${h.halfDayType === "first_half" ? "Morning Off" : "Afternoon Off"})`}
                               {h.holidayType === "custom" && `Custom Time`}
                             </span>
                           </div>
@@ -568,10 +631,15 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
       <CustomModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         <form onSubmit={handleSaveHoliday} className="space-y-4">
           <h4 className="text-xl font-bold text-gray-800 mb-1">
-            {holidays.some((h) => h.date === activeDate) ? "Update Holiday" : "Configure Holiday"}
+            {holidays.some((h) => h.date === activeDate)
+              ? "Update Holiday"
+              : "Configure Holiday"}
           </h4>
           <p className="text-xs text-gray-400 font-medium">
-            For Date: <span className="text-gray-700 font-semibold">{activeDateFormatted}</span>
+            For Date:{" "}
+            <span className="text-gray-700 font-semibold">
+              {activeDateFormatted}
+            </span>
           </p>
 
           <div>
@@ -619,8 +687,14 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { value: "first_half", label: "First Half (Off before Break / Midpoint)" },
-                  { value: "second_half", label: "Second Half (Off after Break / Midpoint)" }
+                  {
+                    value: "first_half",
+                    label: "First Half (Off before Break / Midpoint)",
+                  },
+                  {
+                    value: "second_half",
+                    label: "Second Half (Off after Break / Midpoint)",
+                  },
                 ].map((item) => (
                   <button
                     key={item.value}
@@ -643,7 +717,8 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
             <div className="grid grid-cols-2 gap-3 p-3 bg-gray-55 rounded-lg border border-gray-200">
               <div>
                 <label className="block text-xs font-semibold text-gray-650 mb-1">
-                  Available From (Start Time) <span className="text-red-500">*</span>
+                  Available From (Start Time){" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="time"
@@ -655,7 +730,8 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-655 mb-1">
-                  Available To (End Time) <span className="text-red-500">*</span>
+                  Available To (End Time){" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="time"
@@ -669,10 +745,20 @@ export default function AdminHolidaysPage({ params: paramsPromise }) {
           )}
 
           <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsModalOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" size="sm" disabled={isSaving}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={isSaving}
+            >
               {isSaving ? "Saving..." : "Save"}
             </Button>
           </div>

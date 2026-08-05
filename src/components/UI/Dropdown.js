@@ -3,7 +3,13 @@
 import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 
-export const Dropdown = ({ isOpen, onClose, children, className = "", zIndex = 9999 }) => {
+export const Dropdown = ({
+  isOpen,
+  onClose,
+  children,
+  className = "",
+  zIndex = 9999,
+}) => {
   const dropdownRef = useRef(null);
 
   useEffect(() => {
