@@ -20,7 +20,7 @@ import {
 import { Toast } from "@/components/Toast";
 import { format, parseISO } from "date-fns";
 import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
-import { Eye, EyeOff, Copy, Check, Layers } from "lucide-react";
+import { Eye, EyeOff, Copy, Check } from "lucide-react";
 
 export default function AdminsPage() {
   const searchParams = useSearchParams();
@@ -616,24 +616,7 @@ export default function AdminsPage() {
                           </>
                         )}
 
-                        {/* 5. Manage Module Access */}
-                        <div className="relative group/tooltip inline-flex items-center justify-center">
-                          <button
-                            onClick={() => {
-                              setModuleModalAdmin(admin);
-                              setIsModuleModalOpen(true);
-                            }}
-                            className="text-gray-500 hover:text-purple-600 transition-colors cursor-pointer"
-                          >
-                            <Layers size={20} />
-                          </button>
-                          <span className="absolute bottom-full mb-2 hidden group-hover/tooltip:flex flex-col items-center pointer-events-none z-50">
-                            <span className="bg-slate-900 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md whitespace-nowrap">
-                              Manage Module Access
-                            </span>
-                            <span className="w-2 h-2 bg-slate-900 rotate-45 -mt-1"></span>
-                          </span>
-                        </div>
+
 
                         {/* 6. Edit Profile */}
                         <div className="relative group/tooltip inline-flex items-center justify-center">
@@ -906,60 +889,7 @@ export default function AdminsPage() {
         itemName={selectedAdmin?.username || ""}
       />
 
-      {/* Manage Module Access Modal */}
-      <CustomModal
-        isOpen={isModuleModalOpen}
-        onClose={() => setIsModuleModalOpen(false)}
-        title={`Manage Module Access - ${moduleModalAdmin?.username || ""}`}
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-xs text-gray-500">
-            Enable or disable specific feature modules for <span className="font-bold text-gray-900">{moduleModalAdmin?.username}</span> ({moduleModalAdmin?.businessName}).
-          </p>
 
-          <div className="space-y-3 pt-2">
-            {/* Medicine Module */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                  💊
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-slate-900">Medicine Inventory Module</h4>
-                  <p className="text-xs text-slate-500">Allows Admin to manage medicine catalog, stock levels, and pricing.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() =>
-                  moduleModalAdmin &&
-                  handleToggleModule(
-                    moduleModalAdmin._id,
-                    "medicineModule",
-                    adminModules[moduleModalAdmin._id]?.medicineModule || false
-                  )
-                }
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
-                  adminModules[moduleModalAdmin?._id]?.medicineModule ? "bg-emerald-600" : "bg-gray-200"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    adminModules[moduleModalAdmin?._id]?.medicineModule ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4 border-t border-slate-200">
-            <Button onClick={() => setIsModuleModalOpen(false)} variant="primary">
-              Done
-            </Button>
-          </div>
-        </div>
-      </CustomModal>
     </>
   );
 }
