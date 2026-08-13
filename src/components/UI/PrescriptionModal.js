@@ -10,6 +10,7 @@ import {
   savePrescriptionApi,
   getMedicineSuggestionsApi,
   getMedicalSubUsersApi,
+  getLinkedMedicalAdminsApi,
 } from "@/config/AxiosConfig";
 import {
   Plus,
@@ -97,11 +98,22 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         }
       }
 
-      // 3. Fetch sub-users with Medical Access
+      // 3. Fetch sub-users / connected Medical Admins with Medical Access
       try {
-        const medUserRes = await getMedicalSubUsersApi(adminId);
-        if (medUserRes.status === 200 && Array.isArray(medUserRes.data?.data)) {
-          setMedicalUsers(medUserRes.data.data);
+        let loadedUsers = [];
+        const linkedRes = await getLinkedMedicalAdminsApi(adminId);
+        if (linkedRes.status === 200 && Array.isArray(linkedRes.data?.data) && linkedRes.data.data.length > 0) {
+          loadedUsers = linkedRes.data.data;
+        } else {
+          // Fallback to medical sub-users if no connected medical admin exists yet
+          const medUserRes = await getMedicalSubUsersApi(adminId);
+          if (medUserRes.status === 200 && Array.isArray(medUserRes.data?.data)) {
+            loadedUsers = medUserRes.data.data;
+          }
+        }
+        setMedicalUsers(loadedUsers);
+        if (loadedUsers.length === 1) {
+          setSelectedMedicalUser(loadedUsers[0]._id);
         }
       } catch {
         setMedicalUsers([]);
@@ -263,7 +275,18 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       return;
     }
 
-    const recipientUser = targetMedicalUser || selectedMedicalUser || null;
+    const recipientUser =
+      targetMedicalUser ||
+      selectedMedicalUser ||
+      (medicalUsers.length === 1 ? medicalUsers[0]._id : null);
+
+    if (targetMedicalUser !== null && !recipientUser) {
+      Toast({
+        message: "No connected Medical Admin / Pharmacy found. Please connect via Join page.",
+        type: "error",
+      });
+      return;
+    }
 
     // Sanitize validMedicines before sending payload
     const sanitizedMedicines = validMedicines.map((m) => ({
@@ -1070,35 +1093,31 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                 </div>
               </div>
 
-              {/* Send to Medical Module User Section */}
-              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
-                <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <Send className="w-4 h-4 text-purple-600" /> Send Prescription
-                  to Medical User / Pharmacy
-                </label>
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <select
-                    value={selectedMedicalUser}
-                    onChange={(e) => setSelectedMedicalUser(e.target.value)}
-                    className="w-full sm:flex-1 px-3.5 py-2 border border-purple-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:border-purple-500 font-medium"
-                  >
-                    <option value="">
-                      -- Select Medical Module User / Pharmacy Store --
-                    </option>
-                    {medicalUsers.map((u) => (
-                      <option key={u._id} value={u._id}>
-                        {u.name} ({u.role || "Medical Staff"}) - {u.email}
+              {/* Send to Medical Module User Section - Only shown if Doctor is joined with MORE THAN 1 Medical user */}
+              {medicalUsers.length > 1 && (
+                <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
+                  <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Send className="w-4 h-4 text-purple-600" /> Send Prescription
+                    to Medical User / Pharmacy
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <select
+                      value={selectedMedicalUser}
+                      onChange={(e) => setSelectedMedicalUser(e.target.value)}
+                      className="w-full sm:flex-1 px-3.5 py-2 border border-purple-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:border-purple-500 font-medium"
+                    >
+                      <option value="">
+                        -- Select Medical Module User / Pharmacy Store --
                       </option>
-                    ))}
-                  </select>
-                  {medicalUsers.length === 0 && (
-                    <span className="text-xs text-amber-700 font-medium italic">
-                      (No Medical Users or Pharmacy Accounts with Medical Access
-                      found)
-                    </span>
-                  )}
+                      {medicalUsers.map((u) => (
+                        <option key={u._id} value={u._id}>
+                          {u.name} ({u.role || "Medical Staff"}) - {u.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Modal Actions Footer */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-200">

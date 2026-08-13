@@ -9,6 +9,7 @@ import {
   UserCheck,
   Layers,
   Stethoscope,
+  Link2,
 } from "lucide-react";
 
 export const superAdminMenuItems = [
@@ -30,6 +31,11 @@ export const superAdminMenuItems = [
     icon: Layers,
     name: "Module Access",
     path: "/module-access",
+  },
+  {
+    icon: Link2,
+    name: "Join",
+    path: "/admin-links",
   },
 ];
 
@@ -84,6 +90,11 @@ export const adminMenuItems = [
     name: "Medical Prescriptions",
     path: "/medical",
     isModule: "medicalModule",
+  },
+  {
+    icon: Link2,
+    name: "Join",
+    path: "/admin-links",
   },
 ];
 

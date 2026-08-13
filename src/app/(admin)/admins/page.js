@@ -69,6 +69,7 @@ export default function AdminsPage() {
     businessName: "",
     phoneNumber: "",
     timezone: "Asia/Kolkata",
+    modules: ["doctor"],
   });
 
   const [editFormData, setEditFormData] = useState({
@@ -233,6 +234,16 @@ export default function AdminsPage() {
     }
   };
 
+  const handleModuleCheckboxChange = (modKey) => {
+    setFormData((prev) => {
+      const current = prev.modules || [];
+      const updated = current.includes(modKey)
+        ? current.filter((m) => m !== modKey)
+        : [...current, modKey];
+      return { ...prev, modules: updated };
+    });
+  };
+
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     let processedValue = value;
@@ -316,6 +327,7 @@ export default function AdminsPage() {
           businessName: "",
           phoneNumber: "",
           timezone: "Asia/Kolkata",
+          modules: ["doctor"],
         });
         fetchAdmins();
       } else {
@@ -496,6 +508,7 @@ export default function AdminsPage() {
               <TR>
                 <TH>Sr No</TH>
                 <TH>Admin ID</TH>
+                <TH>Join ID</TH>
                 <TH>Username</TH>
                 <TH>Email</TH>
                 <TH>Phone Number</TH>
@@ -511,7 +524,7 @@ export default function AdminsPage() {
               {isLoading ? (
                 <TR>
                   <TD
-                    colSpan={10}
+                    colSpan={12}
                     className="px-6 py-10 text-center text-gray-400 text-sm"
                   >
                     Loading admin list...
@@ -520,7 +533,7 @@ export default function AdminsPage() {
               ) : adminsList.length === 0 ? (
                 <TR>
                   <TD
-                    colSpan={10}
+                    colSpan={12}
                     className="px-6 py-10 text-center text-gray-400 text-sm"
                   >
                     No Admin profiles found.
@@ -550,6 +563,30 @@ export default function AdminsPage() {
                             <Copy size={14} />
                           )}
                         </button>
+                      </div>
+                    </TD>
+                    <TD className="text-sm font-mono text-xs font-semibold text-blue-600">
+                      <div className="flex items-center gap-1.5 w-fit bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                        <span className="select-all">{admin.joinId || "--"}</span>
+                        {admin.joinId && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCopy(
+                                admin.joinId,
+                                `Join ID (${admin.username})`,
+                              )
+                            }
+                            className="text-blue-500 hover:text-blue-700 focus:outline-none cursor-pointer p-0.5 inline-flex items-center"
+                            title="Copy Join ID"
+                          >
+                            {copiedField === `Join ID (${admin.username})` ? (
+                              <Check size={14} className="text-green-600" />
+                            ) : (
+                              <Copy size={14} />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </TD>
                     <TD className="text-sm font-semibold text-gray-900">
@@ -974,6 +1011,53 @@ export default function AdminsPage() {
                   {formErrors.phoneNumber}
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Assign Module Access
+              </label>
+              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3.5 rounded-lg border border-gray-200">
+                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={(formData.modules || []).includes("doctor")}
+                    onChange={() => handleModuleCheckboxChange("doctor")}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>Doctor Module</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={(formData.modules || []).includes("medical")}
+                    onChange={() => handleModuleCheckboxChange("medical")}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>Medical / Pharmacy</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={(formData.modules || []).includes("medicine")}
+                    onChange={() => handleModuleCheckboxChange("medicine")}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>Medicine Inventory</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 text-sm font-medium text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={(formData.modules || []).includes("userManagement")}
+                    onChange={() => handleModuleCheckboxChange("userManagement")}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <span>User Management</span>
+                </label>
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200">

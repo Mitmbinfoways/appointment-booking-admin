@@ -525,4 +525,28 @@ export const updatePrescriptionFulfillmentStatusApi = async (
   });
 };
 
+// Admin Link API Endpoints
+export const createAdminLinkApi = async (data) => {
+  return await axiosInstance.post(`/api/admin-links`, data);
+};
+
+export const getLinkedAdminsApi = async (adminId, moduleFilter = "") => {
+  const url = moduleFilter
+    ? `/api/admin-links/${adminId}?module=${moduleFilter}`
+    : `/api/admin-links/${adminId}`;
+  return await axiosInstance.get(url);
+};
+
+export const getLinkedMedicalAdminsApi = async (adminId) => {
+  return await axiosInstance.get(`/api/admin-links/${adminId}/medical`);
+};
+
+export const toggleAdminLinkStatusApi = async (linkId) => {
+  return await axiosInstance.put(`/api/admin-links/${linkId}/toggle`);
+};
+
+export const removeAdminLinkApi = async (linkId) => {
+  return await axiosInstance.delete(`/api/admin-links/${linkId}`);
+};
+
 export default axiosInstance;
