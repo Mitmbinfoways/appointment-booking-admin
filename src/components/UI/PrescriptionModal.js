@@ -93,8 +93,11 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       // 2. Fetch catalog medicines if module enabled
       if (hasMed) {
         const catRes = await getMedicinesListApi(adminId);
-        if (catRes.status === 200 && catRes.data?.data) {
-          setCatalogMedicines(catRes.data.data);
+        if (catRes.status === 200 && Array.isArray(catRes.data?.data)) {
+          const availableMedicines = catRes.data.data.filter(
+            (m) => Number(m.stock) > 0,
+          );
+          setCatalogMedicines(availableMedicines);
         }
       }
 
@@ -839,13 +842,19 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                               <option value="custom">
                                 -- Custom Medicine --
                               </option>
-                              {catalogMedicines.map((catMed) => (
-                                <option key={catMed._id} value={catMed._id}>
-                                  {catMed.name}{" "}
-                                  {catMed.dosage ? `(${catMed.dosage})` : ""} -
-                                  Stock: {catMed.stock}
-                                </option>
-                              ))}
+                              {catalogMedicines
+                                .filter(
+                                  (catMed) =>
+                                    Number(catMed.stock) > 0 ||
+                                    catMed._id === item.medicineId,
+                                )
+                                .map((catMed) => (
+                                  <option key={catMed._id} value={catMed._id}>
+                                    {catMed.name}{" "}
+                                    {catMed.dosage ? `(${catMed.dosage})` : ""} -
+                                    Stock: {catMed.stock}
+                                  </option>
+                                ))}
                             </select>
 
                             {(item.isCustom ||
