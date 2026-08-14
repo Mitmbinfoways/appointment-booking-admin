@@ -184,7 +184,10 @@ export default function UserManagementPage() {
     }
 
     try {
-      const res = await updateSubUserRecord(selectedUser._id, editFormData);
+      const res = await updateSubUserRecord(selectedUser._id, {
+        ...editFormData,
+        adminId,
+      });
       if (res.status === 200) {
         Toast({
           message: "User record updated successfully!",
@@ -206,12 +209,18 @@ export default function UserManagementPage() {
 
   const handleToggleActive = async (subUserId) => {
     try {
-      const res = await toggleSubUserActiveApi(subUserId);
-      if (res.status === 200) {
-        Toast({ message: "User active status updated!", type: "success" });
+      const res = await toggleSubUserActiveApi(subUserId, adminId);
+      if (res.status === 200 && res.data?.data) {
+        const updatedUser = res.data.data;
+        const msg =
+          res.data?.message ||
+          `User status changed to ${updatedUser.isActive ? "Active" : "Inactive"}.`;
+        Toast({ message: msg, type: "success" });
         setSubUsers((prev) =>
           prev.map((u) =>
-            u._id === subUserId ? { ...u, isActive: !u.isActive } : u,
+            String(u._id) === String(subUserId)
+              ? { ...u, isActive: updatedUser.isActive }
+              : u,
           ),
         );
       } else {
@@ -234,7 +243,7 @@ export default function UserManagementPage() {
   const handleConfirmDelete = async () => {
     if (!selectedUser) return;
     try {
-      const res = await deleteSubUserRecord(selectedUser._id);
+      const res = await deleteSubUserRecord(selectedUser._id, adminId);
       if (res.status === 200) {
         Toast({
           message: "User record deleted successfully!",
