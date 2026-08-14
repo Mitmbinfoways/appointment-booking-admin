@@ -54,6 +54,7 @@ export default function AdminsPage() {
 
   // Modals visibility states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
@@ -950,19 +951,33 @@ export default function AdminsPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Password <span className="text-red-500">*</span>
               </label>
-              <input
-                id="create-password"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none ${
-                  formErrors.password
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-gray-300 focus:border-blue-500"
-                }`}
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  id="create-password"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-2 pr-10 border rounded-lg text-sm focus:outline-none ${
+                    formErrors.password
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-gray-300 focus:border-blue-500"
+                  }`}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer focus:outline-none"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
               {formErrors.password && (
                 <p className="mt-1.5 text-xs text-red-500 font-bold">
                   {formErrors.password}

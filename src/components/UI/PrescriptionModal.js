@@ -101,7 +101,7 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         }
       }
 
-      // 3. Fetch connected Medical Admins with Medical Access
+      // 3. Fetch connected Medical Admins joined via Join ID
       try {
         let loadedUsers = [];
         const linkedRes = await getLinkedMedicalAdminsApi(adminId);
@@ -112,10 +112,11 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         ) {
           loadedUsers = linkedRes.data.data;
         }
+
         setMedicalUsers(loadedUsers);
-        if (loadedUsers.length === 1) {
-          setSelectedMedicalUser(loadedUsers[0]._id);
-        } else if (loadedUsers.length === 0) {
+        if (loadedUsers.length >= 1) {
+          setSelectedMedicalUser((prev) => prev || loadedUsers[0]._id);
+        } else {
           setSelectedMedicalUser("");
         }
       } catch {
@@ -1226,12 +1227,6 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
               </span>
               <span className="text-base font-bold text-slate-900 block mt-1">
                 {patientFullName}
-              </span>
-              <span className="text-slate-600 block">
-                {booking.phoneNumber || "Phone: N/A"}
-              </span>
-              <span className="text-slate-600 block">
-                {booking.email || "Email: N/A"}
               </span>
             </div>
             <div className="text-right">

@@ -649,8 +649,8 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
                                 </span>
                               )}
                               {!isPast && isFullDayHoliday && (
-                                <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5 font-bold">
-                                  Hol
+                                <span className="text-[8px] text-red-500 font-bold leading-tight mt-0.5 truncate max-w-[90%] text-center px-0.5">
+                                  {dayObj.holidayTitle || "Holiday"}
                                 </span>
                               )}
                             </div>
@@ -669,8 +669,8 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
                               </span>
                             )}
                             {!isPast && isFullDayHoliday && (
-                              <span className="text-[7px] text-red-500 uppercase leading-none mt-0.5 font-bold">
-                                Hol
+                              <span className="text-[8px] text-red-500 font-bold leading-tight mt-0.5 truncate max-w-[90%] text-center px-0.5">
+                                {dayObj.holidayTitle || "Holiday"}
                               </span>
                             )}
                           </div>
