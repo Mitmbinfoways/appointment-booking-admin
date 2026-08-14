@@ -42,7 +42,11 @@ export default function ModuleAccessPage() {
             try {
               const modRes = await getUserModulesApi(adm._id);
               if (modRes.status === 200 && modRes.data?.data) {
-                moduleMap[adm._id] = modRes.data.data;
+                const data = { ...modRes.data.data };
+                if (data.doctorModule && data.medicalModule) {
+                  data.medicalModule = false;
+                }
+                moduleMap[adm._id] = data;
               }
             } catch (e) {
               // ignore single fetch error
@@ -89,28 +93,21 @@ export default function ModuleAccessPage() {
           type: "success",
         });
 
-        if (res.data?.data) {
-          setAdminModules((prev) => ({
+        setAdminModules((prev) => {
+          const updated = {
+            ...(prev[adminId] || {}),
+            ...(res.data?.data || {}),
+            [moduleName]: !currentEnabled,
+          };
+          if (!currentEnabled) {
+            if (moduleName === "doctorModule") updated.medicalModule = false;
+            if (moduleName === "medicalModule") updated.doctorModule = false;
+          }
+          return {
             ...prev,
-            [adminId]: res.data.data,
-          }));
-        } else {
-          setAdminModules((prev) => {
-            const current = prev[adminId] || {};
-            const updated = {
-              ...current,
-              [moduleName]: !currentEnabled,
-            };
-            if (!currentEnabled) {
-              if (moduleName === "doctorModule") updated.medicalModule = false;
-              if (moduleName === "medicalModule") updated.doctorModule = false;
-            }
-            return {
-              ...prev,
-              [adminId]: updated,
-            };
-          });
-        }
+            [adminId]: updated,
+          };
+        });
       } else {
         Toast({
           message: res.data?.message || "Failed to toggle module",
@@ -285,10 +282,9 @@ export default function ModuleAccessPage() {
                   const hasDoctor = Boolean(
                     adminModules[adm._id]?.doctorModule,
                   );
-                  const rawMedical = Boolean(
+                  const hasMedical = Boolean(
                     adminModules[adm._id]?.medicalModule,
                   );
-                  const hasMedical = hasDoctor ? false : rawMedical;
                   const hasMedicine = Boolean(
                     adminModules[adm._id]?.medicineModule,
                   );

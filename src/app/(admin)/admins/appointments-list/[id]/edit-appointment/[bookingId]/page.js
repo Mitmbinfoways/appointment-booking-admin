@@ -19,6 +19,7 @@ import Button from "@/components/UI/Button";
 import Tooltip from "@/components/UI/Tooltip";
 import FileViewModal from "@/components/UI/FileViewModal";
 import MultiSelectDropdown from "@/components/UI/MultiSelectDropdown";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function EditAdminAppointmentPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
