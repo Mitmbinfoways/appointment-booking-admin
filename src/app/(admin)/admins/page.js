@@ -237,9 +237,17 @@ export default function AdminsPage() {
   const handleModuleCheckboxChange = (modKey) => {
     setFormData((prev) => {
       const current = prev.modules || [];
-      const updated = current.includes(modKey)
-        ? current.filter((m) => m !== modKey)
-        : [...current, modKey];
+      let updated;
+      if (current.includes(modKey)) {
+        updated = current.filter((m) => m !== modKey);
+      } else {
+        updated = [...current, modKey];
+        if (modKey === "doctor") {
+          updated = updated.filter((m) => m !== "medical");
+        } else if (modKey === "medical") {
+          updated = updated.filter((m) => m !== "doctor");
+        }
+      }
       return { ...prev, modules: updated };
     });
   };

@@ -17,6 +17,8 @@ import {
   XCircle,
   Mail,
   Building2,
+  Stethoscope,
+  Users,
 } from "lucide-react";
 
 export default function ModuleAccessPage() {
@@ -74,21 +76,41 @@ export default function ModuleAccessPage() {
         enabled: !currentEnabled,
       });
       if (res.status === 200) {
-        const friendlyName =
-          moduleName === "medicineModule" ? "Medicine Module" : moduleName;
+        const friendlyNames = {
+          doctorModule: "Doctor Module",
+          medicalModule: "Medical / Pharmacy Module",
+          medicineModule: "Medicine Inventory Module",
+          userManagementModule: "User Management Module",
+        };
+        const friendlyName = friendlyNames[moduleName] || moduleName;
 
         Toast({
           message: `${friendlyName} ${!currentEnabled ? "enabled" : "disabled"} successfully!`,
           type: "success",
         });
 
-        setAdminModules((prev) => ({
-          ...prev,
-          [adminId]: {
-            ...prev[adminId],
-            [moduleName]: !currentEnabled,
-          },
-        }));
+        if (res.data?.data) {
+          setAdminModules((prev) => ({
+            ...prev,
+            [adminId]: res.data.data,
+          }));
+        } else {
+          setAdminModules((prev) => {
+            const current = prev[adminId] || {};
+            const updated = {
+              ...current,
+              [moduleName]: !currentEnabled,
+            };
+            if (!currentEnabled) {
+              if (moduleName === "doctorModule") updated.medicalModule = false;
+              if (moduleName === "medicalModule") updated.doctorModule = false;
+            }
+            return {
+              ...prev,
+              [adminId]: updated,
+            };
+          });
+        }
       } else {
         Toast({
           message: res.data?.message || "Failed to toggle module",
@@ -110,11 +132,17 @@ export default function ModuleAccessPage() {
   );
 
   const totalAdmins = adminsList.length;
+  const doctorModuleCount = Object.values(adminModules).filter(
+    (m) => m?.doctorModule,
+  ).length;
+  const medicalModuleCount = Object.values(adminModules).filter(
+    (m) => m?.medicalModule && !m?.doctorModule,
+  ).length;
   const medicineModuleCount = Object.values(adminModules).filter(
     (m) => m?.medicineModule,
   ).length;
-  const medicalModuleCount = Object.values(adminModules).filter(
-    (m) => m?.medicalModule,
+  const userManagementModuleCount = Object.values(adminModules).filter(
+    (m) => m?.userManagementModule,
   ).length;
 
   return (
@@ -131,7 +159,7 @@ export default function ModuleAccessPage() {
       />
 
       {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-theme-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
@@ -142,6 +170,34 @@ export default function ModuleAccessPage() {
             </span>
           </div>
           <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-theme-xs flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+              Doctor Module Active
+            </span>
+            <span className="text-2xl font-bold text-blue-600 mt-1 block">
+              {doctorModuleCount}
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Stethoscope className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-theme-xs flex items-center justify-between">
+          <div>
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
+              Medical Module Active
+            </span>
+            <span className="text-2xl font-bold text-purple-600 mt-1 block">
+              {medicalModuleCount}
+            </span>
+          </div>
+          <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
             <ShieldCheck className="w-5 h-5" />
           </div>
         </div>
@@ -163,19 +219,19 @@ export default function ModuleAccessPage() {
         <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-theme-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">
-              Medical Module Active
+              User Mgmt Active
             </span>
-            <span className="text-2xl font-bold text-purple-600 mt-1 block">
-              {medicalModuleCount}
+            <span className="text-2xl font-bold text-amber-600 mt-1 block">
+              {userManagementModuleCount}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <Users className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* Main Table Card (Matches Project Theme layout) */}
+      {/* Main Table Card */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-theme-xs">
         {/* Header Section */}
         <div className="flex flex-col gap-4 p-4 border-b border-gray-200 sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -199,15 +255,17 @@ export default function ModuleAccessPage() {
                 <TH>#</TH>
                 <TH>ADMIN PROFILE</TH>
                 <TH>BUSINESS NAME</TH>
-                <TH>MEDICINE MODULE ACCESS</TH>
+                <TH>DOCTOR MODULE ACCESS</TH>
                 <TH>MEDICAL MODULE ACCESS</TH>
+                <TH>MEDICINE MODULE ACCESS</TH>
+                <TH>USER MANAGEMENT ACCESS</TH>
               </TR>
             </THead>
             <TBody>
               {isLoading ? (
                 <TR>
                   <TD
-                    colSpan={5}
+                    colSpan={7}
                     className="py-10 text-center text-gray-400 text-sm"
                   >
                     Loading admin module permissions...
@@ -216,7 +274,7 @@ export default function ModuleAccessPage() {
               ) : filteredAdmins.length === 0 ? (
                 <TR>
                   <TD
-                    colSpan={5}
+                    colSpan={7}
                     className="py-10 text-center text-gray-400 text-sm"
                   >
                     No Admin accounts found matching search.
@@ -224,9 +282,18 @@ export default function ModuleAccessPage() {
                 </TR>
               ) : (
                 filteredAdmins.map((adm, idx) => {
-                  const hasMed = Boolean(adminModules[adm._id]?.medicineModule);
-                  const hasMedical = Boolean(
+                  const hasDoctor = Boolean(
+                    adminModules[adm._id]?.doctorModule,
+                  );
+                  const rawMedical = Boolean(
                     adminModules[adm._id]?.medicalModule,
+                  );
+                  const hasMedical = hasDoctor ? false : rawMedical;
+                  const hasMedicine = Boolean(
+                    adminModules[adm._id]?.medicineModule,
+                  );
+                  const hasUserMgmt = Boolean(
+                    adminModules[adm._id]?.userManagementModule,
                   );
 
                   return (
@@ -254,7 +321,7 @@ export default function ModuleAccessPage() {
                         </span>
                       </TD>
 
-                      {/* Medicine Module Control */}
+                      {/* Doctor Module Control */}
                       <TD>
                         <div className="flex items-center gap-3">
                           <button
@@ -262,26 +329,26 @@ export default function ModuleAccessPage() {
                             onClick={() =>
                               handleToggleModule(
                                 adm._id,
-                                "medicineModule",
-                                hasMed,
+                                "doctorModule",
+                                hasDoctor,
                               )
                             }
                             className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              hasMed ? "bg-blue-600" : "bg-gray-200"
+                              hasDoctor ? "bg-blue-600" : "bg-gray-200"
                             }`}
                           >
                             <span
                               className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                hasMed ? "translate-x-5" : "translate-x-0"
+                                hasDoctor ? "translate-x-5" : "translate-x-0"
                               }`}
                             />
                           </button>
                           <span
                             className={`text-xs font-bold inline-flex items-center gap-1 ${
-                              hasMed ? "text-blue-600" : "text-gray-400"
+                              hasDoctor ? "text-blue-600" : "text-gray-400"
                             }`}
                           >
-                            {hasMed ? (
+                            {hasDoctor ? (
                               <>
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 Enabled
@@ -324,6 +391,92 @@ export default function ModuleAccessPage() {
                             }`}
                           >
                             {hasMedical ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Enabled
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-3.5 h-3.5" />
+                                Disabled
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </TD>
+
+                      {/* Medicine Module Control */}
+                      <TD>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleToggleModule(
+                                adm._id,
+                                "medicineModule",
+                                hasMedicine,
+                              )
+                            }
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              hasMedicine ? "bg-green-600" : "bg-gray-200"
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                hasMedicine ? "translate-x-5" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                          <span
+                            className={`text-xs font-bold inline-flex items-center gap-1 ${
+                              hasMedicine ? "text-green-600" : "text-gray-400"
+                            }`}
+                          >
+                            {hasMedicine ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Enabled
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-3.5 h-3.5" />
+                                Disabled
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      </TD>
+
+                      {/* User Management Control */}
+                      <TD>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleToggleModule(
+                                adm._id,
+                                "userManagementModule",
+                                hasUserMgmt,
+                              )
+                            }
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              hasUserMgmt ? "bg-amber-600" : "bg-gray-200"
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                hasUserMgmt
+                                  ? "translate-x-5"
+                                  : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                          <span
+                            className={`text-xs font-bold inline-flex items-center gap-1 ${
+                              hasUserMgmt ? "text-amber-600" : "text-gray-400"
+                            }`}
+                          >
+                            {hasUserMgmt ? (
                               <>
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 Enabled
