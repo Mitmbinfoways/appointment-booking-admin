@@ -717,16 +717,18 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
             >
               Edit
             </Button>
-            <Button
-              type="button"
-              onClick={() => handleSavePrescription(selectedMedicalUser)}
-              variant="primary"
-              disabled={isSaving || !selectedMedicalUser}
-              startIcon={<Send className="w-4 h-4" />}
-              className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
-            >
-              {isSaving ? "Sending..." : "Send to Medical"}
-            </Button>
+            {medicalUsers && medicalUsers.length > 0 && (
+              <Button
+                type="button"
+                onClick={() => handleSavePrescription(selectedMedicalUser)}
+                variant="primary"
+                disabled={isSaving}
+                startIcon={<Send className="w-4 h-4" />}
+                className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+              >
+                {isSaving ? "Sending..." : "Send to Medical"}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -741,19 +743,7 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => {
-                if (!isEditMode && existingPrescription) {
-                  onClose();
-                } else if (
-                  isEditMode &&
-                  existingPrescription &&
-                  existingPrescription.fulfillmentStatus === "not_sent"
-                ) {
-                  setIsEditMode(false);
-                } else {
-                  onClose();
-                }
-              }}
+              onClick={() => onClose()}
               className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -1158,16 +1148,18 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                   >
                     {isSaving ? "Saving..." : "Save Only"}
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={() => handleSavePrescription(selectedMedicalUser)}
-                    variant="primary"
-                    disabled={isSaving}
-                    startIcon={<Send className="w-4 h-4" />}
-                    className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
-                  >
-                    {isSaving ? "Sending..." : "Send to Medical"}
-                  </Button>
+                  {medicalUsers && medicalUsers.length > 0 && (
+                    <Button
+                      type="button"
+                      onClick={() => handleSavePrescription(selectedMedicalUser)}
+                      variant="primary"
+                      disabled={isSaving}
+                      startIcon={<Send className="w-4 h-4" />}
+                      className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                    >
+                      {isSaving ? "Sending..." : "Send to Medical"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

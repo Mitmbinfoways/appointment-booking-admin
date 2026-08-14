@@ -15,7 +15,7 @@ import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
 import FileViewModal from "@/components/UI/FileViewModal";
 import PrescriptionModal from "@/components/UI/PrescriptionModal";
-import { Eye, Pencil, Trash2, FileText } from "lucide-react";
+import { Eye, Pencil, Trash2, FileText, X } from "lucide-react";
 import Button from "@/components/UI/Button";
 
 const getStatusClass = (status) => {
@@ -301,6 +301,20 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               <option value="pending">Pending</option>
               <option value="cancelled">Cancelled</option>
             </select>
+            {(startDate || endDate || statusFilter || searchFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setStatusFilter("");
+                  setSearchFilter("");
+                }}
+                className="px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+              >
+                <X className="w-3.5 h-3.5" /> Clear Filter
+              </button>
+            )}
           </div>
         </div>
 

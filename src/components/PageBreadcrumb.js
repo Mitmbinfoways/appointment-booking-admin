@@ -18,6 +18,11 @@ const PageBreadcrumb = ({ items = [] }) => {
                 <Link
                   className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-500"
                   href={item.to}
+                  onClick={(e) => {
+                    if (item.onClick) {
+                      item.onClick(e);
+                    }
+                  }}
                 >
                   {item.label}
                 </Link>

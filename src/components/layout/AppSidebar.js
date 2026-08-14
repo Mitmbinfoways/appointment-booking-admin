@@ -180,6 +180,13 @@ const AppSidebar = () => {
                   <Link
                     href={nav.path}
                     onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(
+                          new CustomEvent("sidebar-nav-click", {
+                            detail: nav.path,
+                          }),
+                        );
+                      }
                       if (isMobileOpen) {
                         toggleMobileSidebar();
                       }

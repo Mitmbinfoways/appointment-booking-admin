@@ -292,25 +292,36 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
     return defaultLabel;
   };
 
-  const handleFileChange = (fieldKey, file, fieldType) => {
+  const handleFileChange = (fieldKey, file, fieldType, event = null) => {
     if (!file) return;
 
-    if (file.name) {
-      setFileNames((prev) => ({ ...prev, [fieldKey]: file.name }));
-    }
+    const clearFileInput = () => {
+      setFileNames((prev) => ({ ...prev, [fieldKey]: "" }));
+      handleEditResponseChange(fieldKey, "");
+      if (event?.target) {
+        event.target.value = "";
+      }
+      const inputEl = document.getElementById(`file_input_${fieldKey}`);
+      if (inputEl) {
+        inputEl.value = "";
+      }
+    };
 
     if (fieldType === "image" && !file.type.startsWith("image/")) {
+      clearFileInput();
       Toast({ message: "Please select a valid image file.", type: "error" });
       return;
     }
     if (fieldType === "video" && !file.type.startsWith("video/")) {
+      clearFileInput();
       Toast({ message: "Please select a valid video file.", type: "error" });
       return;
     }
 
-    const maxSize = fieldType === "image" ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
-    const maxLabel = fieldType === "image" ? "5MB" : "20MB";
+    const maxSize = fieldType === "image" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+    const maxLabel = fieldType === "image" ? "5MB" : "10MB";
     if (file.size > maxSize) {
+      clearFileInput();
       Toast({
         message: `File size must be less than ${maxLabel}.`,
         type: "error",
@@ -318,11 +329,16 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
       return;
     }
 
+    if (file.name) {
+      setFileNames((prev) => ({ ...prev, [fieldKey]: file.name }));
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       handleEditResponseChange(fieldKey, reader.result);
     };
     reader.onerror = () => {
+      clearFileInput();
       Toast({ message: "Failed to read file.", type: "error" });
     };
     reader.readAsDataURL(file);
@@ -1025,6 +1041,7 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
                                       field.fieldKey,
                                       e.target.files[0],
                                       "image",
+                                      e,
                                     )
                                   }
                                   className={
@@ -1112,6 +1129,7 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
                                       field.fieldKey,
                                       e.target.files[0],
                                       "video",
+                                      e,
                                     )
                                   }
                                   className={
@@ -1185,7 +1203,7 @@ export default function EditAdminAppointmentPage({ params: paramsPromise }) {
                                 )}
                               </div>
                               <p className="text-[10px] text-gray-400">
-                                Accepts videos only (max 20MB)
+                                Accepts videos only (max 10MB)
                               </p>
                             </div>
                           ) : (

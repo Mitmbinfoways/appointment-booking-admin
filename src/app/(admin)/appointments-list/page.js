@@ -15,7 +15,7 @@ import { Table, THead, TBody, TR, TD, TH } from "@/components/UI/table";
 import { CustomModal, DeleteConfirmModal } from "@/components/UI/Modal";
 import FileViewModal from "@/components/UI/FileViewModal";
 import PrescriptionModal from "@/components/UI/PrescriptionModal";
-import { Eye, Pencil, Trash2, FileText } from "lucide-react";
+import { Eye, Pencil, Trash2, FileText, X } from "lucide-react";
 import Button from "@/components/UI/Button";
 
 const getStatusClass = (status) => {
@@ -63,12 +63,42 @@ export default function AppointmentsListPage() {
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  // Parse URL parameters from card clicks
+  const handleOpenPrescription = (b) => {
+    setPrescriptionModal({ isOpen: true, booking: b });
+    if (b && (b._id || b.bookingId)) {
+      const targetId = b._id || b.bookingId;
+      const current = new URLSearchParams(Array.from(searchParams.entries()));
+      current.set("prescription", targetId);
+      router.push(`/appointments-list?${current.toString()}`);
+    }
+  };
+
+  const handleClosePrescription = () => {
+    setPrescriptionModal({ isOpen: false, booking: null });
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    current.delete("prescription");
+    const query = current.toString() ? `?${current.toString()}` : "";
+    router.push(`/appointments-list${query}`);
+  };
+
+  const handleClearAllFilters = () => {
+    setSearchFilter("");
+    setDebouncedSearch("");
+    setStartDate("");
+    setEndDate("");
+    setStatusFilter("");
+    if (typeof window !== "undefined") {
+      router.replace("/appointments-list");
+    }
+  };
+
+  // Parse URL parameters from card clicks and prescription query param
   useEffect(() => {
     const statusP = searchParams?.get("status");
     const filterP = searchParams?.get("filter");
     const startP = searchParams?.get("startDate");
     const endP = searchParams?.get("endDate");
+    const prescriptionP = searchParams?.get("prescription");
 
     const formatYMD = (d) => {
       const year = d.getFullYear();
@@ -97,10 +127,38 @@ export default function AppointmentsListPage() {
 
       setStartDate(formatYMD(monday));
       setEndDate(formatYMD(sunday));
-    } else {
+    } else if (startP || endP) {
       if (startP) setStartDate(startP);
       if (endP) setEndDate(endP);
     }
+
+    if (prescriptionP) {
+      const foundBooking = bookingsList.find(
+        (b) =>
+          String(b._id) === String(prescriptionP) ||
+          String(b.bookingId) === String(prescriptionP),
+      );
+      if (foundBooking) {
+        setPrescriptionModal({ isOpen: true, booking: foundBooking });
+      }
+    } else {
+      setPrescriptionModal({ isOpen: false, booking: null });
+    }
+  }, [searchParams, bookingsList]);
+
+  // Close prescription view on sidebar navigation event
+  useEffect(() => {
+    const handleNavClick = (e) => {
+      if (
+        e.detail === "/appointments-list" ||
+        e.detail?.startsWith("/appointments-list")
+      ) {
+        handleClosePrescription();
+      }
+    };
+    window.addEventListener("sidebar-nav-click", handleNavClick);
+    return () =>
+      window.removeEventListener("sidebar-nav-click", handleNavClick);
   }, [searchParams]);
 
   const getNumericBookingId = (b) => {
@@ -269,7 +327,11 @@ export default function AppointmentsListPage() {
       <PageBreadcrumb
         items={[
           { label: "Home", to: "/" },
-          { label: "Appointments List", to: "/appointments-list" },
+          {
+            label: "Appointments List",
+            to: "/appointments-list",
+            onClick: handleClosePrescription,
+          },
           ...(prescriptionModal.isOpen ? [{ label: "Prescription" }] : []),
         ]}
       />
@@ -277,7 +339,7 @@ export default function AppointmentsListPage() {
       {prescriptionModal.isOpen ? (
         <PrescriptionModal
           isOpen={prescriptionModal.isOpen}
-          onClose={() => setPrescriptionModal({ isOpen: false, booking: null })}
+          onClose={handleClosePrescription}
           booking={prescriptionModal.booking}
           admin={admin}
         />
@@ -329,6 +391,19 @@ export default function AppointmentsListPage() {
                 <option value="pending">Pending</option>
                 <option value="cancelled">Cancelled</option>
               </select>
+              {(startDate ||
+                endDate ||
+                statusFilter ||
+                searchFilter ||
+                debouncedSearch) && (
+                <button
+                  type="button"
+                  onClick={handleClearAllFilters}
+                  className="px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <X className="w-3.5 h-3.5" /> Clear Filter
+                </button>
+              )}
             </div>
             <Button
               onClick={handleCreateClick}
@@ -518,12 +593,7 @@ export default function AppointmentsListPage() {
                         <div className="flex items-center justify-end gap-3.5">
                           <div className="relative group">
                             <button
-                              onClick={() =>
-                                setPrescriptionModal({
-                                  isOpen: true,
-                                  booking: b,
-                                })
-                              }
+                              onClick={() => handleOpenPrescription(b)}
                               className="text-gray-500 hover:text-emerald-600 transition-colors cursor-pointer"
                             >
                               <FileText size={18} />
