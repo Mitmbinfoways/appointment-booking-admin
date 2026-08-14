@@ -32,7 +32,11 @@ const AppSidebar = () => {
   } = useSidebar();
   const adminState = useSelector((state) => state.admin) || {};
   const admin = adminState.admin;
-  const [userModules, setUserModules] = useState({ medicineModule: false });
+  const [userModules, setUserModules] = useState({
+    medicineModule: false,
+    doctorModule: true,
+    medicalModule: false,
+  });
 
   useEffect(() => {
     const fetchModules = async () => {
