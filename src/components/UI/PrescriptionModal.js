@@ -101,22 +101,22 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         }
       }
 
-      // 3. Fetch sub-users / connected Medical Admins with Medical Access
+      // 3. Fetch connected Medical Admins with Medical Access
       try {
         let loadedUsers = [];
         const linkedRes = await getLinkedMedicalAdminsApi(adminId);
-        if (linkedRes.status === 200 && Array.isArray(linkedRes.data?.data) && linkedRes.data.data.length > 0) {
+        if (
+          linkedRes.status === 200 &&
+          Array.isArray(linkedRes.data?.data) &&
+          linkedRes.data.data.length > 0
+        ) {
           loadedUsers = linkedRes.data.data;
-        } else {
-          // Fallback to medical sub-users if no connected medical admin exists yet
-          const medUserRes = await getMedicalSubUsersApi(adminId);
-          if (medUserRes.status === 200 && Array.isArray(medUserRes.data?.data)) {
-            loadedUsers = medUserRes.data.data;
-          }
         }
         setMedicalUsers(loadedUsers);
         if (loadedUsers.length === 1) {
           setSelectedMedicalUser(loadedUsers[0]._id);
+        } else if (loadedUsers.length === 0) {
+          setSelectedMedicalUser("");
         }
       } catch {
         setMedicalUsers([]);
@@ -278,14 +278,17 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
       return;
     }
 
-    const recipientUser =
-      targetMedicalUser ||
-      selectedMedicalUser ||
-      (medicalUsers.length === 1 ? medicalUsers[0]._id : null);
+    const isSendingToMedical = targetMedicalUser !== null;
+    const recipientUser = isSendingToMedical
+      ? targetMedicalUser ||
+        selectedMedicalUser ||
+        (medicalUsers.length === 1 ? medicalUsers[0]._id : null)
+      : null;
 
-    if (targetMedicalUser !== null && !recipientUser) {
+    if (isSendingToMedical && !recipientUser) {
       Toast({
-        message: "No connected Medical Admin / Pharmacy found. Please connect via Join page.",
+        message:
+          "No connected Medical Admin / Pharmacy found. Please connect via Join page.",
         type: "error",
       });
       return;
@@ -411,7 +414,7 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
         Toast({
           message: recipientUser
             ? "Prescription sent to Medical User successfully!"
-            : "Prescription saved and stock updated successfully!",
+            : "Prescription Saved Successfully!",
           type: "success",
         });
         onClose();
@@ -1092,8 +1095,8 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                 </div>
               </div>
 
-              {/* Send to Medical Module User Section - Only shown if Doctor is joined with MORE THAN 1 Medical user */}
-              {medicalUsers.length > 1 && (
+              {/* Send to Medical Module User Section - Only shown if Doctor is connected with Medical admin(s) */}
+              {medicalUsers && medicalUsers.length > 0 && (
                 <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
                   <label className="block text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
                     <Send className="w-4 h-4 text-purple-600" /> Send Prescription
@@ -1105,9 +1108,11 @@ export default function PrescriptionModal({ isOpen, onClose, booking, admin }) {
                       onChange={(e) => setSelectedMedicalUser(e.target.value)}
                       className="w-full sm:flex-1 px-3.5 py-2 border border-purple-300 rounded-lg text-sm bg-white text-gray-900 focus:outline-none focus:border-purple-500 font-medium"
                     >
-                      <option value="">
-                        -- Select Medical Module User / Pharmacy Store --
-                      </option>
+                      {medicalUsers.length > 1 && (
+                        <option value="">
+                          -- Select Medical Module User / Pharmacy Store --
+                        </option>
+                      )}
                       {medicalUsers.map((u) => (
                         <option key={u._id} value={u._id}>
                           {u.name} ({u.role || "Medical Staff"}) - {u.email}

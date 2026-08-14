@@ -62,6 +62,7 @@ export default function AppointmentsListPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   const handleOpenPrescription = (b) => {
     setPrescriptionModal({ isOpen: true, booking: b });
@@ -87,6 +88,7 @@ export default function AppointmentsListPage() {
     setStartDate("");
     setEndDate("");
     setStatusFilter("");
+    setDateFilter("");
     if (typeof window !== "undefined") {
       router.replace("/appointments-list");
     }
@@ -111,9 +113,7 @@ export default function AppointmentsListPage() {
       setStatusFilter(statusP);
     }
     if (filterP === "today") {
-      const todayStr = formatYMD(new Date());
-      setStartDate(todayStr);
-      setEndDate(todayStr);
+      setDateFilter("today");
     } else if (filterP === "week") {
       const now = new Date();
       const dayOfWeek = now.getDay();
@@ -273,7 +273,9 @@ export default function AppointmentsListPage() {
 
   // Apply fallback client-side filter on bookingsList to ensure responsive filtering
   const filteredBookings = useMemo(() => {
-    return bookingsList.filter((b) => {
+    const todayStr = new Date().toLocaleDateString("sv-SE");
+
+    const list = bookingsList.filter((b) => {
       if (startDate && b.slotDate && b.slotDate < startDate) return false;
       if (endDate && b.slotDate && b.slotDate > endDate) return false;
       if (
@@ -282,9 +284,40 @@ export default function AppointmentsListPage() {
         b.status.toLowerCase() !== statusFilter.toLowerCase()
       )
         return false;
+
+      if (dateFilter === "today" && b.slotDate !== todayStr) return false;
+      if (dateFilter === "upcoming" && (!b.slotDate || b.slotDate <= todayStr))
+        return false;
+      if (dateFilter === "past" && (!b.slotDate || b.slotDate >= todayStr))
+        return false;
+
       return true;
     });
-  }, [bookingsList, startDate, endDate, statusFilter]);
+
+    return [...list].sort((a, b) => {
+      const dateA = a.slotDate || "";
+      const dateB = b.slotDate || "";
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      const timeA = a.slotStartTime || "";
+      const timeB = b.slotStartTime || "";
+      return timeA.localeCompare(timeB);
+    });
+  }, [bookingsList, startDate, endDate, statusFilter, dateFilter]);
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, startDate, endDate, statusFilter, dateFilter]);
+
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage) || 1;
+
+  const paginatedBookings = useMemo(() => {
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    return filteredBookings.slice(startIdx, startIdx + itemsPerPage);
+  }, [filteredBookings, currentPage, itemsPerPage]);
 
   // Action Triggers
   const handleViewClick = (booking) => {
@@ -380,6 +413,17 @@ export default function AppointmentsListPage() {
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
               />
+              {/* Date Filter (Today / Upcoming / Past) */}
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700 bg-white"
+              >
+                <option value="">All Appointments</option>
+                <option value="today">Today's appointments</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="past">Past appointments</option>
+              </select>
               {/* Status Filter */}
               <select
                 value={statusFilter}
@@ -394,6 +438,7 @@ export default function AppointmentsListPage() {
               {(startDate ||
                 endDate ||
                 statusFilter ||
+                dateFilter ||
                 searchFilter ||
                 debouncedSearch) && (
                 <button
@@ -454,9 +499,11 @@ export default function AppointmentsListPage() {
                     </TD>
                   </TR>
                 ) : (
-                  filteredBookings.map((b, idx) => (
+                  paginatedBookings.map((b, idx) => (
                     <TR key={b._id}>
-                      <TD className="text-sm text-gray-500">{idx + 1}</TD>
+                      <TD className="text-sm text-gray-500 font-medium">
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
+                      </TD>
                       {mediaFields.map((field) => {
                         const val =
                           b.dynamicResponses?.[field.fieldKey] ||
@@ -647,6 +694,92 @@ export default function AppointmentsListPage() {
               </TBody>
             </Table>
           </div>
+
+          {/* Pagination Footer */}
+          {!isLoading && filteredBookings.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-200 bg-white">
+              <div className="flex items-center gap-3 text-xs text-gray-500 font-medium">
+                <span>
+                  Showing{" "}
+                  <span className="font-semibold text-gray-900">
+                    {(currentPage - 1) * itemsPerPage + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-semibold text-gray-900">
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      filteredBookings.length,
+                    )}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-gray-900">
+                    {filteredBookings.length}
+                  </span>{" "}
+                  appointments
+                </span>
+                <span className="text-gray-300">|</span>
+                <div className="flex items-center gap-1.5">
+                  <span>Per page:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="px-2 py-1 border border-gray-300 rounded text-xs bg-white text-gray-700 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    Previous
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+                          currentPage === page
+                            ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ),
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

@@ -49,6 +49,7 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   // Modals state
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -161,7 +162,9 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
   }, [formFields]);
 
   const filteredBookings = useMemo(() => {
-    return bookingsList.filter((b) => {
+    const todayStr = new Date().toLocaleDateString("sv-SE");
+
+    const list = bookingsList.filter((b) => {
       // Search filter across dynamic response values
       const responsesString = formFields
         .map((f) =>
@@ -192,16 +195,45 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
         matchesStatus = b.status?.toLowerCase() === statusFilter.toLowerCase();
       }
 
+      if (dateFilter === "today" && b.slotDate !== todayStr) return false;
+      if (dateFilter === "upcoming" && (!b.slotDate || b.slotDate <= todayStr))
+        return false;
+      if (dateFilter === "past" && (!b.slotDate || b.slotDate >= todayStr))
+        return false;
+
       return matchesSearch && matchesDate && matchesStatus;
+    });
+
+    return [...list].sort((a, b) => {
+      const dateA = a.slotDate || "";
+      const dateB = b.slotDate || "";
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      const timeA = a.slotStartTime || "";
+      const timeB = b.slotStartTime || "";
+      return timeA.localeCompare(timeB);
     });
   }, [
     bookingsList,
     formFields,
     searchFilter,
     startDate,
-    endDate,
-    statusFilter,
   ]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchFilter, startDate, endDate, statusFilter, dateFilter]);
+
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage) || 1;
+
+  const paginatedBookings = useMemo(() => {
+    const startIdx = (currentPage - 1) * itemsPerPage;
+    return filteredBookings.slice(startIdx, startIdx + itemsPerPage);
+  }, [filteredBookings, currentPage, itemsPerPage]);
 
   // Action Triggers
   const handleViewClick = (booking) => {
@@ -290,6 +322,17 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               }}
               className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700"
             />
+            {/* Date Filter (Today / Upcoming / Past) */}
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 text-gray-700 bg-white"
+            >
+              <option value="">All Appointments</option>
+              <option value="today">Today's appointments</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="past">Past appointments</option>
+            </select>
             {/* Status Filter */}
             <select
               value={statusFilter}
@@ -301,13 +344,18 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
               <option value="pending">Pending</option>
               <option value="cancelled">Cancelled</option>
             </select>
-            {(startDate || endDate || statusFilter || searchFilter) && (
+            {(startDate ||
+              endDate ||
+              statusFilter ||
+              dateFilter ||
+              searchFilter) && (
               <button
                 type="button"
                 onClick={() => {
                   setStartDate("");
                   setEndDate("");
                   setStatusFilter("");
+                  setDateFilter("");
                   setSearchFilter("");
                 }}
                 className="px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors flex items-center gap-1 cursor-pointer shrink-0"
@@ -359,9 +407,11 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
                   </TD>
                 </TR>
               ) : (
-                filteredBookings.map((b, idx) => (
+                paginatedBookings.map((b, idx) => (
                   <TR key={b._id}>
-                    <TD className="text-sm text-gray-500">{idx + 1}</TD>
+                    <TD className="text-sm text-gray-500 font-medium">
+                      {(currentPage - 1) * itemsPerPage + idx + 1}
+                    </TD>
 
                     {/* Render matching dynamic responses for Media Columns */}
                     {mediaFields.map((field) => {
@@ -536,6 +586,92 @@ export default function AdminAppointmentsPage({ params: paramsPromise }) {
             </TBody>
           </Table>
         </div>
+
+        {/* Pagination Footer */}
+        {!isLoading && filteredBookings.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-200 bg-white">
+            <div className="flex items-center gap-3 text-xs text-gray-500 font-medium">
+              <span>
+                Showing{" "}
+                <span className="font-semibold text-gray-900">
+                  {(currentPage - 1) * itemsPerPage + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold text-gray-900">
+                  {Math.min(
+                    currentPage * itemsPerPage,
+                    filteredBookings.length,
+                  )}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-gray-900">
+                  {filteredBookings.length}
+                </span>{" "}
+                appointments
+              </span>
+              <span className="text-gray-300">|</span>
+              <div className="flex items-center gap-1.5">
+                <span>Per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1 border border-gray-300 rounded text-xs bg-white text-gray-700 focus:outline-none focus:border-blue-500"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  Previous
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors cursor-pointer ${
+                        currentPage === page
+                          ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ),
+                )}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* View Modal */}
