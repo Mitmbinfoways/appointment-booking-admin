@@ -271,9 +271,9 @@ export default function CreateAppointmentPage() {
       return;
     }
 
-    // Validate file size: 5MB for images, 10MB for videos
-    const maxSize = fieldType === "image" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
-    const maxLabel = fieldType === "image" ? "5MB" : "10MB";
+    // Validate file size: 5MB for images, 20MB for videos
+    const maxSize = fieldType === "image" ? 5 * 1024 * 1024 : 20 * 1024 * 1024;
+    const maxLabel = fieldType === "image" ? "5MB" : "20MB";
     if (file.size > maxSize) {
       clearFileInput();
       Toast({
@@ -1106,7 +1106,7 @@ export default function CreateAppointmentPage() {
                                 )}
                               </div>
                               <p className="text-[10px] text-gray-400">
-                                Accepts videos only (max 10MB)
+                                Accepts videos only (max 20MB)
                               </p>
                             </div>
                           ) : (
